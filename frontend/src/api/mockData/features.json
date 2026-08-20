@@ -1,0 +1,18 @@
+{
+  "blockAdoption": [
+    { "blockType": "Experience", "count": 940, "percentage": 87 },
+    { "blockType": "Skills", "count": 884, "percentage": 82 },
+    { "blockType": "Projects", "count": 809, "percentage": 75 },
+    { "blockType": "Achievements", "count": 561, "percentage": 52 },
+    { "blockType": "Certification", "count": 442, "percentage": 41 },
+    { "blockType": "Education", "count": 398, "percentage": 37 },
+    { "blockType": "Contact", "count": 367, "percentage": 34 },
+    { "blockType": "Testimonials", "count": 280, "percentage": 26 },
+    { "blockType": "Gallery", "count": 204, "percentage": 19 },
+    { "blockType": "Links", "count": 162, "percentage": 15 }
+  ],
+  "themeDistribution": [
+    { "theme": "Dark", "count": 648, "percentage": 60 },
+    { "theme": "Light", "count": 432, "percentage": 40 }
+  ]
+}

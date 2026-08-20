@@ -1,0 +1,17 @@
+{
+  "funnel": [
+    { "stage": "Signup Started", "count": 2450, "percentage": 100 },
+    { "stage": "Email Verified", "count": 2401, "percentage": 98 },
+    { "stage": "Room Created", "count": 1080, "percentage": 45 },
+    { "stage": "Room Published", "count": 940, "percentage": 87 },
+    { "stage": "Room Shared", "count": 770, "percentage": 82 }
+  ],
+  "dropoff": [
+    { "from": "Signup Started", "to": "Email Verified", "percentage": 2 },
+    { "from": "Email Verified", "to": "Room Created", "percentage": 55 },
+    { "from": "Room Created", "to": "Room Published", "percentage": 13 },
+    { "from": "Room Published", "to": "Room Shared", "percentage": 18 }
+  ],
+  "cachedAt": "2026-08-20T12:00:00Z",
+  "expiresAt": "2026-08-20T12:15:00Z"
+}

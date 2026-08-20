@@ -1,0 +1,14 @@
+{
+  "events": [
+    { "eventId": "evt_001", "eventName": "signup_started", "timestamp": "2026-08-01T14:22:00Z", "properties": { "utm_source": "google" } },
+    { "eventId": "evt_002", "eventName": "email_verified", "timestamp": "2026-08-01T14:23:30Z", "properties": {} },
+    { "eventId": "evt_003", "eventName": "showcase_room_created", "timestamp": "2026-08-01T14:30:00Z", "properties": { "roomName": "Alice's Portfolio" } },
+    { "eventId": "evt_004", "eventName": "block_added", "timestamp": "2026-08-01T14:35:00Z", "properties": { "blockType": "Experience" } },
+    { "eventId": "evt_005", "eventName": "block_added", "timestamp": "2026-08-01T14:38:00Z", "properties": { "blockType": "Skills" } },
+    { "eventId": "evt_006", "eventName": "block_added", "timestamp": "2026-08-01T14:42:00Z", "properties": { "blockType": "Projects" } },
+    { "eventId": "evt_007", "eventName": "room_theme_changed", "timestamp": "2026-08-01T15:00:00Z", "properties": { "theme_name": "dark" } },
+    { "eventId": "evt_008", "eventName": "showcase_room_published", "timestamp": "2026-08-01T15:15:00Z", "properties": {} },
+    { "eventId": "evt_009", "eventName": "showcase_room_shared", "timestamp": "2026-08-02T09:00:00Z", "properties": { "shareType": "public_link" } },
+    { "eventId": "evt_010", "eventName": "user_returned_7d", "timestamp": "2026-08-08T11:20:00Z", "properties": {} }
+  ]
+}

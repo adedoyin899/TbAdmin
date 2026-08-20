@@ -1,0 +1,57 @@
+{
+  "campaigns": [
+    {
+      "campaignId": "welcome-email-001",
+      "campaignName": "Welcome Email",
+      "sentDate": "2026-08-01",
+      "sentCount": 500,
+      "openCount": 210,
+      "openPercentage": 42,
+      "clickCount": 85,
+      "clickPercentage": 17,
+      "bounceCount": 2,
+      "unsubscribeCount": 0
+    },
+    {
+      "campaignId": "showcase-tips-001",
+      "campaignName": "Showcase Tips",
+      "sentDate": "2026-08-03",
+      "sentCount": 450,
+      "openCount": 156,
+      "openPercentage": 35,
+      "clickCount": 62,
+      "clickPercentage": 14,
+      "bounceCount": 1,
+      "unsubscribeCount": 1
+    },
+    {
+      "campaignId": "feature-update-001",
+      "campaignName": "Feature Update — Aug",
+      "sentDate": "2026-08-10",
+      "sentCount": 620,
+      "openCount": 248,
+      "openPercentage": 40,
+      "clickCount": 99,
+      "clickPercentage": 16,
+      "bounceCount": 3,
+      "unsubscribeCount": 2
+    },
+    {
+      "campaignId": "reengagement-001",
+      "campaignName": "Re-engagement Campaign",
+      "sentDate": "2026-08-15",
+      "sentCount": 310,
+      "openCount": 68,
+      "openPercentage": 22,
+      "clickCount": 21,
+      "clickPercentage": 7,
+      "bounceCount": 5,
+      "unsubscribeCount": 3
+    }
+  ],
+  "topPerformers": [
+    { "campaignName": "Welcome Email", "clickPercentage": 17 },
+    { "campaignName": "Feature Update — Aug", "clickPercentage": 16 },
+    { "campaignName": "Showcase Tips", "clickPercentage": 14 }
+  ]
+}

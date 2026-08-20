@@ -1,0 +1,12 @@
+{
+  "retention7d": { "percentage": 42, "change": 2 },
+  "retention30d": { "percentage": 28, "change": 3 },
+  "trend": [
+    { "week": "Jul 10", "retention7d": 35, "retention30d": 22 },
+    { "week": "Jul 17", "retention7d": 37, "retention30d": 24 },
+    { "week": "Jul 24", "retention7d": 38, "retention30d": 25 },
+    { "week": "Jul 31", "retention7d": 40, "retention30d": 26 },
+    { "week": "Aug 7", "retention7d": 42, "retention30d": 28 },
+    { "week": "Aug 14", "retention7d": 42, "retention30d": 28 }
+  ]
+}
