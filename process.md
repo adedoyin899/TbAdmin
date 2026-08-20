@@ -93,11 +93,23 @@ Systemic 3D room performance:
 | **Week 1** | **User Directory** (Prompt 10) | User-only metrics, header search, signups trend, and granular creator room drill-downs. | 🟢 Completed |
 | **Week 1** | **Extra Features** | Universal `DateRangeSelector` (custom date pickers), Email Campaign drill-down, Showcase Room intelligence. | 🟢 Completed |
 | **Week 1** | **E2E Testing** (Prompt 11) | Cypress test suites (`auth.cy.ts`, `dashboards.cy.ts`, `userLookup.cy.ts`). | 🟢 Completed |
-| **Week 1** | **Deployment & CI/CD** | Synced to GitHub (`adedoyin899/TbAdmin`), deployed to Vercel (`https://tbadmin.vercel.app`). | 🟢 Completed |
+| **Week 1** | **Routing** (Prompt 12) | Connect dashboard components to router with protected routes. | 🟢 Completed |
+| **Week 2** | **Backend Auth** (Prompt 13) | Bcrypt 12 salt hashing, 7-day JWT tokens, `admin_users` table seeder (`maz@talentbridge.cv`), `/auth` endpoints. | 🟢 Completed |
+| **Week 2** | **PostHog & Cache** (Prompt 14) | PostHog API client, 15-min Redis caching service with PostgreSQL `dashboard_cache` fallback, rate limiting resilience. | 🟢 Completed |
+| **Week 2** | **Funnel API** (Prompt 15) | `GET /api/dashboard/funnel` endpoint with 5-stage conversion, drop-offs, and filters. | 🟢 Completed |
+| **Week 2** | **Dashboards API** (Prompt 16) | `GET /api/dashboard/features`, `/retention`, `/email`, `/rooms` endpoints with 15-min TTL. | 🟢 Completed |
+| **Week 2** | **User Lookup API** (Prompt 17) | `GET /api/users/search`, `GET /api/users/:userId` (uncached, real-time PostHog Person queries, replay URLs, email history). | 🟢 Completed |
+| **Week 2** | **Webhooks & RBAC** (Prompt 18) | Mailgun HMAC-SHA256 signature verification, PostgreSQL event deduplication, and RBAC permissions middleware. | 🟢 Completed |
+| **Week 2** | **API Swap** (Prompt 19) | Connected Frontend Axios client to real backend APIs with JWT interceptors and env config. | 🟢 Completed |
+| **Week 2** | **Full E2E Testing** (Prompt 20) | End-to-end user flows with real backend services and database sessions. | 🟡 In Progress |
 
 ---
 
 ## 🌐 LIVE DEPLOYMENT & REPOSITORY
+
+- **GitHub Repository**: [https://github.com/adedoyin899/TbAdmin](https://github.com/adedoyin899/TbAdmin)
+- **Live Production URL**: [https://tbadmin.vercel.app](https://tbadmin.vercel.app)
+
 
 - 🚀 **Live Production App**: **[https://tbadmin.vercel.app](https://tbadmin.vercel.app)**
 - 🐙 **GitHub Repository**: **[https://github.com/adedoyin899/TbAdmin](https://github.com/adedoyin899/TbAdmin)**
