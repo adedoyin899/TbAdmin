@@ -10,6 +10,7 @@ import { apiLimiter } from './middleware/rateLimiter.js';
 import { authRouter } from './routes/auth.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { userRouter } from './routes/users.js';
+import { webhookRouter } from './routes/webhooks.js';
 
 export const app = express();
 
@@ -59,6 +60,10 @@ app.use('/dashboard', dashboardRouter);
 // User Lookup Routes (Fresh data, real-time)
 app.use('/api/users', userRouter);
 app.use('/users', userRouter);
+
+// Webhook Routes (Server-to-server, HMAC verification)
+app.use('/api/webhooks', webhookRouter);
+app.use('/webhooks', webhookRouter);
 
 // Global Error Handler
 app.use(errorHandler);
