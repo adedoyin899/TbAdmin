@@ -1,7 +1,7 @@
 # 📋 TalentBridge Admin Dashboard — Process & Implementation Plan
 
 > **Written for everyone — technical and non-technical alike.**  
-> This document explains what we're building, why, how, and in what order.
+> This document explains what we've built, why, how, what steps have been completed, and what comes next.
 
 ---
 
@@ -10,210 +10,113 @@
 ### What are we building?
 A private admin portal that lets the TalentBridge team (Maz, Marilyn, Peter, Ayo, and interns) see key analytics data **without needing to dig through PostHog**.
 
-Think of it like a simple dashboard on your phone that shows your bank balance — instead of logging into the full banking website and hunting for the number yourself.
+Think of it like a simple banking dashboard on your phone — instead of logging into the full accounting system and hunting for raw database entries yourself, you get crystal-clear insights immediately.
 
 ### Why do we need it?
-Right now, finding a simple metric (like "how many users signed up this week?") takes **45 minutes** in PostHog because PostHog is built for technical users. This tool will surface the most important numbers in **under 5 minutes**, for anyone on the team.
+Right now, finding a simple metric (like "how many users dropped off during room creation this week?") takes **45 minutes** in PostHog. This portal surfaces the most important metrics in **under 5 minutes** for anyone on the team.
 
 ### What it is NOT
-- ❌ It will NOT replace PostHog — PostHog stays as the source of truth
+- ❌ It will NOT replace PostHog — PostHog stays as the underlying event source of truth
 - ❌ It will NOT let anyone edit or delete data — it's **read-only**
-- ❌ It is NOT a public-facing product — only internal team members can log in
+- ❌ It is NOT a public-facing product — only authenticated team members can log in
 
 ---
 
 ## 👥 WHO IS THIS FOR?
 
-| Person | Role | What they'll use it for |
-|--------|------|--------------------------|
-| Maz | CEO | Funnel performance, retention, user journeys |
-| Marilyn | Ops | Funnel drop-offs, troubleshooting users |
-| Peter | Marketing | Email campaign results, feature adoption |
-| Ayo | Product | Feature usage, funnel data |
-| Interns | Various | Funnel & feature dashboards only |
+| Person | Role | What they use it for |
+|--------|------|----------------------|
+| **Maz** | CEO | Funnel conversion, user retention, growth trajectories |
+| **Marilyn** | Ops | Drop-off analysis, user directory search, troubleshooting |
+| **Peter** | Marketing | Email campaign open/click rates, feature & template adoption |
+| **Ayo** | Product | Showcase room engagement heatmaps, viewer leads |
+| **Interns** | Various | High-level funnel & feature dashboards |
 
 ---
 
-## 📊 THE 5 SCREENS
+## 📊 PORTAL SCREENS & CAPABILITIES
 
-### 1. 🔐 Login Page
-The entry point. You enter your email and password to access the portal. Nobody else can get in.
+### 1. 🔐 Authentication & Session Guard
+Secure login interface supporting team credentials, field validation, session persistence across browser reloads, and automatic redirection to default dashboards.
 
-### 2. 📉 Funnel Dashboard
-Shows how users move through TalentBridge:
-> Sign Up → Verify Email → Create Room → Publish Room → Share Room
+### 2. 📉 Funnel Conversion Dashboard (`/dashboard/funnel`)
+Tracks user progression across the 5 core stages:
+> **Signup Started → Email Verified → Room Created → Room Published → Room Shared**
+- Displays stage counts, retention rates, and step drop-off percentages.
+- Filterable by presets (`7d`, `30d`, `90d`, `12m`) or custom start/end date ranges, plus acquisition source.
 
-You can see at each step: how many users made it through, and how many dropped off. You can filter by time period (last 7 days, 30 days, etc.) or by how users originally found TalentBridge.
+### 3. 🧩 Feature Adoption Dashboard (`/dashboard/features`)
+Visualizes which platform tools creators adopt most:
+- Top 10 Block types added (`Skills`, `Portfolio Grid`, `Video Reel`, `About`, `Contact`).
+- Theme split distribution (`Dark Mode` vs `Light Mode`).
 
-### 3. 🧩 Feature Adoption Dashboard
-Shows which features users are actually using — e.g. "82% of users added a Skills block" or "60% of users prefer the dark theme."
+### 4. 🔄 Retention Cohorts Dashboard (`/dashboard/retention`)
+Measures product stickiness:
+- 7-Day & 30-Day returning user benchmarks.
+- Week-over-week growth trajectory area chart.
 
-### 4. 🔄 Retention Dashboard
-Shows how many users come back after signing up — after 7 days and after 30 days. This tells us if the product is sticky.
+### 5. 📧 Email Campaigns Intelligence (`/dashboard/email`)
+- Macro stats: Total Campaigns, Avg Open Rate, Avg Click Rate, Total Bounces.
+- **Granular Campaign Drill-Down**: Clicking on any email campaign opens:
+  - 6 KPI cards (Sent, Delivered, Open %, Click %, CTOR, Bounces).
+  - Hourly engagement curve (Opens vs Clicks over the first 48 hours).
+  - Link/CTA performance breakdown (Ranked click counts & progress bars).
+  - Searchable recipient delivery logs with timestamps, client, and device info.
+  - Interactive email template mockup preview.
 
-### 5. 📧 Email Dashboard
-Shows how our email campaigns are performing — open rates, click rates, bounces — pulled from Mailgun (our email tool).
+### 6. ✨ Showcase Room Intelligence (`/dashboard/rooms`)
+Systemic 3D room performance:
+- Total room views, unique visitors, average time spent (e.g. `7m 24s`), and engagement quality.
+- Macro views trend, traffic sources, device breakdown, day/hour engagement heatmap, and geographic distribution.
+- AI-driven platform recommendations.
 
-### 6. 🔍 User Lookup
-You can type in a user's email or name and pull up their full journey: when they signed up, what they did, which emails they opened, and a link to watch a session replay of their time in the product.
-
----
-
-## 🏗️ HOW IT'S BUILT (In Plain English)
-
-The project has two parts that talk to each other:
-
-### The Frontend (What you see)
-This is the visual interface — the screens, buttons, charts, and tables you interact with in your browser. Built with React (a popular tool for building web interfaces).
-
-### The Backend (The engine behind the scenes)
-This is the server that securely fetches data from PostHog and Mailgun, caches it (stores a copy temporarily to make things fast), and sends it to the frontend. Built with Node.js.
-
-### How they connect
-```
-You (browser) → Frontend → Backend → PostHog / Mailgun
-                                  → PostgreSQL (for email events)
-                                  → Redis (for caching / speed)
-```
-
-**Caching explained:** Instead of calling PostHog every single time someone opens a dashboard (which would be slow), the backend stores the result for 15 minutes. If you open the dashboard again within that 15 minutes, it loads instantly from the saved copy.
-
----
-
-## 🗓️ THE BUILD PLAN — 3 WEEKS
-
-### ✅ WEEK 1 — Build the Visual Interface (with fake data)
-**Goal:** A fully working, demo-ready dashboard by Friday — without needing any real data connections yet.
-
-We use fake (mock) data that looks exactly like the real data will look. This means the team can see and test the UI immediately while the backend is still being built.
-
-| Step | What happens | Who touches it |
-|------|-------------|----------------|
-| 1 | Set up the backend project structure (folders, packages) | Developer |
-| 2 | Set up the database tables | Developer |
-| 3 | Set up the frontend project (React + Tailwind + Vite) | Developer |
-| 4 | Create fake data files for all dashboards | Developer |
-| 5 | Define all the data shapes (TypeScript types) + utility functions | Developer |
-| 6 | Build the Login page + authentication flow | Developer |
-| 7 | Build the main layout — header, sidebar, navigation | Developer |
-| 8 | Build the Funnel Dashboard with chart + table + filters | Developer |
-| 9 | Build the Features, Retention, and Email Dashboards | Developer |
-| 10 | Build the User Lookup page (search + profile + timeline) | Developer |
-| 11 | Write automated tests to verify everything works | Developer |
-| 12 | Wire everything up so navigation works end-to-end | Developer |
-
-**✅ End of Week 1 deliverable:** The whole UI is working, looks great, and can be demoed to the team.
+### 7. 👤 User Directory (`/lookup`)
+- **Main View**: High-level platform user metrics:
+  - Total Registered Users (`12,450`), Active Users (`8,920`), Verified Accounts (`10,810`), New Signups (`1,247`).
+  - User Signups Growth area chart (Signups vs. Verified Users).
+  - User acquisition channels & global demographic breakdown.
+  - Prominent search bar with an explicit **"Search"** button.
+- **Granular Creator Profile (On Row Click)**:
+  - User Hero card with PostHog Session Replay link.
+  - Individual Showcase Rooms switcher and room-specific viewer leads table (*"Who's Viewing"*).
+  - Chronological activity event logs + user email engagement history.
 
 ---
 
-### ✅ WEEK 2 — Build the Real Backend APIs (in parallel)
-**Goal:** All backend endpoints working and tested independently.
+## 🗓️ PROGRESS LOG: WHAT HAS BEEN COMPLETED
 
-While the UI is being polished, a developer builds the real server that connects to PostHog and Mailgun.
-
-| Step | What happens |
-|------|-------------|
-| 13 | Build real login system (bcrypt password hashing + JWT tokens) |
-| 14 | Build PostHog API client + Redis caching layer |
-| 15 | Build the Funnel data endpoint |
-| 16 | Build the Features, Retention, and Email data endpoints |
-| 17 | Build the User Lookup endpoints (no caching — always fresh) |
-| 18 | Build the Mailgun webhook receiver + Role-Based Access Control (RBAC) |
-
-**What is RBAC?**  
-Role-Based Access Control means different team members see different things. An intern might only see the Funnel and Features dashboards, while Maz as admin sees everything. This is currently turned OFF (everyone sees everything) and can be turned ON later without code changes.
-
-**✅ End of Week 2 deliverable:** All backend APIs working and tested independently.
+| Phase | Milestone | Deliverables / Features | Status |
+|---|---|---|---|
+| **Week 1** | **Setup & Types** (Prompts 3–5) | Vite + React 18 + TS + Tailwind design system, data models, formatters, and mock data. | 🟢 Completed |
+| **Week 1** | **Auth & Layout** (Prompts 6–7) | Login flow, JWT token simulation, responsive sidebar drawer for mobile/tablet/desktop. | 🟢 Completed |
+| **Week 1** | **Dashboards** (Prompts 8–9) | Funnel, Features, Retention, and Email dashboards with Recharts charts and KPI cards. | 🟢 Completed |
+| **Week 1** | **User Directory** (Prompt 10) | User-only metrics, header search, signups trend, and granular creator room drill-downs. | 🟢 Completed |
+| **Week 1** | **Extra Features** | Universal `DateRangeSelector` (custom date pickers), Email Campaign drill-down, Showcase Room intelligence. | 🟢 Completed |
+| **Week 1** | **E2E Testing** (Prompt 11) | Cypress test suites (`auth.cy.ts`, `dashboards.cy.ts`, `userLookup.cy.ts`). | 🟢 Completed |
+| **Week 1** | **Deployment & CI/CD** | Synced to GitHub (`adedoyin899/TbAdmin`), deployed to Vercel (`https://tbadmin.vercel.app`). | 🟢 Completed |
 
 ---
 
-### ✅ WEEK 3 — Connect Frontend to Real Backend + Deploy
-**Goal:** Live dashboard accessible to the team.
+## 🌐 LIVE DEPLOYMENT & REPOSITORY
 
-| Step | What happens |
-|------|-------------|
-| 19 | Swap the fake data out for real API calls (one config file change) |
-| 20 | Run all tests against real backend, fix any issues |
-| 21 | Deploy frontend to Vercel (public URL, login-protected) |
-| 22 | Deploy backend to EC2 (our existing server) |
-
-**✅ End of Week 3 deliverable:** Live, working dashboard the whole team can use.
+- 🚀 **Live Production App**: **[https://tbadmin.vercel.app](https://tbadmin.vercel.app)**
+- 🐙 **GitHub Repository**: **[https://github.com/adedoyin899/TbAdmin](https://github.com/adedoyin899/TbAdmin)**
+- 📊 **Vercel Project**: `tbadmin` (in `adedoyin899s-projects`)
 
 ---
 
-## 🔐 SECURITY & ACCESS
+## ⏭️ NEXT PHASE: WEEK 2 BACKEND APIS & LIVE INTEGRATIONS
 
-- Every team member gets their own login (email + password)
-- Passwords are encrypted (hashed with bcrypt — not stored in plain text)
-- Sessions expire after 7 days (you'll need to log in again)
-- All API routes require a valid login token — no anonymous access
-- The portal is not publicly findable — there's no "sign up" button
-
----
-
-## ⚡ PERFORMANCE TARGETS
-
-| Metric | Target |
-|--------|--------|
-| Dashboard load time | Under 2 seconds |
-| Cache hit rate | Over 80% (most loads are instant) |
-| Concurrent users supported | 100+ |
-| Mobile usability | Works on tablet and phone |
+| Step | Prompt | Scope |
+|---|---|---|
+| 1 | **Prompt 1** | Backend Scaffolding (`backend/` with Express, TypeScript, CORS, Helmet, rate limiter). |
+| 2 | **Prompt 2** | PostgreSQL Schema & Migration scripts (`admin_users`, `mailgun_events`, `dashboard_cache`, `query_audit_log`). |
+| 3 | **Prompt 13** | Real Backend Auth System (bcrypt password hashing, JWT in httpOnly cookies, RBAC). |
+| 4 | **Prompt 14** | PostHog API Client & Redis Caching layer (15-min TTL). |
+| 5 | **Prompt 15–17** | Live Analytics Endpoints (`/api/funnel`, `/api/features`, `/api/retention`, `/api/rooms`, `/api/users`). |
+| 6 | **Prompt 18** | Mailgun Webhooks & Ingestion service. |
+| 7 | **Prompt 19–20** | Switch frontend from mock data to real API endpoints & live E2E validation. |
 
 ---
 
-## 🧱 KEY DESIGN DECISIONS (& WHY)
-
-| Decision | Why |
-|----------|-----|
-| Build the UI with fake data first | Team can review and give feedback without waiting for backend |
-| 15-minute cache | Fresh enough for a dashboard, but fast for the user |
-| User lookup has NO cache | Individual user data needs to be accurate in real-time |
-| RBAC is a toggle (off by default) | Zero performance impact at MVP; can be switched on later |
-| Read-only portal | Protects data integrity — no risk of accidental changes |
-| Single codebase, simple stack | Easy for the team to maintain and hand over |
-
----
-
-## 📁 FILE OVERVIEW (For Reference)
-
-```
-TbridgeAdmin/
-├── ARCHITECTURE.md       ← Tech stack decisions + data flow diagram
-├── PRODUCT_REQUIREMENTS.md ← Detailed specs, DB schema, API endpoints
-├── DESIGN-2.md           ← Full design system (colours, fonts, components)
-├── PROMPTS.md            ← 20 step-by-step build instructions for the developer
-├── bug.md                ← Bug tracker (this project)
-└── process.md            ← This file — the plan explained simply
-```
-
----
-
-## ✅ HOW TO KNOW IT'S DONE
-
-The project is complete when:
-
-- [ ] You can log in with your email and password
-- [ ] The Funnel Dashboard loads in under 2 seconds and shows correct data
-- [ ] You can filter by date range and signup source
-- [ ] Feature Adoption shows real block usage data
-- [ ] Retention shows 7-day and 30-day rates
-- [ ] Email Dashboard shows real campaign metrics from Mailgun
-- [ ] You can search for any user by name or email and see their full journey
-- [ ] Maz, Marilyn, Peter, and Ayo all have working logins
-- [ ] The dashboard works on mobile/tablet
-- [ ] No bugs are blocking any key workflow
-
----
-
-## 🙋 QUESTIONS?
-
-If anything is unclear about the plan, log it here so it can be answered before the team starts building:
-
-| Question | Asked by | Answer |
-|----------|----------|--------|
-| *(none yet)* | | |
-
----
-
-*Last updated: 2026-08-20 · Maintained by: Antigravity / TalentBridge team*
+*Last Updated: 2026-08-20*

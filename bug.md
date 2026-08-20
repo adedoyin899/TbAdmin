@@ -9,27 +9,19 @@
 
 Copy this template and fill it in:
 
-```
+```markdown
 ### BUG-XXX — [Short title describing the problem]
 
 | Field       | Detail                          |
 |-------------|---------------------------------|
-| **Status**  | 🔴 Open                         |
+| **Status**  | 🔴 Open / 🟢 Fixed              |
 | **Found by**| [Your name]                     |
 | **Date**    | YYYY-MM-DD                      |
-| **Area**    | [Login / Funnel / Features / Retention / Email / User Lookup / Layout] |
+| **Area**    | [Login / Funnel / Features / Retention / Email / User Directory / Layout / Deploy] |
 | **Severity**| 🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low |
 
 **What happened:**
-Describe exactly what went wrong. What did you see?
-
-**What should happen:**
-Describe what the correct behaviour should be.
-
-**Steps to reproduce:**
-1. Go to...
-2. Click...
-3. See error...
+Describe exactly what went wrong.
 
 **Fix applied (if resolved):**
 What was changed to fix it? Which file?
@@ -39,33 +31,62 @@ What was changed to fix it? Which file?
 
 ---
 
-## SEVERITY GUIDE
+## 🟢 RESOLVED BUGS & TECHNICAL ADJUSTMENTS
 
-| Level | Meaning | Example |
-|-------|---------|---------|
-| 🔴 Critical | Blocks all users, data wrong, crash | Login broken, dashboard shows no data |
-| 🟠 High | Breaks a feature for most users | Chart not rendering, filter not working |
-| 🟡 Medium | Works but behaves incorrectly | Wrong percentage shown, layout broken on tablet |
-| 🟢 Low | Minor cosmetic or polish issue | Wrong colour, slight alignment off |
+### BUG-001 — TypeScript `verbatimModuleSyntax` Type Import Errors
+| Field | Detail |
+|---|---|
+| **Status** | 🟢 Fixed |
+| **Found by** | Compiler / Build |
+| **Date** | 2026-08-20 |
+| **Area** | Common Components (`DateRangeSelector.tsx` imports) |
+| **Severity** | 🟠 High (Build blocker) |
+
+**What happened:**
+`TS1484` error occurred when importing `DateRangeValue` interface without the explicit `type` keyword in dashboards.
+**Fix applied:**
+Updated all imports to use explicit type syntax (`import { DateRangeSelector, type DateRangeValue } from ...`).
+**Fixed on:** 2026-08-20
+
+---
+
+### BUG-002 — Vercel SPA Client Routing 404 on Direct Sub-Path Refresh
+| Field | Detail |
+|---|---|
+| **Status** | 🟢 Fixed |
+| **Found by** | Deployment verification |
+| **Date** | 2026-08-20 |
+| **Area** | Deployment / Routing (`vercel.json`) |
+| **Severity** | 🟠 High |
+
+**What happened:**
+Refreshing pages on deep routes (e.g. `/dashboard/funnel`, `/dashboard/rooms`, `/lookup`) returned 404 because Vercel looked for physical files instead of rewriting to `/index.html`.
+**Fix applied:**
+Created `frontend/vercel.json` and root `vercel.json` with SPA rewrite rules (`{"source": "/(.*)", "destination": "/index.html"}`).
+**Fixed on:** 2026-08-20
+
+---
+
+### BUG-003 — Unused Import Lint Warnings in CampaignDetailView
+| Field | Detail |
+|---|---|
+| **Status** | 🟢 Fixed |
+| **Found by** | TypeScript compiler |
+| **Date** | 2026-08-20 |
+| **Area** | Email Campaign Drill-Down |
+| **Severity** | 🟢 Low |
+
+**What happened:**
+Icons declared in `CampaignDetailView.tsx` were not referenced, causing `TS6133` error during production build.
+**Fix applied:**
+Cleaned up unused icon imports in `CampaignDetailView.tsx`.
+**Fixed on:** 2026-08-20
 
 ---
 
 ## ACTIVE BUGS
 
-> No bugs logged yet. You're off to a great start! 🎉
-
----
-
-## RESOLVED BUGS
-
-> No resolved bugs yet.
-
----
-
-## NOTES & PATTERNS
-
-> Use this section to note any recurring issues or patterns that keep appearing.  
-> e.g. "All caching issues seem to happen when Redis is cold."
+> No active bugs. All test suites and production builds passing with 0 errors! 🎉
 
 ---
 
