@@ -4,20 +4,20 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { Calendar } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FeaturesDashboardResponse } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
-import { DATE_RANGES, CHART_COLORS } from '../../config/constants';
+import { CHART_COLORS } from '../../config/constants';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 const PIE_COLORS = ['#0D1F1E', '#2DD4BF'];
 
 export const FeatureDashboard: React.FC = () => {
-  const [dateRange, setDateRange] = useState('30d');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
 
   const { data, isLoading, error } = useQuery<FeaturesDashboardResponse>({
-    queryKey: ['features', dateRange],
-    queryFn: () => dashboardApi.getFeatures(dateRange) as Promise<FeaturesDashboardResponse>,
+    queryKey: ['features', dateRange.preset, dateRange.startDate, dateRange.endDate],
+    queryFn: () => dashboardApi.getFeatures(dateRange.preset) as Promise<FeaturesDashboardResponse>,
   });
 
   return (
@@ -30,18 +30,11 @@ export const FeatureDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Which content blocks and themes are users choosing?</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Calendar size={14} color="var(--dim)" />
-          <select
-            id="features-date-range"
-            className="input"
-            style={{ width: 150 }}
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-          >
-            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-        </div>
+        <DateRangeSelector
+          value={dateRange}
+          onChange={setDateRange}
+          idPrefix="features-date-range"
+        />
       </div>
 
       {isLoading && (

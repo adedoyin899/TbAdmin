@@ -9,12 +9,14 @@ import { dashboardApi } from '../../api/dashboardApi';
 import type { RetentionDashboardResponse } from '../../types';
 import { formatPercentage } from '../../utils/formatters';
 import { SIGNUP_SOURCES, CHART_COLORS } from '../../config/constants';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 export const RetentionDashboard: React.FC = () => {
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [signupSource, setSignupSource] = useState('all');
 
   const { data, isLoading, error } = useQuery<RetentionDashboardResponse>({
-    queryKey: ['retention', signupSource],
+    queryKey: ['retention', dateRange.preset, dateRange.startDate, dateRange.endDate, signupSource],
     queryFn: () => dashboardApi.getRetention(signupSource) as Promise<RetentionDashboardResponse>,
   });
 
@@ -28,17 +30,24 @@ export const RetentionDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>How many users come back after signing up?</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Filter size={14} color="var(--dim)" />
-          <select
-            id="retention-source"
-            className="input"
-            style={{ width: 160 }}
-            value={signupSource}
-            onChange={e => setSignupSource(e.target.value)}
-          >
-            {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix="retention-date-range"
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Filter size={14} color="var(--dim)" />
+            <select
+              id="retention-source"
+              className="input"
+              style={{ width: 160 }}
+              value={signupSource}
+              onChange={e => setSignupSource(e.target.value)}
+            >
+              {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 

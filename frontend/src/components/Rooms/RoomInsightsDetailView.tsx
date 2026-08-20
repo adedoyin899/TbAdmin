@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { RoomInsight } from '../../types';
 import { formatNumber } from '../../utils/formatters';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const TIME_SLOTS = [
@@ -29,6 +30,7 @@ export const RoomInsightsDetailView: React.FC<{
   room: RoomInsight;
   onEdit?: () => void;
 }> = ({ room, onEdit }) => {
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [viewerSearch, setViewerSearch] = useState('');
   const [viewerFilter, setViewerFilter] = useState<'all' | 'returning' | 'new' | 'high_value'>('all');
   const [locationMetric, setLocationMetric] = useState<'unique' | 'clicks' | 'views' | 'engagement' | 'ctr'>('unique');
@@ -79,6 +81,11 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix={`room-${room.roomId}-date`}
+          />
           {room.publishedUrl && (
             <a
               href={room.publishedUrl}

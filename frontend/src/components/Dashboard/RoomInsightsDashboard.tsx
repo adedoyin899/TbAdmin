@@ -6,13 +6,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  Sparkles, Calendar, ArrowUpRight,
+  Sparkles, ArrowUpRight,
   ArrowDownRight, Trophy,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RoomsDashboardResponse } from '../../types';
 import { formatNumber } from '../../utils/formatters';
-import { DATE_RANGES } from '../../config/constants';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const TIME_SLOTS = [
@@ -28,12 +28,12 @@ const HEATMAP_BG: Record<number, string> = {
 };
 
 export const RoomInsightsDashboard: React.FC = () => {
-  const [dateRange, setDateRange] = useState('30d');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery<RoomsDashboardResponse>({
-    queryKey: ['roomsDashboard', dateRange],
-    queryFn: () => dashboardApi.getRoomsDashboard(dateRange) as Promise<RoomsDashboardResponse>,
+    queryKey: ['roomsDashboard', dateRange.preset, dateRange.startDate, dateRange.endDate],
+    queryFn: () => dashboardApi.getRoomsDashboard(dateRange.preset) as Promise<RoomsDashboardResponse>,
   });
 
   return (
@@ -54,18 +54,11 @@ export const RoomInsightsDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Calendar size={14} color="var(--dim)" />
-          <select
-            id="rooms-date-range"
-            className="input"
-            style={{ width: 150 }}
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-          >
-            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-        </div>
+        <DateRangeSelector
+          value={dateRange}
+          onChange={setDateRange}
+          idPrefix="rooms-date-range"
+        />
       </div>
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}

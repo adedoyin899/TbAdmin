@@ -5,12 +5,13 @@ import {
   ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
 import {
-  Calendar, Filter, ArrowDownRight,
+  Filter, ArrowDownRight,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FunnelDashboardResponse } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
-import { DATE_RANGES, SIGNUP_SOURCES } from '../../config/constants';
+import { SIGNUP_SOURCES } from '../../config/constants';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 const STAGE_COLORS = [
   '#2DD4BF', '#1FB8A7', '#13A090', '#0A8A7A', '#057060',
@@ -23,10 +24,11 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payl
       <div style={{
         background: 'var(--panel)', border: '1px solid var(--line)',
         borderRadius: 10, padding: '10px 14px', boxShadow: 'var(--shadow)',
+        fontSize: 13,
       }}>
-        <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4, fontFamily: 'Sora, sans-serif' }}>{d.stage}</p>
-        <p style={{ color: 'var(--text-2)', fontSize: 13 }}>Users: <strong style={{ color: 'var(--accent)' }}>{formatNumber(d.count)}</strong></p>
-        <p style={{ color: 'var(--text-2)', fontSize: 13 }}>Of total: <strong>{formatPercentage(d.percentage)}</strong></p>
+        <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{d.stage}</p>
+        <p style={{ color: 'var(--text-2)' }}>Count: <strong style={{ color: '#2DD4BF' }}>{formatNumber(d.count)}</strong></p>
+        <p style={{ color: 'var(--text-2)' }}>Conversion: <strong style={{ color: '#2DD4BF' }}>{formatPercentage(d.percentage)}</strong></p>
       </div>
     );
   }
@@ -34,40 +36,36 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payl
 };
 
 export const FunnelDashboard: React.FC = () => {
-  const [dateRange, setDateRange] = useState('7d');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [signupSource, setSignupSource] = useState('all');
 
-  const { data, isLoading, error } = useQuery<FunnelDashboardResponse>({
-    queryKey: ['funnel', dateRange, signupSource],
-    queryFn: () => dashboardApi.getFunnel(dateRange, signupSource) as Promise<FunnelDashboardResponse>,
+  const { data, isLoading, error, isFetching } = useQuery<FunnelDashboardResponse>({
+    queryKey: ['funnel', dateRange.preset, dateRange.startDate, dateRange.endDate, signupSource],
+    queryFn: () => dashboardApi.getFunnel(dateRange.preset, signupSource) as Promise<FunnelDashboardResponse>,
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-            User Funnel
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+              Funnel Conversion
+            </h2>
+            {isFetching && <div className="spinner" style={{ width: 14, height: 14 }} />}
+          </div>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Track how users move from signup to sharing their room
+            Track conversion and drop-off across key user onboarding stages
           </p>
         </div>
         {/* Filters */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calendar size={14} color="var(--dim)" />
-            <select
-              id="funnel-date-range"
-              className="input"
-              style={{ width: 145 }}
-              value={dateRange}
-              onChange={e => setDateRange(e.target.value)}
-            >
-              {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </div>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix="funnel-date-range"
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Filter size={14} color="var(--dim)" />
             <select

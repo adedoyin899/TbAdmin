@@ -15,6 +15,7 @@ import { userApi } from '../api/userApi';
 import { formatDate, formatDateTime, formatNumber } from '../utils/formatters';
 import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
 import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
+import { DateRangeSelector, type DateRangeValue } from '../components/Common/DateRangeSelector';
 import MOCK_ROOMS from '../api/mockData/rooms.json';
 
 // ── Event Icon & Color Config ─────────────────────────────────
@@ -74,6 +75,7 @@ const HEATMAP_BG: Record<number, string> = {
 // ── General Platform Showcase Overview (Main Page) ────────────
 
 const GeneralPlatformShowcaseOverview: React.FC = () => {
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [locationTab, setLocationTab] = useState<'unique' | 'clicks' | 'views' | 'engagement' | 'ctr'>('unique');
   const summary = MOCK_ROOMS.platformRoomsSummary;
   const viewsTrend = MOCK_ROOMS.platformViewsTrend;
@@ -84,6 +86,15 @@ const GeneralPlatformShowcaseOverview: React.FC = () => {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Date filter bar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <DateRangeSelector
+          value={dateRange}
+          onChange={setDateRange}
+          idPrefix="directory-overview-date"
+        />
+      </div>
+
       {/* Overview Top 4 KPI Cards (General Platform Metrics) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="stat-card">

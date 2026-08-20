@@ -6,19 +6,20 @@ import {
 } from 'recharts';
 import {
   Mail, MousePointerClick, AlertTriangle, Trophy,
-  Calendar, Inbox,
+  Inbox,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { EmailDashboardResponse } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
-import { DATE_RANGES, CHART_COLORS } from '../../config/constants';
+import { CHART_COLORS } from '../../config/constants';
+import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 export const EmailDashboard: React.FC = () => {
-  const [dateRange, setDateRange] = useState('30d');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
 
   const { data, isLoading, error } = useQuery<EmailDashboardResponse>({
-    queryKey: ['email', dateRange],
-    queryFn: () => dashboardApi.getEmail(dateRange) as Promise<EmailDashboardResponse>,
+    queryKey: ['email', dateRange.preset, dateRange.startDate, dateRange.endDate],
+    queryFn: () => dashboardApi.getEmail(dateRange.preset) as Promise<EmailDashboardResponse>,
   });
 
   const chartData = data?.campaigns.map(c => ({
@@ -37,18 +38,11 @@ export const EmailDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Open rates, click rates, and bounce data from Mailgun</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Calendar size={15} color="var(--dim)" />
-          <select
-            id="email-date-range"
-            className="input"
-            style={{ width: 150 }}
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-          >
-            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-        </div>
+        <DateRangeSelector
+          value={dateRange}
+          onChange={setDateRange}
+          idPrefix="email-date-range"
+        />
       </div>
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
