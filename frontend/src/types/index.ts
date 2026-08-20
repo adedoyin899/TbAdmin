@@ -68,6 +68,95 @@ export interface EmailDashboardResponse {
 
 // ── User Types ───────────────────────────────────────────────
 
+export interface ViewerLead {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  location: string;
+  timeSpent: string;
+  views: number | string;
+  status: 'high_value' | 'new' | 'returning';
+  lastVisit: string;
+  avatarBg?: string;
+}
+
+export interface HeatmapCell {
+  day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+  timeSlot: '9 - 11 AM' | '11 - 1 PM' | '2 - 4 PM' | '4 - 6 PM' | '6 - 8 PM' | '8 - 10 PM' | '10 - 12 AM';
+  views: number;
+  intensity: 1 | 2 | 3 | 4; // 1: Low, 4: High
+}
+
+export interface CountryTraffic {
+  country: string;
+  code: string;
+  flag: string;
+  views: number;
+  percentage: number;
+}
+
+export interface SmartRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  actionText: string;
+  actionType: 'update_room' | 'share_room';
+  priority: 'Urgent' | 'Medium' | 'Low';
+  iconType: 'sparkles' | 'image' | 'message' | 'share';
+}
+
+export interface RoomViewsTrend {
+  month: string;
+  totalViews: number;
+  uniqueViews: number;
+}
+
+export interface RoomInsight {
+  roomId: string;
+  roomName: string;
+  isPublished: boolean;
+  publishedUrl?: string;
+  createdAt: string;
+  totalViews: { count: number; change: number };
+  uniqueViews: { count: number; change: number };
+  avgTimeSpent: { value: string; change: string };
+  engagementQuality: { percentage: number; change: number };
+  viewsTrend: RoomViewsTrend[];
+  trafficSources: { name: string; count: string | number; percentage: number; color: string }[];
+  devices: { name: string; count: string | number; percentage: number; color: string }[];
+  viewers: ViewerLead[];
+  heatmap: HeatmapCell[];
+  geoTraffic: CountryTraffic[];
+  recommendations: SmartRecommendation[];
+}
+
+export interface RoomsDashboardResponse {
+  summary: {
+    totalRooms: number;
+    publishedRooms: number;
+    totalViews: { count: number; change: number };
+    uniqueViews: { count: number; change: number };
+    avgTimeSpent: { value: string; change: string };
+    engagementQuality: { percentage: number; change: number };
+  };
+  viewsTrend: RoomViewsTrend[];
+  trafficSources: { name: string; count: string | number; percentage: number; color: string }[];
+  devices: { name: string; count: string | number; percentage: number; color: string }[];
+  heatmap: HeatmapCell[];
+  geoTraffic: CountryTraffic[];
+  topRecommendations: SmartRecommendation[];
+  topPerformingRooms: {
+    roomId: string;
+    roomName: string;
+    ownerName: string;
+    ownerEmail: string;
+    views: number;
+    uniqueViews: number;
+    engagement: number;
+  }[];
+}
+
 export interface User {
   userId: string;
   email: string;
@@ -75,9 +164,13 @@ export interface User {
   lastName: string;
   signupDate: string;
   country: string;
+  countryCode?: string;
   signupSource: string;
   planTier: string;
   lastActive: string;
+  roomsCreated?: number;
+  roomsPublished?: number;
+  totalEvents?: number;
 }
 
 export interface UserEvent {
@@ -98,6 +191,7 @@ export interface UserProfile {
   user: User;
   events: UserEvent[];
   emailEngagement: EmailEngagement[];
+  roomInsights?: RoomInsight[];
   postHogSessionReplayUrl: string;
 }
 

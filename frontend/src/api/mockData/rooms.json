@@ -1,0 +1,471 @@
+{
+  "platformRoomsSummary": {
+    "totalRooms": 1080,
+    "publishedRooms": 940,
+    "totalViews": { "count": 142850, "change": 16.2 },
+    "uniqueViews": { "count": 108922, "change": -2.4 },
+    "avgTimeSpent": { "value": "7m 24s", "change": "+2 min" },
+    "engagementQuality": { "percentage": 68.5, "change": 3.2 }
+  },
+  "platformViewsTrend": [
+    { "month": "Jan", "totalViews": 210, "uniqueViews": 110 },
+    { "month": "Feb", "totalViews": 320, "uniqueViews": 190 },
+    { "month": "Mar", "totalViews": 240, "uniqueViews": 140 },
+    { "month": "Apr", "totalViews": 190, "uniqueViews": 120 },
+    { "month": "May", "totalViews": 280, "uniqueViews": 170 },
+    { "month": "Jun", "totalViews": 310, "uniqueViews": 195 }
+  ],
+  "platformTrafficSources": [
+    { "name": "Direct link", "count": "185", "percentage": 25, "color": "#E9D5FF" },
+    { "name": "Social media", "count": "3.5k", "percentage": 78, "color": "#DDD6FE" },
+    { "name": "Email", "count": "2.3k", "percentage": 60, "color": "#F3E8FF" },
+    { "name": "Referral", "count": "73", "percentage": 18, "color": "#E9D5FF" },
+    { "name": "Search", "count": "185", "percentage": 32, "color": "#F5F3FF" },
+    { "name": "Others", "count": "390", "percentage": 42, "color": "#FAF5FF" }
+  ],
+  "platformDevices": [
+    { "name": "iOS", "count": "185", "percentage": 30, "color": "#BAE6FD" },
+    { "name": "Android", "count": "3.5k", "percentage": 82, "color": "#7DD3FC" },
+    { "name": "Windows", "count": "2.5k", "percentage": 65, "color": "#93C5FD" },
+    { "name": "Macbook", "count": "73", "percentage": 20, "color": "#BAE6FD" },
+    { "name": "Linux", "count": "185", "percentage": 28, "color": "#E0F2FE" },
+    { "name": "Others", "count": "390", "percentage": 38, "color": "#F0F9FF" }
+  ],
+  "platformHeatmap": [
+    { "day": "Mon", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+    { "day": "Mon", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+    { "day": "Mon", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+    { "day": "Mon", "timeSlot": "4 - 6 PM", "views": 3200, "intensity": 4 },
+    { "day": "Mon", "timeSlot": "6 - 8 PM", "views": 3200, "intensity": 4 },
+    { "day": "Mon", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Mon", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+    { "day": "Tue", "timeSlot": "9 - 11 AM", "views": 1120, "intensity": 2 },
+    { "day": "Tue", "timeSlot": "11 - 1 PM", "views": 2140, "intensity": 3 },
+    { "day": "Tue", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+    { "day": "Tue", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+    { "day": "Tue", "timeSlot": "6 - 8 PM", "views": 3100, "intensity": 4 },
+    { "day": "Tue", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Tue", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+    { "day": "Wed", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+    { "day": "Wed", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+    { "day": "Wed", "timeSlot": "2 - 4 PM", "views": 2140, "intensity": 3 },
+    { "day": "Wed", "timeSlot": "4 - 6 PM", "views": 2140, "intensity": 3 },
+    { "day": "Wed", "timeSlot": "6 - 8 PM", "views": 1840, "intensity": 2 },
+    { "day": "Wed", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Wed", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+    { "day": "Thu", "timeSlot": "9 - 11 AM", "views": 41520, "intensity": 4 },
+    { "day": "Thu", "timeSlot": "11 - 1 PM", "views": 41520, "intensity": 4 },
+    { "day": "Thu", "timeSlot": "2 - 4 PM", "views": 41520, "intensity": 4 },
+    { "day": "Thu", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+    { "day": "Thu", "timeSlot": "6 - 8 PM", "views": 2140, "intensity": 3 },
+    { "day": "Thu", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Thu", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+    { "day": "Fri", "timeSlot": "9 - 11 AM", "views": 1820, "intensity": 2 },
+    { "day": "Fri", "timeSlot": "11 - 1 PM", "views": 1814, "intensity": 3 },
+    { "day": "Fri", "timeSlot": "2 - 4 PM", "views": 1814, "intensity": 3 },
+    { "day": "Fri", "timeSlot": "4 - 6 PM", "views": 41520, "intensity": 4 },
+    { "day": "Fri", "timeSlot": "6 - 8 PM", "views": 2140, "intensity": 3 },
+    { "day": "Fri", "timeSlot": "8 - 10 PM", "views": 2140, "intensity": 3 },
+    { "day": "Fri", "timeSlot": "10 - 12 AM", "views": 2140, "intensity": 3 },
+
+    { "day": "Sat", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+    { "day": "Sat", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sat", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sat", "timeSlot": "4 - 6 PM", "views": 41520, "intensity": 4 },
+    { "day": "Sat", "timeSlot": "6 - 8 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sat", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sat", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+    { "day": "Sun", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+    { "day": "Sun", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sun", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sun", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sun", "timeSlot": "6 - 8 PM", "views": 41520, "intensity": 4 },
+    { "day": "Sun", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+    { "day": "Sun", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 }
+  ],
+  "platformGeoTraffic": [
+    { "country": "Australia", "code": "AU", "flag": "🇦🇺", "views": 14200, "percentage": 88 },
+    { "country": "United States", "code": "US", "flag": "🇺🇸", "views": 9800, "percentage": 72 },
+    { "country": "Spain", "code": "ES", "flag": "🇪🇸", "views": 5300, "percentage": 52 },
+    { "country": "Mexico", "code": "MX", "flag": "🇲🇽", "views": 4500, "percentage": 44 },
+    { "country": "Poland", "code": "PL", "flag": "🇵🇱", "views": 4100, "percentage": 38 },
+    { "country": "France", "code": "FR", "flag": "🇫🇷", "views": 4000, "percentage": 35 }
+  ],
+  "platformRecommendations": [
+    {
+      "id": "rec_01",
+      "title": "Bio Needs Improvement",
+      "description": "Viewers spend only 12 seconds on room bios. Adding compelling stories with measurable results increases engagement by 45%.",
+      "actionText": "Update room",
+      "actionType": "update_room",
+      "priority": "Urgent",
+      "iconType": "sparkles"
+    },
+    {
+      "id": "rec_02",
+      "title": "Add More Visuals to Case Studies",
+      "description": "Portfolios with 5-7 images get 3x more recruiter engagement. Case studies with only text see 55% bounce rates.",
+      "actionText": "Update room",
+      "actionType": "update_room",
+      "priority": "Urgent",
+      "iconType": "image"
+    },
+    {
+      "id": "rec_03",
+      "title": "Add Client Testimonials",
+      "description": "Showcase rooms with testimonials get 2x more connection requests and verified recruiter bookmarking.",
+      "actionText": "Update room",
+      "actionType": "update_room",
+      "priority": "Low",
+      "iconType": "message"
+    },
+    {
+      "id": "rec_04",
+      "title": "Optimize Share Link Previews",
+      "description": "Adding high-contrast preview images and custom OG tags to share links boosts LinkedIn and Twitter click-through by 40%.",
+      "actionText": "Share room",
+      "actionType": "share_room",
+      "priority": "Medium",
+      "iconType": "share"
+    }
+  ],
+  "roomsByUser": {
+    "user_123abc": [
+      {
+        "roomId": "room_alice_01",
+        "roomName": "Alice's Portfolio",
+        "isPublished": true,
+        "publishedUrl": "https://talentbridge.cv/r/alice-chen",
+        "createdAt": "2026-08-01T14:30:00Z",
+        "totalViews": { "count": 1247, "change": 16.0 },
+        "uniqueViews": { "count": 10922, "change": -2.0 },
+        "avgTimeSpent": { "value": "7m 24s", "change": "+2 min" },
+        "engagementQuality": { "percentage": 68.5, "change": 3.2 },
+        "viewsTrend": [
+          { "month": "Jan", "totalViews": 220, "uniqueViews": 120 },
+          { "month": "Feb", "totalViews": 340, "uniqueViews": 190 },
+          { "month": "Mar", "totalViews": 260, "uniqueViews": 140 },
+          { "month": "Apr", "totalViews": 180, "uniqueViews": 110 },
+          { "month": "May", "totalViews": 300, "uniqueViews": 180 },
+          { "month": "Jun", "totalViews": 340, "uniqueViews": 200 }
+        ],
+        "trafficSources": [
+          { "name": "Direct link", "count": "185", "percentage": 30, "color": "#E9D5FF" },
+          { "name": "Social media", "count": "3.5k", "percentage": 85, "color": "#DDD6FE" },
+          { "name": "Email", "count": "2.3k", "percentage": 65, "color": "#F3E8FF" },
+          { "name": "Referral", "count": "73", "percentage": 20, "color": "#E9D5FF" },
+          { "name": "Search", "count": "185", "percentage": 35, "color": "#F5F3FF" },
+          { "name": "Others", "count": "390", "percentage": 45, "color": "#FAF5FF" }
+        ],
+        "devices": [
+          { "name": "iOS", "count": "185", "percentage": 32, "color": "#BAE6FD" },
+          { "name": "Android", "count": "3.5k", "percentage": 88, "color": "#7DD3FC" },
+          { "name": "Windows", "count": "2.5k", "percentage": 70, "color": "#93C5FD" },
+          { "name": "Macbook", "count": "73", "percentage": 22, "color": "#BAE6FD" },
+          { "name": "Linux", "count": "185", "percentage": 25, "color": "#E0F2FE" },
+          { "name": "Others", "count": "390", "percentage": 40, "color": "#F0F9FF" }
+        ],
+        "viewers": [
+          {
+            "id": "vw_01",
+            "name": "Alex Morgan",
+            "role": "Creative Director",
+            "company": "Design Studio Co",
+            "location": "New York, USA",
+            "timeSpent": "8 min 21 sec",
+            "views": "12 views",
+            "status": "high_value",
+            "lastVisit": "Today",
+            "avatarBg": "#0D1F1E"
+          },
+          {
+            "id": "vw_02",
+            "name": "Sarah Jenkins",
+            "role": "Lead Recruiter",
+            "company": "TechVentures Capital",
+            "location": "London, UK",
+            "timeSpent": "5 min 45 sec",
+            "views": "1.4k views",
+            "status": "high_value",
+            "lastVisit": "Yesterday",
+            "avatarBg": "#0F766E"
+          },
+          {
+            "id": "vw_03",
+            "name": "David Miller",
+            "role": "Senior Product Manager",
+            "company": "Fintech Alpha",
+            "location": "San Francisco, USA",
+            "timeSpent": "3 min 12 sec",
+            "views": "203 views",
+            "status": "new",
+            "lastVisit": "Today",
+            "avatarBg": "#3B82F6"
+          },
+          {
+            "id": "vw_04",
+            "name": "Elena Rostova",
+            "role": "HR Manager",
+            "company": "Global Talent Agency",
+            "location": "Berlin, Germany",
+            "timeSpent": "9 min 10 sec",
+            "views": "165.9k views",
+            "status": "returning",
+            "lastVisit": "2d ago",
+            "avatarBg": "#8B5CF6"
+          },
+          {
+            "id": "vw_05",
+            "name": "Marcus Aurel",
+            "role": "Design Director",
+            "company": "Creative Hub Studio",
+            "location": "New York, USA",
+            "timeSpent": "8 min 21 sec",
+            "views": "1 view",
+            "status": "returning",
+            "lastVisit": "12h ago",
+            "avatarBg": "#10B981"
+          }
+        ],
+        "heatmap": [
+          { "day": "Mon", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+          { "day": "Mon", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+          { "day": "Mon", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+          { "day": "Mon", "timeSlot": "4 - 6 PM", "views": 3200, "intensity": 4 },
+          { "day": "Mon", "timeSlot": "6 - 8 PM", "views": 3200, "intensity": 4 },
+          { "day": "Mon", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Mon", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+          { "day": "Tue", "timeSlot": "9 - 11 AM", "views": 1120, "intensity": 2 },
+          { "day": "Tue", "timeSlot": "11 - 1 PM", "views": 2140, "intensity": 3 },
+          { "day": "Tue", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+          { "day": "Tue", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+          { "day": "Tue", "timeSlot": "6 - 8 PM", "views": 3100, "intensity": 4 },
+          { "day": "Tue", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Tue", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+          { "day": "Wed", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+          { "day": "Wed", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+          { "day": "Wed", "timeSlot": "2 - 4 PM", "views": 2140, "intensity": 3 },
+          { "day": "Wed", "timeSlot": "4 - 6 PM", "views": 2140, "intensity": 3 },
+          { "day": "Wed", "timeSlot": "6 - 8 PM", "views": 1840, "intensity": 2 },
+          { "day": "Wed", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Wed", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+          { "day": "Thu", "timeSlot": "9 - 11 AM", "views": 41520, "intensity": 4 },
+          { "day": "Thu", "timeSlot": "11 - 1 PM", "views": 41520, "intensity": 4 },
+          { "day": "Thu", "timeSlot": "2 - 4 PM", "views": 41520, "intensity": 4 },
+          { "day": "Thu", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+          { "day": "Thu", "timeSlot": "6 - 8 PM", "views": 2140, "intensity": 3 },
+          { "day": "Thu", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Thu", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+          { "day": "Fri", "timeSlot": "9 - 11 AM", "views": 1820, "intensity": 2 },
+          { "day": "Fri", "timeSlot": "11 - 1 PM", "views": 1814, "intensity": 3 },
+          { "day": "Fri", "timeSlot": "2 - 4 PM", "views": 1814, "intensity": 3 },
+          { "day": "Fri", "timeSlot": "4 - 6 PM", "views": 41520, "intensity": 4 },
+          { "day": "Fri", "timeSlot": "6 - 8 PM", "views": 2140, "intensity": 3 },
+          { "day": "Fri", "timeSlot": "8 - 10 PM", "views": 2140, "intensity": 3 },
+          { "day": "Fri", "timeSlot": "10 - 12 AM", "views": 2140, "intensity": 3 },
+
+          { "day": "Sat", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+          { "day": "Sat", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sat", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sat", "timeSlot": "4 - 6 PM", "views": 41520, "intensity": 4 },
+          { "day": "Sat", "timeSlot": "6 - 8 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sat", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sat", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 },
+
+          { "day": "Sun", "timeSlot": "9 - 11 AM", "views": 1840, "intensity": 2 },
+          { "day": "Sun", "timeSlot": "11 - 1 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sun", "timeSlot": "2 - 4 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sun", "timeSlot": "4 - 6 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sun", "timeSlot": "6 - 8 PM", "views": 41520, "intensity": 4 },
+          { "day": "Sun", "timeSlot": "8 - 10 PM", "views": 1840, "intensity": 2 },
+          { "day": "Sun", "timeSlot": "10 - 12 AM", "views": 1840, "intensity": 2 }
+        ],
+        "geoTraffic": [
+          { "country": "Australia", "code": "AU", "flag": "🇦🇺", "views": 14200, "percentage": 88 },
+          { "country": "United States", "code": "US", "flag": "🇺🇸", "views": 9800, "percentage": 72 },
+          { "country": "Spain", "code": "ES", "flag": "🇪🇸", "views": 5300, "percentage": 52 },
+          { "country": "Mexico", "code": "MX", "flag": "🇲🇽", "views": 4500, "percentage": 44 },
+          { "country": "Poland", "code": "PL", "flag": "🇵🇱", "views": 4100, "percentage": 38 },
+          { "country": "France", "code": "FR", "flag": "🇫🇷", "views": 4000, "percentage": 35 }
+        ],
+        "recommendations": [
+          {
+            "id": "rec_a1",
+            "title": "Your Bio Needs Improvement",
+            "description": "Viewers spend only 12 seconds on your bio. Add compelling stories with measurable results to hold recruiter attention.",
+            "actionText": "Update room",
+            "actionType": "update_room",
+            "priority": "Urgent",
+            "iconType": "sparkles"
+          },
+          {
+            "id": "rec_a2",
+            "title": "Add More Visuals to Case Studies",
+            "description": "Portfolios with 5-7 images get 3x more engagement. Your case study currently has only 2 images.",
+            "actionText": "Update room",
+            "actionType": "update_room",
+            "priority": "Urgent",
+            "iconType": "image"
+          },
+          {
+            "id": "rec_a3",
+            "title": "Add Client Testimonials",
+            "description": "Showcase rooms with testimonials get 2x more connection requests and higher recruiter response rates.",
+            "actionText": "Update room",
+            "actionType": "update_room",
+            "priority": "Low",
+            "iconType": "message"
+          },
+          {
+            "id": "rec_a4",
+            "title": "Optimize Share Link Previews",
+            "description": "Adding preview images to share links could boost click-through rate by 40% across LinkedIn and email.",
+            "actionText": "Share room",
+            "actionType": "share_room",
+            "priority": "Medium",
+            "iconType": "share"
+          }
+        ]
+      },
+      {
+        "roomId": "room_alice_02",
+        "roomName": "Alice — Visual Experiments",
+        "isPublished": false,
+        "createdAt": "2026-08-14T11:00:00Z",
+        "totalViews": { "count": 84, "change": 5.0 },
+        "uniqueViews": { "count": 62, "change": 8.0 },
+        "avgTimeSpent": { "value": "3m 15s", "change": "+45s" },
+        "engagementQuality": { "percentage": 52.0, "change": 1.5 },
+        "viewsTrend": [
+          { "month": "Apr", "totalViews": 10, "uniqueViews": 8 },
+          { "month": "May", "totalViews": 32, "uniqueViews": 24 },
+          { "month": "Jun", "totalViews": 42, "uniqueViews": 30 }
+        ],
+        "trafficSources": [
+          { "name": "Direct link", "count": "45", "percentage": 60, "color": "#E9D5FF" },
+          { "name": "Referral", "count": "17", "percentage": 25, "color": "#DDD6FE" }
+        ],
+        "devices": [
+          { "name": "Macbook", "count": "50", "percentage": 75, "color": "#BAE6FD" },
+          { "name": "iOS", "count": "12", "percentage": 25, "color": "#7DD3FC" }
+        ],
+        "viewers": [
+          {
+            "id": "vw_06",
+            "name": "Chloe Dupont",
+            "role": "Art Director",
+            "company": "Atelier Paris",
+            "location": "Paris, France",
+            "timeSpent": "4 min 10 sec",
+            "views": "3 views",
+            "status": "new",
+            "lastVisit": "Yesterday"
+          }
+        ],
+        "heatmap": [
+          { "day": "Mon", "timeSlot": "2 - 4 PM", "views": 12, "intensity": 3 },
+          { "day": "Wed", "timeSlot": "4 - 6 PM", "views": 25, "intensity": 4 }
+        ],
+        "geoTraffic": [
+          { "country": "France", "code": "FR", "flag": "🇫🇷", "views": 42, "percentage": 68 },
+          { "country": "United Kingdom", "code": "GB", "flag": "🇬🇧", "views": 20, "percentage": 32 }
+        ],
+        "recommendations": [
+          {
+            "id": "rec_a5",
+            "title": "Publish Room to Enable Public Analytics",
+            "description": "This showcase room is currently in draft. Publishing it will unlock live tracking and recruiter outreach.",
+            "actionText": "Update room",
+            "actionType": "update_room",
+            "priority": "Urgent",
+            "iconType": "sparkles"
+          }
+        ]
+      }
+    ],
+    "user_321jkl": [
+      {
+        "roomId": "room_kwame_01",
+        "roomName": "Kwame Asante — Dev",
+        "isPublished": true,
+        "publishedUrl": "https://talentbridge.cv/r/kwame-asante",
+        "createdAt": "2026-07-28T09:00:00Z",
+        "totalViews": { "count": 2840, "change": 24.5 },
+        "uniqueViews": { "count": 1845, "change": 18.2 },
+        "avgTimeSpent": { "value": "9m 12s", "change": "+3m 10s" },
+        "engagementQuality": { "percentage": 82.4, "change": 6.8 },
+        "viewsTrend": [
+          { "month": "Jan", "totalViews": 150, "uniqueViews": 90 },
+          { "month": "Feb", "totalViews": 280, "uniqueViews": 170 },
+          { "month": "Mar", "totalViews": 450, "uniqueViews": 310 },
+          { "month": "Apr", "totalViews": 620, "uniqueViews": 480 },
+          { "month": "May", "totalViews": 790, "uniqueViews": 590 },
+          { "month": "Jun", "totalViews": 950, "uniqueViews": 720 }
+        ],
+        "trafficSources": [
+          { "name": "Social media", "count": "1.2k", "percentage": 75, "color": "#DDD6FE" },
+          { "name": "Direct link", "count": "850", "percentage": 55, "color": "#E9D5FF" },
+          { "name": "Search", "count": "450", "percentage": 30, "color": "#F5F3FF" }
+        ],
+        "devices": [
+          { "name": "Macbook", "count": "1.4k", "percentage": 80, "color": "#BAE6FD" },
+          { "name": "Linux", "count": "800", "percentage": 45, "color": "#7DD3FC" },
+          { "name": "iOS", "count": "640", "percentage": 35, "color": "#93C5FD" }
+        ],
+        "viewers": [
+          {
+            "id": "vw_k1",
+            "name": "Kofi Boateng",
+            "role": "VP Engineering",
+            "company": "Fintech West Africa",
+            "location": "Accra, Ghana",
+            "timeSpent": "14 min 30 sec",
+            "views": "28 views",
+            "status": "high_value",
+            "lastVisit": "Today"
+          },
+          {
+            "id": "vw_k2",
+            "name": "Liam Connor",
+            "role": "Staff Recruiter",
+            "company": "Stripe",
+            "location": "Dublin, Ireland",
+            "timeSpent": "11 min 05 sec",
+            "views": "5 views",
+            "status": "high_value",
+            "lastVisit": "Yesterday"
+          }
+        ],
+        "heatmap": [
+          { "day": "Wed", "timeSlot": "2 - 4 PM", "views": 450, "intensity": 4 },
+          { "day": "Thu", "timeSlot": "4 - 6 PM", "views": 620, "intensity": 4 }
+        ],
+        "geoTraffic": [
+          { "country": "Ghana", "code": "GH", "flag": "🇬🇭", "views": 1200, "percentage": 78 },
+          { "country": "United Kingdom", "code": "GB", "flag": "🇬🇧", "views": 850, "percentage": 60 },
+          { "country": "United States", "code": "US", "flag": "🇺🇸", "views": 540, "percentage": 42 }
+        ],
+        "recommendations": [
+          {
+            "id": "rec_k1",
+            "title": "Add Code Sandbox Embeds",
+            "description": "Developer showcase rooms with live interactive code sandbox embeds increase hiring manager interviews by 3.4x.",
+            "actionText": "Update room",
+            "actionType": "update_room",
+            "priority": "Urgent",
+            "iconType": "sparkles"
+          }
+        ]
+      }
+    ]
+  }
+}

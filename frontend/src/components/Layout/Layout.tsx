@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  TrendingDown, Puzzle, RefreshCcw, Mail, Search,
+  TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   BarChart2,
 } from 'lucide-react';
@@ -16,14 +16,16 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   RefreshCcw,
   Mail,
   Search,
+  Sparkles,
 };
 
 const NAV_LINKS = [
-  { path: '/dashboard/funnel',    label: 'Funnel',      icon: 'TrendingDown' },
-  { path: '/dashboard/features',  label: 'Features',    icon: 'Puzzle' },
-  { path: '/dashboard/retention', label: 'Retention',   icon: 'RefreshCcw' },
-  { path: '/dashboard/email',     label: 'Email',       icon: 'Mail' },
-  { path: '/lookup',              label: 'User Lookup', icon: 'Search' },
+  { path: '/dashboard/funnel',    label: 'Funnel',        icon: 'TrendingDown' },
+  { path: '/dashboard/features',  label: 'Features',      icon: 'Puzzle' },
+  { path: '/dashboard/retention', label: 'Retention',     icon: 'RefreshCcw' },
+  { path: '/dashboard/email',     label: 'Email',         icon: 'Mail' },
+  { path: '/dashboard/rooms',     label: 'Room Insights', icon: 'Sparkles' },
+  { path: '/lookup',              label: 'User Lookup',   icon: 'Search' },
 ];
 
 // ── Sidebar ───────────────────────────────────────────────────

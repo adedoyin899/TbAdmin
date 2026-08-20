@@ -1,5 +1,7 @@
 import MOCK_USERS from './mockData/users.json';
 import MOCK_EVENTS from './mockData/events.json';
+import MOCK_ROOMS from './mockData/rooms.json';
+import type { RoomInsight } from '../types';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -57,11 +59,13 @@ export const userApi = {
     const events = (MOCK_EVENTS.byUser as Record<string, unknown[]>)[userId]
       || (MOCK_EVENTS.byUser as Record<string, unknown[]>)['user_123abc'];
     const emailEngagement = EMAIL_ENGAGEMENT[userId] || EMAIL_ENGAGEMENT['user_123abc'];
+    const roomInsights = ((MOCK_ROOMS.roomsByUser as Record<string, RoomInsight[]>)[userId] || []) as RoomInsight[];
 
     return {
       user,
       events,
       emailEngagement,
+      roomInsights,
       postHogSessionReplayUrl: `https://posthog.example.com/sessions/sess_${userId.slice(-6)}`,
     };
   },

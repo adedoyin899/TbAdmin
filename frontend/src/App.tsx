@@ -8,6 +8,7 @@ import { FunnelDashboard } from './components/Dashboard/FunnelDashboard';
 import { FeatureDashboard } from './components/Dashboard/FeatureDashboard';
 import { RetentionDashboard } from './components/Dashboard/RetentionDashboard';
 import { EmailDashboard } from './components/Dashboard/EmailDashboard';
+import { RoomInsightsDashboard } from './components/Dashboard/RoomInsightsDashboard';
 import { UserLookupPage } from './pages/UserLookup';
 
 const queryClient = new QueryClient({
@@ -62,6 +63,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout><EmailDashboard /></Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/rooms"
+              element={
+                <ProtectedRoute>
+                  <Layout><RoomInsightsDashboard /></Layout>
                 </ProtectedRoute>
               }
             />

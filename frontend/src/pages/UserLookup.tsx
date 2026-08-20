@@ -4,7 +4,7 @@ import {
   Search, ArrowLeft, ExternalLink, Clock, Mail, Globe,
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
   Share2, RefreshCcw, Palette, Repeat, User as UserIcon,
-  Zap, ChevronDown, ChevronUp,
+  Zap, ChevronDown, ChevronUp, Sparkles,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
 import { formatDate, formatDateTime } from '../utils/formatters';
@@ -277,7 +277,12 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
   );
 };
 
+import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
+
 const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ userId, onBack }) => {
+  const [activeTab, setActiveTab] = useState<'timeline' | 'rooms'>('timeline');
+  const [selectedRoomIdx, setSelectedRoomIdx] = useState(0);
+
   const { data, isLoading } = useQuery<UserProfile>({
     queryKey: ['user', userId],
     queryFn: () => userApi.getUserProfile(userId) as Promise<UserProfile>,
@@ -291,8 +296,9 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--dim)' }}>User not found.</div>;
   }
 
-  const { user, events, emailEngagement, postHogSessionReplayUrl } = data;
+  const { user, events, emailEngagement, roomInsights = [], postHogSessionReplayUrl } = data;
   const extUser = user as User & { countryCode?: string; roomsCreated?: number; roomsPublished?: number; totalEvents?: number };
+  const currentRoom = roomInsights[selectedRoomIdx] || roomInsights[0];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -377,81 +383,161 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
         </div>
       </div>
 
-      {/* Timeline + Email side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
+      {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className="btn"
+          style={{
+            background: activeTab === 'timeline' ? 'var(--ink)' : 'transparent',
+            color: activeTab === 'timeline' ? '#FFFFFF' : 'var(--text-2)',
+            border: activeTab === 'timeline' ? 'none' : '1px solid var(--line)',
+            fontSize: 13,
+            padding: '8px 16px',
+            gap: 6,
+          }}
+        >
+          <Clock size={14} />
+          Activity & Timeline
+          <span className="badge badge-neutral" style={{ fontSize: 10 }}>{events.length}</span>
+        </button>
 
-        {/* Event timeline */}
-        <div style={{
-          background: 'var(--panel)', border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
-        }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-              Event Timeline
-            </h3>
-            <span className="badge badge-neutral" style={{ fontSize: 11 }}>
-              {events.length} events
-            </span>
-          </div>
-          <EventTimeline events={events as UserEvent[]} />
-        </div>
+        <button
+          onClick={() => setActiveTab('rooms')}
+          className="btn"
+          style={{
+            background: activeTab === 'rooms' ? 'var(--ink)' : 'transparent',
+            color: activeTab === 'rooms' ? '#FFFFFF' : 'var(--text-2)',
+            border: activeTab === 'rooms' ? 'none' : '1px solid var(--line)',
+            fontSize: 13,
+            padding: '8px 16px',
+            gap: 6,
+          }}
+        >
+          <Sparkles size={14} color={activeTab === 'rooms' ? '#2DD4BF' : undefined} />
+          Showcase Rooms & Insights
+          <span className="badge badge-success" style={{ fontSize: 10 }}>{roomInsights.length} rooms</span>
+        </button>
+      </div>
 
-        {/* Email engagement */}
-        <div style={{
-          background: 'var(--panel)', border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
-        }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Mail size={15} color="var(--text-2)" />
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-              Email Engagement
-            </h3>
+      {/* ── Tab Content ──────────────────────────────────────── */}
+      {activeTab === 'timeline' ? (
+        /* Timeline + Email side by side */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
+          {/* Event timeline */}
+          <div style={{
+            background: 'var(--panel)', border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
+          }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                Event Timeline
+              </h3>
+              <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                {events.length} events
+              </span>
+            </div>
+            <EventTimeline events={events as UserEvent[]} />
           </div>
-          <div style={{ padding: '8px 0' }}>
-            {(emailEngagement as EmailEngagement[]).map((e, i) => (
-              <div
-                key={e.campaignName}
-                style={{
-                  padding: '14px 20px',
-                  borderBottom: i < emailEngagement.length - 1 ? '1px solid var(--line)' : 'none',
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--panel-2)')}
-                onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
-              >
-                <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{e.campaignName}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Clock size={11} color="var(--faint)" />
-                      <span style={{ fontSize: 12, color: 'var(--faint)' }}>Sent</span>
+
+          {/* Email engagement */}
+          <div style={{
+            background: 'var(--panel)', border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
+          }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Mail size={15} color="var(--text-2)" />
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                Email Engagement
+              </h3>
+            </div>
+            <div style={{ padding: '8px 0' }}>
+              {(emailEngagement as EmailEngagement[]).map((e, i) => (
+                <div
+                  key={e.campaignName}
+                  style={{
+                    padding: '14px 20px',
+                    borderBottom: i < emailEngagement.length - 1 ? '1px solid var(--line)' : 'none',
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--panel-2)')}
+                  onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
+                >
+                  <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{e.campaignName}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Clock size={11} color="var(--faint)" />
+                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Sent</span>
+                      </div>
+                      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
                     </div>
-                    <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Mail size={11} color="var(--faint)" />
-                      <span style={{ fontSize: 12, color: 'var(--faint)' }}>Opened</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Mail size={11} color="var(--faint)" />
+                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Opened</span>
+                      </div>
+                      {e.opened
+                        ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ {formatDate(e.opened)}</span>
+                        : <span className="badge badge-neutral" style={{ fontSize: 11 }}>Not opened</span>}
                     </div>
-                    {e.opened
-                      ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ {formatDate(e.opened)}</span>
-                      : <span className="badge badge-neutral" style={{ fontSize: 11 }}>Not opened</span>}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <ExternalLink size={11} color="var(--faint)" />
-                      <span style={{ fontSize: 12, color: 'var(--faint)' }}>Clicked</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <ExternalLink size={11} color="var(--faint)" />
+                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Clicked</span>
+                      </div>
+                      {e.clicked
+                        ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ Clicked</span>
+                        : <span className="badge badge-neutral" style={{ fontSize: 11 }}>No click</span>}
                     </div>
-                    {e.clicked
-                      ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ Clicked</span>
-                      : <span className="badge badge-neutral" style={{ fontSize: 11 }}>No click</span>}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Showcase Rooms View */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {roomInsights.length === 0 ? (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
+              <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
+              <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
+              <p style={{ fontSize: 13 }}>This user has not initialized any showcase rooms in their TalentBridge account.</p>
+            </div>
+          ) : (
+            <>
+              {/* Room selector if multiple */}
+              {roomInsights.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {roomInsights.map((r, idx) => (
+                      <button
+                        key={r.roomId}
+                        onClick={() => setSelectedRoomIdx(idx)}
+                        className="btn"
+                        style={{
+                          background: selectedRoomIdx === idx ? 'var(--ink)' : 'var(--panel-2)',
+                          color: selectedRoomIdx === idx ? '#2DD4BF' : 'var(--text-2)',
+                          border: '1px solid var(--line)',
+                          padding: '6px 12px',
+                          fontSize: 12,
+                        }}
+                      >
+                        {r.roomName} {r.isPublished ? '●' : '○'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Full Room Insights detail view for the chosen room */}
+              {currentRoom && <RoomInsightsDetailView room={currentRoom} />}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
