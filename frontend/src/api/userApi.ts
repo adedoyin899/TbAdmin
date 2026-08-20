@@ -1,9 +1,10 @@
+import apiClient from './client';
 import MOCK_USERS from './mockData/users.json';
 import MOCK_EVENTS from './mockData/events.json';
 import MOCK_ROOMS from './mockData/rooms.json';
 import type { RoomInsight } from '../types';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const USE_MOCK_ONLY = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 const EMAIL_ENGAGEMENT: Record<string, { campaignName: string; sent: string; opened: string | null; clicked: boolean }[]> = {
   user_123abc: [
@@ -40,8 +41,16 @@ const EMAIL_ENGAGEMENT: Record<string, { campaignName: string; sent: string; ope
 };
 
 export const userApi = {
-  searchUsers: async (query: string) => {
-    await delay(300);
+  searchUsers: async (query: string = '') => {
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get('/users/search', {
+          params: { q: query },
+        });
+        if (res && res.results) return res;
+      } catch {}
+    }
+
     const q = query.toLowerCase();
     const results = MOCK_USERS.results.filter(
       u =>
@@ -54,19 +63,26 @@ export const userApi = {
   },
 
   getUserProfile: async (userId: string) => {
-    await delay(350);
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get(`/users/${userId}`);
+        if (res && res.user) return res;
+      } catch {}
+    }
+
     const user = MOCK_USERS.results.find(u => u.userId === userId) || MOCK_USERS.results[0];
     const events = (MOCK_EVENTS.byUser as Record<string, unknown[]>)[userId]
       || (MOCK_EVENTS.byUser as Record<string, unknown[]>)['user_123abc'];
     const emailEngagement = EMAIL_ENGAGEMENT[userId] || EMAIL_ENGAGEMENT['user_123abc'];
-    const roomInsights = ((MOCK_ROOMS.roomsByUser as Record<string, RoomInsight[]>)[userId] || []) as RoomInsight[];
+    const roomInsights = (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)[userId]
+      || (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)['user_123abc'] || [];
 
     return {
       user,
       events,
       emailEngagement,
       roomInsights,
-      postHogSessionReplayUrl: `https://posthog.example.com/sessions/sess_${userId.slice(-6)}`,
+      postHogSessionReplayUrl: `https://app.posthog.com/project/ph_proj_live/replay/${userId}`,
     };
   },
 };
