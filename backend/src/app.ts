@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 
 import { authRouter } from './routes/auth.js';
+import { dashboardRouter } from './routes/dashboard.js';
 
 export const app = express();
 
@@ -48,6 +49,11 @@ app.get('/api/health', (_req, res) => {
 // Authentication Routes
 app.use('/api/auth', authRouter);
 app.use('/auth', authRouter);
+
+// Dashboard Routes
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/dashboards', dashboardRouter);
+app.use('/dashboard', dashboardRouter);
 
 // Global Error Handler
 app.use(errorHandler);
