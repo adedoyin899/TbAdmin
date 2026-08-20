@@ -18,7 +18,7 @@ export const NAV_LINKS = [
   { path: '/dashboard/retention', label: 'Retention', icon: 'RefreshCcw' },
   { path: '/dashboard/email', label: 'Email', icon: 'Mail' },
   { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles' },
-  { path: '/lookup', label: 'User Lookup', icon: 'Search' },
+  { path: '/lookup', label: 'User Directory', icon: 'Search' },
 ] as const;
 
 export const CHART_COLORS = {
