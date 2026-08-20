@@ -1,30 +1,34 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import {
   Search, ArrowLeft, ExternalLink, Clock, Mail, Globe,
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
   Share2, RefreshCcw, Palette, Repeat, User as UserIcon,
   Zap, ChevronDown, ChevronUp, Sparkles, Filter,
-  ArrowRight, Users,
+  ArrowRight, Users, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
-import { formatDate, formatDateTime } from '../utils/formatters';
-import type { User, UserProfile, UserEvent, EmailEngagement, RoomInsight } from '../types';
+import { formatDate, formatDateTime, formatNumber } from '../utils/formatters';
+import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
 import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
 import MOCK_ROOMS from '../api/mockData/rooms.json';
 
-// ── Event icon map ────────────────────────────────────────────
+// ── Event Icon & Color Config ─────────────────────────────────
 
 const EVENT_ICON: Record<string, React.ReactNode> = {
-  signup_started:         <Rocket         size={15} color="#2DD4BF" strokeWidth={2} />,
-  email_verified:         <CheckCircle2   size={15} color="#10B981" strokeWidth={2} />,
-  showcase_room_created:  <Home           size={15} color="#3B82F6" strokeWidth={2} />,
-  block_added:            <PlusCircle     size={15} color="#8B5CF6" strokeWidth={2} />,
-  room_theme_changed:     <Palette        size={15} color="#F59E0B" strokeWidth={2} />,
-  showcase_room_published:<Megaphone      size={15} color="#10B981" strokeWidth={2} />,
-  showcase_room_shared:   <Share2         size={15} color="#2DD4BF" strokeWidth={2} />,
-  user_returned_7d:       <RefreshCcw     size={15} color="#F59E0B" strokeWidth={2} />,
-  user_returned_30d:      <Repeat         size={15} color="#EF4444" strokeWidth={2} />,
+  signup_started:          <Rocket       size={15} color="#2DD4BF" strokeWidth={2} />,
+  email_verified:          <CheckCircle2 size={15} color="#10B981" strokeWidth={2} />,
+  showcase_room_created:   <Home         size={15} color="#3B82F6" strokeWidth={2} />,
+  block_added:             <PlusCircle   size={15} color="#8B5CF6" strokeWidth={2} />,
+  room_theme_changed:      <Palette      size={15} color="#F59E0B" strokeWidth={2} />,
+  showcase_room_published: <Megaphone    size={15} color="#10B981" strokeWidth={2} />,
+  showcase_room_shared:    <Share2       size={15} color="#2DD4BF" strokeWidth={2} />,
+  user_returned_7d:        <RefreshCcw   size={15} color="#F59E0B" strokeWidth={2} />,
+  user_returned_30d:       <Repeat       size={15} color="#EF4444" strokeWidth={2} />,
 };
 
 const EVENT_COLOR: Record<string, string> = {
@@ -44,7 +48,7 @@ function formatEventLabel(name: string): string {
 }
 
 const COUNTRY_FLAG: Record<string, string> = {
-  GB: '🇬🇧', US: '🇺🇸', IT: '🇮🇹', GH: '🇬🇭', IN: '🇮🇳', IE: '🇮🇪',
+  GB: '🇬🇧', US: '🇺🇸', IT: '🇮🇹', GH: '🇬🇭', IN: '🇮🇳', IE: '🇮🇪', AU: '🇦🇺', ES: '🇪🇸', MX: '🇲🇽', PL: '🇵🇱', FR: '🇫🇷',
 };
 
 const SOURCE_BADGE_CLASS: Record<string, string> = {
@@ -52,6 +56,328 @@ const SOURCE_BADGE_CLASS: Record<string, string> = {
   email:   'badge-info',
   referral:'badge-warning',
   paid_ad: 'badge-error',
+};
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+const TIME_SLOTS = [
+  '9 - 11 AM', '11 - 1 PM', '2 - 4 PM', '4 - 6 PM',
+  '6 - 8 PM', '8 - 10 PM', '10 - 12 AM',
+] as const;
+
+const HEATMAP_BG: Record<number, string> = {
+  1: '#2DD4BF',
+  2: '#0D9488',
+  3: '#0F766E',
+  4: '#134E4A',
+};
+
+// ── General Platform Showcase Overview (Main Page) ────────────
+
+const GeneralPlatformShowcaseOverview: React.FC = () => {
+  const [locationTab, setLocationTab] = useState<'unique' | 'clicks' | 'views' | 'engagement' | 'ctr'>('unique');
+  const summary = MOCK_ROOMS.platformRoomsSummary;
+  const viewsTrend = MOCK_ROOMS.platformViewsTrend;
+  const trafficSources = MOCK_ROOMS.platformTrafficSources;
+  const devices = MOCK_ROOMS.platformDevices;
+  const heatmap = MOCK_ROOMS.platformHeatmap;
+  const geoTraffic = MOCK_ROOMS.platformGeoTraffic;
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Overview Top 4 KPI Cards (General Platform Metrics) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Total Showcase Views</span>
+            <span className="badge badge-success" style={{ gap: 2, fontSize: 11 }}>
+              <ArrowUpRight size={11} /> +{summary.totalViews.change}%
+            </span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+            {formatNumber(summary.totalViews.count)}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Across all published creator rooms</p>
+        </div>
+
+        <div className="stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Unique Visitors</span>
+            <span className="badge badge-error" style={{ gap: 2, fontSize: 11 }}>
+              <ArrowDownRight size={11} /> {summary.uniqueViews.change}%
+            </span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+            {formatNumber(summary.uniqueViews.count)}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Distinct recruiters and viewers</p>
+        </div>
+
+        <div className="stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Avg Time Spent</span>
+            <span className="badge badge-info" style={{ fontSize: 11 }}>
+              {summary.avgTimeSpent.change}
+            </span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+            {summary.avgTimeSpent.value}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Average room exploration time</p>
+        </div>
+
+        <div className="stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Engagement Quality</span>
+            <span className="badge badge-warning" style={{ gap: 2, fontSize: 11 }}>
+              <ArrowUpRight size={11} /> +{summary.engagementQuality.change}%
+            </span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+            {summary.engagementQuality.percentage}%
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>High-intent recruiter sessions</p>
+        </div>
+      </div>
+
+      {/* Views Trend Area Chart */}
+      <div className="chart-container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              Views Trend
+            </h3>
+            <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Overall view growth across all creator rooms</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#FB923C' }} />
+              <span style={{ color: 'var(--text-2)' }}>Total Views</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#2DD4BF' }} />
+              <span style={{ color: 'var(--text-2)' }}>Unique Views</span>
+            </div>
+          </div>
+        </div>
+
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={viewsTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <defs>
+              <linearGradient id="genTotalGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#FB923C" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#FB923C" stopOpacity={0.0} />
+              </linearGradient>
+              <linearGradient id="genUniqueGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0.0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.3)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
+              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+            />
+            <Area type="monotone" dataKey="totalViews" stroke="#FB923C" strokeWidth={2.5} fillOpacity={1} fill="url(#genTotalGrad)" name="Total Views (k)" />
+            <Area type="monotone" dataKey="uniqueViews" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#genUniqueGrad)" name="Unique Views (k)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Traffic Sources & Devices */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Traffic source */}
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            Traffic Sources
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>How viewers discover showcase rooms</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {trafficSources.map(s => (
+              <div key={s.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.name}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{s.count}</span>
+                </div>
+                <div style={{ height: 16, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${s.percentage}%`,
+                      background: 'linear-gradient(90deg, #E9D5FF, #DDD6FE)',
+                      borderRadius: 3,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Devices */}
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            Devices
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Devices used by room viewers</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {devices.map(d => (
+              <div key={d.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{d.name}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{d.count}</span>
+                </div>
+                <div style={{ height: 16, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${d.percentage}%`,
+                      background: 'linear-gradient(90deg, #BAE6FD, #7DD3FC)',
+                      borderRadius: 3,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Engagement Heatmap & Geo Traffic */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Heatmap */}
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Engagement Heatmap
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Peak viewing traffic windows throughout the week</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-2)' }}>
+              <span>Low</span>
+              {[1, 2, 3, 4].map(lvl => (
+                <div key={lvl} style={{ width: 12, height: 12, borderRadius: 2, background: HEATMAP_BG[lvl] }} />
+              ))}
+              <span>High</span>
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 460 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+                <div />
+                {DAYS.map(day => (
+                  <div key={day} style={{ textAlign: 'center', fontWeight: 600, fontSize: 11, color: 'var(--text-2)' }}>
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {TIME_SLOTS.slice(0, 5).map(slot => (
+                <div key={slot} style={{ display: 'grid', gridTemplateColumns: '70px repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--faint)', display: 'flex', alignItems: 'center' }}>
+                    {slot}
+                  </div>
+                  {DAYS.map(day => {
+                    const cell = heatmap.find(h => h.day === day && h.timeSlot === slot);
+                    const intensity = cell ? cell.intensity : 1;
+                    const val = cell ? (cell.views > 1000 ? `${(cell.views / 1000).toFixed(1)}k` : `${cell.views}`) : '1.8k';
+
+                    return (
+                      <div
+                        key={day + slot}
+                        style={{
+                          height: 30,
+                          borderRadius: 4,
+                          background: HEATMAP_BG[intensity],
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          fontFamily: 'JetBrains Mono, monospace',
+                        }}
+                      >
+                        {val}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Traffic by Location */}
+        <div className="card" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+            <div>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Traffic by Location
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Top visitor regions</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 3, background: 'var(--panel-2)', padding: 2, borderRadius: 6, border: '1px solid var(--line)' }}>
+              {[
+                { key: 'unique', label: 'Unique' },
+                { key: 'views', label: 'Views' },
+                { key: 'engagement', label: 'Engagement' },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setLocationTab(tab.key as typeof locationTab)}
+                  style={{
+                    padding: '3px 8px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    borderRadius: 4,
+                    border: 'none',
+                    background: locationTab === tab.key ? 'var(--panel)' : 'transparent',
+                    color: locationTab === tab.key ? 'var(--text)' : 'var(--text-2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {geoTraffic.map(g => (
+              <div key={g.code}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, marginBottom: 3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 14 }}>{g.flag}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>{g.country}</span>
+                  </div>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-2)' }}>
+                    {formatNumber(g.views)} views
+                  </span>
+                </div>
+                <div style={{ height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${g.percentage}%`,
+                      background: 'var(--ink)',
+                      borderRadius: 99,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // ── Event Timeline Sub-component ──────────────────────────────
@@ -133,7 +459,7 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
   );
 };
 
-// ── Granular User Profile View ────────────────────────────────
+// ── Granular User Profile View (Specific User Deep Dive) ───────
 
 const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ userId, onBack }) => {
   const [activeTab, setActiveTab] = useState<'rooms' | 'timeline'>('rooms');
@@ -167,7 +493,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           id="user-back-btn"
         >
           <ArrowLeft size={15} strokeWidth={2} />
-          Back to User Directory & Insights
+          Back to User Directory & Overview
         </button>
       </div>
 
@@ -267,7 +593,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           }}
         >
           <Sparkles size={14} color={activeTab === 'rooms' ? '#2DD4BF' : undefined} />
-          Showcase Rooms & Insights
+          Showcase Rooms & Specific Insights
           <span className="badge badge-success" style={{ fontSize: 10 }}>{roomInsights.length} rooms</span>
         </button>
 
@@ -296,7 +622,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
             <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
               <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
               <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
-              <p style={{ fontSize: 13 }}>This user has not initialized any showcase rooms in their TalentBridge account.</p>
+              <p style={{ fontSize: 13 }}>This creator has not created or published any showcase rooms yet.</p>
             </div>
           ) : (
             <>
@@ -325,7 +651,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                 </div>
               )}
 
-              {/* Full Room Insights detail view for the chosen room */}
+              {/* Granular Room Insights detail view for the chosen room (with Smart Recommendations) */}
               {currentRoom && <RoomInsightsDetailView room={currentRoom} />}
             </>
           )}
@@ -422,9 +748,6 @@ export const UserLookupPage: React.FC = () => {
     queryFn: () => userApi.searchUsers(searchQuery),
   });
 
-  // Highlight room data for the main overview (from design)
-  const defaultRoomInsight = (MOCK_ROOMS.roomsByUser as Record<string, RoomInsight[]>)['user_123abc'][0];
-
   const filteredUsers = (usersData?.results as User[] | undefined)?.filter(u => {
     return sourceFilter === 'all' || u.signupSource === sourceFilter;
   }) || [];
@@ -448,35 +771,35 @@ export const UserLookupPage: React.FC = () => {
               User Directory & Showcase Insights
             </h2>
             <span className="badge badge-success" style={{ gap: 4 }}>
-              <Users size={11} /> Directory Overview
+              <Users size={11} /> Platform Overview
             </span>
           </div>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Monitor high-level showcase viewer analytics and inspect granular details for any registered creator
+            Systemic showcase viewer intelligence across all creator rooms. Click any user to inspect granular details.
           </p>
         </div>
       </div>
 
-      {/* ── Section 1: Top Showcase Insights Overview (from design) ── */}
+      {/* ── Section 1: General Platform Showcase Overview ─────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            Featured Room Insights Overview
+            General Showcase Performance
           </h3>
-          <span style={{ fontSize: 12, color: 'var(--faint)' }}>Sample active room analytics benchmark</span>
+          <span style={{ fontSize: 12, color: 'var(--faint)' }}>Aggregated ecosystem metrics</span>
         </div>
 
-        {defaultRoomInsight && <RoomInsightsDetailView room={defaultRoomInsight} />}
+        <GeneralPlatformShowcaseOverview />
       </div>
 
-      {/* ── Section 2: User Directory & List ──────────────────────── */}
+      {/* ── Section 2: All Registered Users Directory Table ───────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 10 }}>
         <div>
           <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-            All Registered Users
+            All Registered Creators
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
-            Click on any user row to drill down into their complete granular event history, email stats, and showcase rooms
+            Click on any user row to drill down into their granular profile, individual room insights, event timeline, and email history
           </p>
         </div>
 
