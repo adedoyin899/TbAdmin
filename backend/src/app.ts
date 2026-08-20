@@ -7,6 +7,8 @@ import { ENV } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 
+import { authRouter } from './routes/auth.js';
+
 export const app = express();
 
 // Global middleware
@@ -42,6 +44,10 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Authentication Routes
+app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
 
 // Global Error Handler
 app.use(errorHandler);
