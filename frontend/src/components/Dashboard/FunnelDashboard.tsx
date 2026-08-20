@@ -4,6 +4,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
+import {
+  Calendar, Filter, ArrowDownRight,
+} from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FunnelDashboardResponse } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
@@ -52,25 +55,31 @@ export const FunnelDashboard: React.FC = () => {
           </p>
         </div>
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <select
-            id="funnel-date-range"
-            className="input"
-            style={{ width: 150 }}
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-          >
-            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-          </select>
-          <select
-            id="funnel-signup-source"
-            className="input"
-            style={{ width: 160 }}
-            value={signupSource}
-            onChange={e => setSignupSource(e.target.value)}
-          >
-            {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Calendar size={14} color="var(--dim)" />
+            <select
+              id="funnel-date-range"
+              className="input"
+              style={{ width: 145 }}
+              value={dateRange}
+              onChange={e => setDateRange(e.target.value)}
+            >
+              {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Filter size={14} color="var(--dim)" />
+            <select
+              id="funnel-signup-source"
+              className="input"
+              style={{ width: 155 }}
+              value={signupSource}
+              onChange={e => setSignupSource(e.target.value)}
+            >
+              {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -97,9 +106,10 @@ export const FunnelDashboard: React.FC = () => {
                 {formatPercentage(stage.percentage)} of total
               </p>
               {i < data.dropoff.length && (
-                <div style={{ marginTop: 8, padding: '4px 8px', background: 'color-mix(in srgb, #EF4444 10%, transparent)', borderRadius: 6, display: 'inline-block' }}>
+                <div style={{ marginTop: 8, padding: '4px 8px', background: 'color-mix(in srgb, #EF4444 10%, transparent)', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <ArrowDownRight size={12} color="#EF4444" />
                   <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600 }}>
-                    ↓ {formatPercentage(data.dropoff[i].percentage)} drop-off
+                    {formatPercentage(data.dropoff[i].percentage)} drop-off
                   </span>
                 </div>
               )}

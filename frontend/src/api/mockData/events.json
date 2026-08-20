@@ -1,14 +1,85 @@
 {
-  "events": [
-    { "eventId": "evt_001", "eventName": "signup_started", "timestamp": "2026-08-01T14:22:00Z", "properties": { "utm_source": "google" } },
-    { "eventId": "evt_002", "eventName": "email_verified", "timestamp": "2026-08-01T14:23:30Z", "properties": {} },
-    { "eventId": "evt_003", "eventName": "showcase_room_created", "timestamp": "2026-08-01T14:30:00Z", "properties": { "roomName": "Alice's Portfolio" } },
-    { "eventId": "evt_004", "eventName": "block_added", "timestamp": "2026-08-01T14:35:00Z", "properties": { "blockType": "Experience" } },
-    { "eventId": "evt_005", "eventName": "block_added", "timestamp": "2026-08-01T14:38:00Z", "properties": { "blockType": "Skills" } },
-    { "eventId": "evt_006", "eventName": "block_added", "timestamp": "2026-08-01T14:42:00Z", "properties": { "blockType": "Projects" } },
-    { "eventId": "evt_007", "eventName": "room_theme_changed", "timestamp": "2026-08-01T15:00:00Z", "properties": { "theme_name": "dark" } },
-    { "eventId": "evt_008", "eventName": "showcase_room_published", "timestamp": "2026-08-01T15:15:00Z", "properties": {} },
-    { "eventId": "evt_009", "eventName": "showcase_room_shared", "timestamp": "2026-08-02T09:00:00Z", "properties": { "shareType": "public_link" } },
-    { "eventId": "evt_010", "eventName": "user_returned_7d", "timestamp": "2026-08-08T11:20:00Z", "properties": {} }
-  ]
+  "byUser": {
+    "user_123abc": [
+      { "eventId": "evt_001", "eventName": "signup_started", "timestamp": "2026-08-01T14:22:00Z", "properties": { "utm_source": "google", "utm_medium": "cpc" } },
+      { "eventId": "evt_002", "eventName": "email_verified", "timestamp": "2026-08-01T14:23:30Z", "properties": {} },
+      { "eventId": "evt_003", "eventName": "showcase_room_created", "timestamp": "2026-08-01T14:30:00Z", "properties": { "roomName": "Alice's Portfolio" } },
+      { "eventId": "evt_004", "eventName": "block_added", "timestamp": "2026-08-01T14:35:00Z", "properties": { "blockType": "Experience" } },
+      { "eventId": "evt_005", "eventName": "block_added", "timestamp": "2026-08-01T14:38:00Z", "properties": { "blockType": "Skills" } },
+      { "eventId": "evt_006", "eventName": "block_added", "timestamp": "2026-08-01T14:42:00Z", "properties": { "blockType": "Projects" } },
+      { "eventId": "evt_007", "eventName": "room_theme_changed", "timestamp": "2026-08-01T15:00:00Z", "properties": { "theme_name": "dark" } },
+      { "eventId": "evt_008", "eventName": "showcase_room_published", "timestamp": "2026-08-01T15:15:00Z", "properties": {} },
+      { "eventId": "evt_009", "eventName": "showcase_room_shared", "timestamp": "2026-08-02T09:00:00Z", "properties": { "shareType": "public_link" } },
+      { "eventId": "evt_010", "eventName": "user_returned_7d", "timestamp": "2026-08-08T11:20:00Z", "properties": {} }
+    ],
+    "user_456def": [
+      { "eventId": "evt_101", "eventName": "signup_started", "timestamp": "2026-08-05T10:00:00Z", "properties": { "utm_source": "email_campaign" } },
+      { "eventId": "evt_102", "eventName": "email_verified", "timestamp": "2026-08-05T10:05:00Z", "properties": {} },
+      { "eventId": "evt_103", "eventName": "showcase_room_created", "timestamp": "2026-08-05T10:30:00Z", "properties": { "roomName": "Bob's CV" } },
+      { "eventId": "evt_104", "eventName": "block_added", "timestamp": "2026-08-05T10:45:00Z", "properties": { "blockType": "Experience" } },
+      { "eventId": "evt_105", "eventName": "showcase_room_published", "timestamp": "2026-08-05T11:00:00Z", "properties": {} },
+      { "eventId": "evt_106", "eventName": "showcase_room_shared", "timestamp": "2026-08-06T14:00:00Z", "properties": { "shareType": "linkedin" } }
+    ],
+    "user_789ghi": [
+      { "eventId": "evt_201", "eventName": "signup_started", "timestamp": "2026-08-10T09:15:00Z", "properties": { "referrer": "friend_invite" } },
+      { "eventId": "evt_202", "eventName": "email_verified", "timestamp": "2026-08-10T09:20:00Z", "properties": {} },
+      { "eventId": "evt_203", "eventName": "showcase_room_created", "timestamp": "2026-08-10T10:00:00Z", "properties": { "roomName": "Chiara Design Portfolio" } },
+      { "eventId": "evt_204", "eventName": "block_added", "timestamp": "2026-08-10T10:15:00Z", "properties": { "blockType": "Skills" } },
+      { "eventId": "evt_205", "eventName": "block_added", "timestamp": "2026-08-10T10:20:00Z", "properties": { "blockType": "Gallery" } }
+    ],
+    "user_321jkl": [
+      { "eventId": "evt_301", "eventName": "signup_started", "timestamp": "2026-07-28T08:00:00Z", "properties": { "utm_source": "instagram", "utm_medium": "paid_social" } },
+      { "eventId": "evt_302", "eventName": "email_verified", "timestamp": "2026-07-28T08:10:00Z", "properties": {} },
+      { "eventId": "evt_303", "eventName": "showcase_room_created", "timestamp": "2026-07-28T09:00:00Z", "properties": { "roomName": "Kwame Asante — Dev" } },
+      { "eventId": "evt_304", "eventName": "block_added", "timestamp": "2026-07-28T09:15:00Z", "properties": { "blockType": "Experience" } },
+      { "eventId": "evt_305", "eventName": "block_added", "timestamp": "2026-07-28T09:20:00Z", "properties": { "blockType": "Projects" } },
+      { "eventId": "evt_306", "eventName": "block_added", "timestamp": "2026-07-28T09:25:00Z", "properties": { "blockType": "Skills" } },
+      { "eventId": "evt_307", "eventName": "room_theme_changed", "timestamp": "2026-07-28T09:40:00Z", "properties": { "theme_name": "dark" } },
+      { "eventId": "evt_308", "eventName": "showcase_room_published", "timestamp": "2026-07-28T10:00:00Z", "properties": {} },
+      { "eventId": "evt_309", "eventName": "showcase_room_shared", "timestamp": "2026-07-28T10:30:00Z", "properties": { "shareType": "twitter" } },
+      { "eventId": "evt_310", "eventName": "user_returned_7d", "timestamp": "2026-08-04T08:00:00Z", "properties": {} },
+      { "eventId": "evt_311", "eventName": "showcase_room_created", "timestamp": "2026-08-04T08:30:00Z", "properties": { "roomName": "Kwame — Side Projects" } },
+      { "eventId": "evt_312", "eventName": "block_added", "timestamp": "2026-08-04T08:45:00Z", "properties": { "blockType": "Achievements" } },
+      { "eventId": "evt_313", "eventName": "showcase_room_published", "timestamp": "2026-08-04T09:00:00Z", "properties": {} },
+      { "eventId": "evt_314", "eventName": "showcase_room_shared", "timestamp": "2026-08-04T09:15:00Z", "properties": { "shareType": "public_link" } },
+      { "eventId": "evt_315", "eventName": "user_returned_30d", "timestamp": "2026-08-18T10:00:00Z", "properties": {} },
+      { "eventId": "evt_316", "eventName": "showcase_room_created", "timestamp": "2026-08-18T10:20:00Z", "properties": { "roomName": "Kwame — Freelance Work" } },
+      { "eventId": "evt_317", "eventName": "block_added", "timestamp": "2026-08-18T10:35:00Z", "properties": { "blockType": "Testimonials" } },
+      { "eventId": "evt_318", "eventName": "showcase_room_published", "timestamp": "2026-08-18T11:00:00Z", "properties": {} }
+    ],
+    "user_654mno": [
+      { "eventId": "evt_401", "eventName": "signup_started", "timestamp": "2026-08-12T16:45:00Z", "properties": { "utm_source": "google" } },
+      { "eventId": "evt_402", "eventName": "email_verified", "timestamp": "2026-08-12T16:50:00Z", "properties": {} },
+      { "eventId": "evt_403", "eventName": "showcase_room_created", "timestamp": "2026-08-12T17:10:00Z", "properties": { "roomName": "Priya Sharma — UX" } },
+      { "eventId": "evt_404", "eventName": "block_added", "timestamp": "2026-08-12T17:20:00Z", "properties": { "blockType": "Experience" } },
+      { "eventId": "evt_405", "eventName": "block_added", "timestamp": "2026-08-12T17:25:00Z", "properties": { "blockType": "Certification" } },
+      { "eventId": "evt_406", "eventName": "room_theme_changed", "timestamp": "2026-08-12T17:35:00Z", "properties": { "theme_name": "light" } },
+      { "eventId": "evt_407", "eventName": "showcase_room_published", "timestamp": "2026-08-12T18:00:00Z", "properties": {} },
+      { "eventId": "evt_408", "eventName": "showcase_room_shared", "timestamp": "2026-08-13T09:00:00Z", "properties": { "shareType": "public_link" } }
+    ],
+    "user_987pqr": [
+      { "eventId": "evt_501", "eventName": "signup_started", "timestamp": "2026-07-15T11:30:00Z", "properties": { "referrer": "colleague" } },
+      { "eventId": "evt_502", "eventName": "email_verified", "timestamp": "2026-07-15T11:35:00Z", "properties": {} },
+      { "eventId": "evt_503", "eventName": "showcase_room_created", "timestamp": "2026-07-15T12:00:00Z", "properties": { "roomName": "James O'Brien — Engineering" } },
+      { "eventId": "evt_504", "eventName": "block_added", "timestamp": "2026-07-15T12:15:00Z", "properties": { "blockType": "Experience" } },
+      { "eventId": "evt_505", "eventName": "block_added", "timestamp": "2026-07-15T12:20:00Z", "properties": { "blockType": "Skills" } },
+      { "eventId": "evt_506", "eventName": "block_added", "timestamp": "2026-07-15T12:25:00Z", "properties": { "blockType": "Projects" } },
+      { "eventId": "evt_507", "eventName": "block_added", "timestamp": "2026-07-15T12:30:00Z", "properties": { "blockType": "Education" } },
+      { "eventId": "evt_508", "eventName": "room_theme_changed", "timestamp": "2026-07-15T12:45:00Z", "properties": { "theme_name": "dark" } },
+      { "eventId": "evt_509", "eventName": "showcase_room_published", "timestamp": "2026-07-15T13:00:00Z", "properties": {} },
+      { "eventId": "evt_510", "eventName": "showcase_room_shared", "timestamp": "2026-07-16T09:00:00Z", "properties": { "shareType": "public_link" } },
+      { "eventId": "evt_511", "eventName": "user_returned_7d", "timestamp": "2026-07-22T10:00:00Z", "properties": {} },
+      { "eventId": "evt_512", "eventName": "showcase_room_created", "timestamp": "2026-07-22T10:30:00Z", "properties": { "roomName": "James — Open Source" } },
+      { "eventId": "evt_513", "eventName": "block_added", "timestamp": "2026-07-22T10:45:00Z", "properties": { "blockType": "Achievements" } },
+      { "eventId": "evt_514", "eventName": "showcase_room_published", "timestamp": "2026-07-22T11:00:00Z", "properties": {} },
+      { "eventId": "evt_515", "eventName": "showcase_room_shared", "timestamp": "2026-07-22T11:30:00Z", "properties": { "shareType": "linkedin" } },
+      { "eventId": "evt_516", "eventName": "user_returned_30d", "timestamp": "2026-08-14T09:00:00Z", "properties": {} },
+      { "eventId": "evt_517", "eventName": "block_added", "timestamp": "2026-08-14T09:20:00Z", "properties": { "blockType": "Testimonials" } },
+      { "eventId": "evt_518", "eventName": "room_theme_changed", "timestamp": "2026-08-14T09:30:00Z", "properties": { "theme_name": "light" } },
+      { "eventId": "evt_519", "eventName": "showcase_room_shared", "timestamp": "2026-08-14T10:00:00Z", "properties": { "shareType": "twitter" } },
+      { "eventId": "evt_520", "eventName": "user_returned_30d", "timestamp": "2026-08-17T14:55:00Z", "properties": {} },
+      { "eventId": "evt_521", "eventName": "block_added", "timestamp": "2026-08-17T15:10:00Z", "properties": { "blockType": "Contact" } },
+      { "eventId": "evt_522", "eventName": "showcase_room_published", "timestamp": "2026-08-17T15:30:00Z", "properties": {} }
+    ]
+  }
 }

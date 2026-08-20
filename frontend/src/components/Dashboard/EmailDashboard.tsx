@@ -4,6 +4,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import {
+  Mail, MousePointerClick, AlertTriangle, Trophy,
+  Calendar, Inbox,
+} from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { EmailDashboardResponse } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
@@ -33,15 +37,18 @@ export const EmailDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Open rates, click rates, and bounce data from Mailgun</p>
         </div>
-        <select
-          id="email-date-range"
-          className="input"
-          style={{ width: 150 }}
-          value={dateRange}
-          onChange={e => setDateRange(e.target.value)}
-        >
-          {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Calendar size={15} color="var(--dim)" />
+          <select
+            id="email-date-range"
+            className="input"
+            style={{ width: 150 }}
+            value={dateRange}
+            onChange={e => setDateRange(e.target.value)}
+          >
+            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
@@ -52,15 +59,18 @@ export const EmailDashboard: React.FC = () => {
           {/* Summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             {[
-              { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: CHART_COLORS.primary },
-              { label: 'Avg Open Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.openPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.info },
-              { label: 'Avg Click Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.clickPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.success },
-              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + c.bounceCount, 0), suffix: '', color: CHART_COLORS.warning },
+              { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: CHART_COLORS.primary, icon: <Inbox size={16} color={CHART_COLORS.primary} /> },
+              { label: 'Avg Open Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.openPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.info, icon: <Mail size={16} color={CHART_COLORS.info} /> },
+              { label: 'Avg Click Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.clickPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.success, icon: <MousePointerClick size={16} color={CHART_COLORS.success} /> },
+              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + c.bounceCount, 0), suffix: '', color: CHART_COLORS.warning, icon: <AlertTriangle size={16} color={CHART_COLORS.warning} /> },
             ].map(card => (
               <div key={card.label} className="stat-card animate-slide-up">
-                <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  {card.label}
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {card.label}
+                  </p>
+                  {card.icon}
+                </div>
                 <p style={{ fontSize: 32, fontWeight: 800, color: card.color, fontFamily: 'Sora, sans-serif' }}>
                   {card.value}{card.suffix}
                 </p>
@@ -100,7 +110,9 @@ export const EmailDashboard: React.FC = () => {
                   {data.topPerformers.slice(0, 1).map(p => (
                     <div key={p.campaignName} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Top performer:</span>
-                      <span className="badge badge-success">🏆 {p.campaignName} ({p.clickPercentage}% click)</span>
+                      <span className="badge badge-success" style={{ gap: 4 }}>
+                        <Trophy size={13} /> {p.campaignName} ({p.clickPercentage}% click)
+                      </span>
                     </div>
                   ))}
                 </div>

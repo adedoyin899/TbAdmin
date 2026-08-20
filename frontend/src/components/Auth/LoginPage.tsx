@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BarChart2, Mail, Lock, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/formatters';
 
@@ -51,10 +52,10 @@ export const LoginPage: React.FC = () => {
         {/* Logo / brand */}
         <div className="text-center mb-8">
           <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-[16px] mb-4"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-[16px] mb-4 shadow-lg"
             style={{ background: 'var(--ink)' }}
           >
-            <span style={{ color: '#2DD4BF', fontSize: 24 }}>TB</span>
+            <BarChart2 size={28} color="#2DD4BF" strokeWidth={2.5} />
           </div>
           <h1
             style={{ fontFamily: 'Sora, sans-serif', color: 'var(--text)', fontSize: 28, fontWeight: 700, marginBottom: 6 }}
@@ -82,7 +83,7 @@ export const LoginPage: React.FC = () => {
 
           {error && (
             <div
-              className="animate-fade-in"
+              className="animate-fade-in flex items-center gap-2"
               style={{
                 background: 'color-mix(in srgb, #EF4444 12%, transparent)',
                 border: '1px solid color-mix(in srgb, #EF4444 30%, transparent)',
@@ -93,7 +94,8 @@ export const LoginPage: React.FC = () => {
                 fontSize: 13,
               }}
             >
-              {error}
+              <AlertCircle size={15} className="shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -101,8 +103,9 @@ export const LoginPage: React.FC = () => {
             <div style={{ marginBottom: 16 }}>
               <label
                 htmlFor="login-email"
-                style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 13, color: 'var(--text-2)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontWeight: 600, fontSize: 13, color: 'var(--text-2)' }}
               >
+                <Mail size={13} />
                 Email address
               </label>
               <input
@@ -121,8 +124,9 @@ export const LoginPage: React.FC = () => {
             <div style={{ marginBottom: 24 }}>
               <label
                 htmlFor="login-password"
-                style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 13, color: 'var(--text-2)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontWeight: 600, fontSize: 13, color: 'var(--text-2)' }}
               >
+                <Lock size={13} />
                 Password
               </label>
               <input
@@ -141,7 +145,7 @@ export const LoginPage: React.FC = () => {
               id="login-submit"
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '11px 15px', fontSize: 15 }}
+              style={{ width: '100%', justifyContent: 'center', padding: '11px 15px', fontSize: 15, gap: 8 }}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -150,15 +154,19 @@ export const LoginPage: React.FC = () => {
                   Signing in…
                 </>
               ) : (
-                'Sign in'
+                <>
+                  Sign in
+                  <ArrowRight size={16} />
+                </>
               )}
             </button>
           </form>
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--faint)', fontSize: 12 }}>
-          Access is restricted to TalentBridge team members.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20, color: 'var(--faint)', fontSize: 12 }}>
+          <ShieldCheck size={14} />
+          <span>Access is restricted to TalentBridge team members.</span>
+        </div>
       </div>
     </div>
   );

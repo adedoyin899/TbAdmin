@@ -13,11 +13,11 @@ export const SIGNUP_SOURCES = [
 ] as const;
 
 export const NAV_LINKS = [
-  { path: '/dashboard/funnel', label: 'Funnel', icon: '📉' },
-  { path: '/dashboard/features', label: 'Features', icon: '🧩' },
-  { path: '/dashboard/retention', label: 'Retention', icon: '🔄' },
-  { path: '/dashboard/email', label: 'Email', icon: '📧' },
-  { path: '/lookup', label: 'User Lookup', icon: '🔍' },
+  { path: '/dashboard/funnel', label: 'Funnel', icon: 'TrendingDown' },
+  { path: '/dashboard/features', label: 'Features', icon: 'Puzzle' },
+  { path: '/dashboard/retention', label: 'Retention', icon: 'RefreshCcw' },
+  { path: '/dashboard/email', label: 'Email', icon: 'Mail' },
+  { path: '/lookup', label: 'User Lookup', icon: 'Search' },
 ] as const;
 
 export const CHART_COLORS = {

@@ -4,6 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
+import { TrendingUp, Filter } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RetentionDashboardResponse } from '../../types';
 import { formatPercentage } from '../../utils/formatters';
@@ -27,15 +28,18 @@ export const RetentionDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>How many users come back after signing up?</p>
         </div>
-        <select
-          id="retention-source"
-          className="input"
-          style={{ width: 160 }}
-          value={signupSource}
-          onChange={e => setSignupSource(e.target.value)}
-        >
-          {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Filter size={14} color="var(--dim)" />
+          <select
+            id="retention-source"
+            className="input"
+            style={{ width: 160 }}
+            value={signupSource}
+            onChange={e => setSignupSource(e.target.value)}
+          >
+            {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
@@ -63,9 +67,9 @@ export const RetentionDashboard: React.FC = () => {
                   </span>
                   <span
                     className="badge badge-success"
-                    style={{ marginBottom: 6 }}
+                    style={{ marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                   >
-                    ↑ +{stat.change}% this week
+                    <TrendingUp size={13} /> +{stat.change}% this week
                   </span>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--faint)' }}>{stat.desc}</p>

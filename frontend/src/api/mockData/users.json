@@ -6,10 +6,14 @@
       "firstName": "Alice",
       "lastName": "Chen",
       "signupDate": "2026-08-01T14:22:00Z",
-      "country": "UK",
+      "country": "United Kingdom",
+      "countryCode": "GB",
       "signupSource": "organic",
       "planTier": "free",
-      "lastActive": "2026-08-20T14:00:00Z"
+      "lastActive": "2026-08-20T14:00:00Z",
+      "roomsCreated": 2,
+      "roomsPublished": 1,
+      "totalEvents": 10
     },
     {
       "userId": "user_456def",
@@ -17,10 +21,14 @@
       "firstName": "Bob",
       "lastName": "Smith",
       "signupDate": "2026-08-05T10:00:00Z",
-      "country": "US",
+      "country": "United States",
+      "countryCode": "US",
       "signupSource": "email",
       "planTier": "free",
-      "lastActive": "2026-08-20T15:30:00Z"
+      "lastActive": "2026-08-20T15:30:00Z",
+      "roomsCreated": 1,
+      "roomsPublished": 1,
+      "totalEvents": 6
     },
     {
       "userId": "user_789ghi",
@@ -28,10 +36,59 @@
       "firstName": "Chiara",
       "lastName": "Romano",
       "signupDate": "2026-08-10T09:15:00Z",
-      "country": "IT",
+      "country": "Italy",
+      "countryCode": "IT",
       "signupSource": "referral",
       "planTier": "free",
-      "lastActive": "2026-08-19T18:45:00Z"
+      "lastActive": "2026-08-19T18:45:00Z",
+      "roomsCreated": 1,
+      "roomsPublished": 0,
+      "totalEvents": 5
+    },
+    {
+      "userId": "user_321jkl",
+      "email": "kwame@example.com",
+      "firstName": "Kwame",
+      "lastName": "Asante",
+      "signupDate": "2026-07-28T08:00:00Z",
+      "country": "Ghana",
+      "countryCode": "GH",
+      "signupSource": "paid_ad",
+      "planTier": "free",
+      "lastActive": "2026-08-18T10:20:00Z",
+      "roomsCreated": 3,
+      "roomsPublished": 2,
+      "totalEvents": 18
+    },
+    {
+      "userId": "user_654mno",
+      "email": "priya@example.com",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "signupDate": "2026-08-12T16:45:00Z",
+      "country": "India",
+      "countryCode": "IN",
+      "signupSource": "organic",
+      "planTier": "free",
+      "lastActive": "2026-08-20T08:10:00Z",
+      "roomsCreated": 1,
+      "roomsPublished": 1,
+      "totalEvents": 8
+    },
+    {
+      "userId": "user_987pqr",
+      "email": "james@example.com",
+      "firstName": "James",
+      "lastName": "O'Brien",
+      "signupDate": "2026-07-15T11:30:00Z",
+      "country": "Ireland",
+      "countryCode": "IE",
+      "signupSource": "referral",
+      "planTier": "free",
+      "lastActive": "2026-08-17T14:55:00Z",
+      "roomsCreated": 2,
+      "roomsPublished": 2,
+      "totalEvents": 22
     }
   ]
 }

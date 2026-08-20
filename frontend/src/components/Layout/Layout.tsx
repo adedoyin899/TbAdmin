@@ -1,55 +1,88 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  TrendingDown, Puzzle, RefreshCcw, Mail, Search,
+  ChevronLeft, ChevronRight, Sun, Moon, LogOut,
+  BarChart2,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { NAV_LINKS } from '../../config/constants';
 
-export const Sidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = ({ collapsed, onToggle }) => {
-  return (
-    <aside
-      id="sidebar"
+import type { LucideProps } from 'lucide-react';
+
+// Icon map — keeps the sidebar config clean
+const ICON_MAP: Record<string, React.FC<LucideProps>> = {
+  TrendingDown,
+  Puzzle,
+  RefreshCcw,
+  Mail,
+  Search,
+};
+
+const NAV_LINKS = [
+  { path: '/dashboard/funnel',    label: 'Funnel',      icon: 'TrendingDown' },
+  { path: '/dashboard/features',  label: 'Features',    icon: 'Puzzle' },
+  { path: '/dashboard/retention', label: 'Retention',   icon: 'RefreshCcw' },
+  { path: '/dashboard/email',     label: 'Email',       icon: 'Mail' },
+  { path: '/lookup',              label: 'User Lookup', icon: 'Search' },
+];
+
+// ── Sidebar ───────────────────────────────────────────────────
+
+export const Sidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = ({
+  collapsed,
+  onToggle,
+}) => (
+  <aside
+    id="sidebar"
+    style={{
+      width: collapsed ? 64 : 240,
+      minHeight: '100%',
+      background: 'var(--panel)',
+      borderRight: '1px solid var(--line)',
+      display: 'flex',
+      flexDirection: 'column',
+      transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1)',
+      flexShrink: 0,
+      overflow: 'hidden',
+    }}
+  >
+    {/* Logo */}
+    <div
       style={{
-        width: collapsed ? 64 : 240,
-        minHeight: '100%',
-        background: 'var(--panel)',
-        borderRight: '1px solid var(--line)',
+        padding: collapsed ? '18px 0' : '18px 16px',
         display: 'flex',
-        flexDirection: 'column',
-        transition: 'width 0.2s cubic-bezier(0.16,1,0.3,1)',
-        flexShrink: 0,
-        overflow: 'hidden',
+        alignItems: 'center',
+        gap: 10,
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        borderBottom: '1px solid var(--line)',
+        minHeight: 57,
       }}
     >
-      {/* Logo */}
       <div
         style={{
-          padding: collapsed ? '20px 0' : '20px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          borderBottom: '1px solid var(--line)',
+          width: 32, height: 32, borderRadius: 8,
+          background: 'var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ color: '#2DD4BF', fontSize: 12, fontWeight: 800, fontFamily: 'Sora, sans-serif' }}>TB</span>
-        </div>
-        {!collapsed && (
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap' }}>
-            Analytics
-          </span>
-        )}
+        <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
       </div>
+      {!collapsed && (
+        <div>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', marginBottom: 1 }}>
+            TalentBridge
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--faint)', whiteSpace: 'nowrap' }}>Analytics Portal</p>
+        </div>
+      )}
+    </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_LINKS.map(link => (
+    {/* Nav links */}
+    <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {NAV_LINKS.map(link => {
+        const Icon = ICON_MAP[link.icon];
+        return (
           <NavLink
             key={link.path}
             to={link.path}
@@ -58,32 +91,35 @@ export const Sidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = (
             style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
             title={collapsed ? link.label : undefined}
           >
-            <span style={{ fontSize: 16, flexShrink: 0 }}>{link.icon}</span>
+            <Icon size={17} strokeWidth={1.8} style={{ flexShrink: 0 }} />
             {!collapsed && (
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {link.label}
               </span>
             )}
           </NavLink>
-        ))}
-      </nav>
+        );
+      })}
+    </nav>
 
-      {/* Collapse toggle */}
-      <button
-        onClick={onToggle}
-        className="btn-icon"
-        style={{ margin: '12px auto', border: 'none', background: 'transparent' }}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          {collapsed
-            ? <path d="M9 18l6-6-6-6" />
-            : <path d="M15 18l-6-6 6-6" />}
-        </svg>
-      </button>
-    </aside>
-  );
-};
+    {/* Collapse toggle */}
+    <button
+      onClick={onToggle}
+      className="btn-icon"
+      style={{
+        margin: '12px auto',
+        border: 'none',
+        background: 'var(--panel-2)',
+        color: 'var(--dim)',
+      }}
+      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+    >
+      {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+    </button>
+  </aside>
+);
+
+// ── Header ────────────────────────────────────────────────────
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -104,6 +140,10 @@ export const Header: React.FC = () => {
     navigate('/');
   };
 
+  const today = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
+
   return (
     <header
       id="app-header"
@@ -111,41 +151,32 @@ export const Header: React.FC = () => {
         background: 'var(--panel)',
         borderBottom: '1px solid var(--line)',
         padding: '0 24px',
-        height: 56,
+        height: 57,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
+        gap: 16,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ color: 'var(--faint)', fontSize: 13 }}>
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </span>
-      </div>
+      <span style={{ color: 'var(--faint)', fontSize: 13 }}>{today}</span>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Dark mode toggle */}
-        <button className="mode-toggle" onClick={toggleMode} title="Toggle dark mode" id="dark-mode-toggle">
-          {isDark ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          )}
+        <button
+          className="btn-icon"
+          onClick={toggleMode}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          id="dark-mode-toggle"
+        >
+          {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
         </button>
 
-        {/* User info */}
+        {/* User pill */}
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 12px',
+            padding: '5px 12px',
             background: 'var(--panel-2)',
             borderRadius: 'var(--radius-xs)',
             border: '1px solid var(--line)',
@@ -169,23 +200,22 @@ export const Header: React.FC = () => {
           <span className="badge badge-neutral" style={{ fontSize: 11 }}>{user?.role}</span>
         </div>
 
+        {/* Logout */}
         <button
           id="logout-btn"
           className="btn btn-ghost"
-          style={{ padding: '6px 12px', fontSize: 13 }}
+          style={{ padding: '6px 12px', fontSize: 13, gap: 6 }}
           onClick={handleLogout}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
+          <LogOut size={14} strokeWidth={1.8} />
           Sign out
         </button>
       </div>
     </header>
   );
 };
+
+// ── Layout shell ──────────────────────────────────────────────
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);

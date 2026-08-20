@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { Calendar } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FeaturesDashboardResponse } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
@@ -29,15 +30,18 @@ export const FeatureDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Which content blocks and themes are users choosing?</p>
         </div>
-        <select
-          id="features-date-range"
-          className="input"
-          style={{ width: 150 }}
-          value={dateRange}
-          onChange={e => setDateRange(e.target.value)}
-        >
-          {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Calendar size={14} color="var(--dim)" />
+          <select
+            id="features-date-range"
+            className="input"
+            style={{ width: 150 }}
+            value={dateRange}
+            onChange={e => setDateRange(e.target.value)}
+          >
+            {DATE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {isLoading && (
