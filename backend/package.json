@@ -13,7 +13,10 @@
     "seed": "tsx src/db/seeders/admin_users.ts",
     "test:auth": "tsx src/tests/auth.test.ts",
     "test:cache": "tsx src/tests/cache.test.ts",
-    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts"
+    "test:funnel": "tsx src/tests/funnel.test.ts",
+    "test:dashboards": "tsx src/tests/dashboards.test.ts",
+    "test:users": "tsx src/tests/users.test.ts",
+    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts && tsx src/tests/funnel.test.ts && tsx src/tests/dashboards.test.ts && tsx src/tests/users.test.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",

@@ -9,6 +9,7 @@ import { apiLimiter } from './middleware/rateLimiter.js';
 
 import { authRouter } from './routes/auth.js';
 import { dashboardRouter } from './routes/dashboard.js';
+import { userRouter } from './routes/users.js';
 
 export const app = express();
 
@@ -54,6 +55,10 @@ app.use('/auth', authRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/dashboards', dashboardRouter);
 app.use('/dashboard', dashboardRouter);
+
+// User Lookup Routes (Fresh data, real-time)
+app.use('/api/users', userRouter);
+app.use('/users', userRouter);
 
 // Global Error Handler
 app.use(errorHandler);
