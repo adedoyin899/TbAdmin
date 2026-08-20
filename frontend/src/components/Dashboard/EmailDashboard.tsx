@@ -6,16 +6,18 @@ import {
 } from 'recharts';
 import {
   Mail, MousePointerClick, AlertTriangle, Trophy,
-  Inbox,
+  Inbox, ArrowRight,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
-import type { EmailDashboardResponse } from '../../types';
+import type { EmailDashboardResponse, EmailCampaign } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
 import { CHART_COLORS } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
+import { CampaignDetailView } from '../Email/CampaignDetailView';
 
 export const EmailDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
+  const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
 
   const { data, isLoading, error } = useQuery<EmailDashboardResponse>({
     queryKey: ['email', dateRange.preset, dateRange.startDate, dateRange.endDate],
@@ -28,15 +30,27 @@ export const EmailDashboard: React.FC = () => {
     'Click %': c.clickPercentage,
   }));
 
+  // If a campaign is selected, render its granular drill-down view!
+  if (selectedCampaign) {
+    return (
+      <CampaignDetailView
+        campaign={selectedCampaign}
+        onBack={() => setSelectedCampaign(null)}
+      />
+    );
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-in">
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
             Email Campaigns
           </h2>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Open rates, click rates, and bounce data from Mailgun</p>
+          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
+            Open rates, click rates, and bounce data from Mailgun. Click any campaign to explore granular details.
+          </p>
         </div>
         <DateRangeSelector
           value={dateRange}
@@ -95,9 +109,13 @@ export const EmailDashboard: React.FC = () => {
           {/* Top performers & Table */}
           <div className="table-wrap">
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                All Campaigns
-              </h3>
+              <div>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  All Campaigns
+                </h3>
+                <p style={{ fontSize: 12, color: 'var(--faint)' }}>Click any campaign row to explore its link CTRs, recipient logs, and email mockup</p>
+              </div>
+
               <div style={{ display: 'flex', gap: 8 }}>
                 {data.topPerformers.slice(0, 1).map(p => (
                   <div key={p.campaignName} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -109,6 +127,7 @@ export const EmailDashboard: React.FC = () => {
                 ))}
               </div>
             </div>
+
             <div style={{ overflowX: 'auto' }}>
               <table>
                 <thead>
@@ -120,12 +139,23 @@ export const EmailDashboard: React.FC = () => {
                     <th>Clicks</th>
                     <th>Click %</th>
                     <th>Bounces</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.campaigns.map(c => (
-                    <tr key={c.campaignId}>
-                      <td style={{ fontWeight: 600 }}>{c.campaignName}</td>
+                    <tr
+                      key={c.campaignId}
+                      onClick={() => setSelectedCampaign(c)}
+                      style={{ cursor: 'pointer' }}
+                      title="Click to explore campaign details"
+                    >
+                      <td>
+                        <div>
+                          <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>{c.campaignName}</p>
+                          <p style={{ fontSize: 11, color: 'var(--text-2)' }}>{c.subjectLine || c.campaignId}</p>
+                        </div>
+                      </td>
                       <td style={{ color: 'var(--text-2)', fontSize: 13 }}>{formatDate(c.sentDate)}</td>
                       <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{formatNumber(c.sentCount)}</td>
                       <td>
@@ -146,6 +176,18 @@ export const EmailDashboard: React.FC = () => {
                         {c.bounceCount > 0
                           ? <span className="badge badge-error">{c.bounceCount}</span>
                           : <span style={{ color: 'var(--faint)' }}>—</span>}
+                      </td>
+                      <td>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedCampaign(c);
+                          }}
+                          className="btn btn-ghost"
+                          style={{ padding: '4px 8px', fontSize: 12, gap: 4, color: 'var(--accent2)' }}
+                        >
+                          Explore <ArrowRight size={12} />
+                        </button>
                       </td>
                     </tr>
                   ))}

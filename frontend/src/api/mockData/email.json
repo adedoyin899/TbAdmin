@@ -3,55 +3,150 @@
     {
       "campaignId": "welcome-email-001",
       "campaignName": "Welcome Email",
+      "subjectLine": "Welcome to TalentBridge — Build your first showcase room!",
+      "triggerType": "Event-triggered: signup_started",
+      "targetAudience": "All newly registered creators",
       "sentDate": "2026-08-01",
       "sentCount": 500,
+      "deliveredCount": 498,
       "openCount": 210,
-      "openPercentage": 42,
+      "openPercentage": 42.0,
       "clickCount": 85,
-      "clickPercentage": 17,
+      "clickPercentage": 17.0,
+      "ctor": 40.5,
       "bounceCount": 2,
-      "unsubscribeCount": 0
+      "unsubscribeCount": 0,
+      "links": [
+        { "url": "https://talentbridge.io/room/new", "label": "Start Building Your Room (CTA Button)", "clicks": 54, "percentage": 63.5 },
+        { "url": "https://talentbridge.io/templates", "label": "Explore Showcase Room Templates", "clicks": 21, "percentage": 24.7 },
+        { "url": "https://talentbridge.io/guides/creator-starter", "label": "Creator Quickstart Guide", "clicks": 10, "percentage": 11.8 }
+      ],
+      "hourlyEngagement": [
+        { "hour": "0h", "opens": 72, "clicks": 34 },
+        { "hour": "2h", "opens": 58, "clicks": 24 },
+        { "hour": "6h", "opens": 38, "clicks": 14 },
+        { "hour": "12h", "opens": 22, "clicks": 7 },
+        { "hour": "24h", "opens": 14, "clicks": 4 },
+        { "hour": "48h", "opens": 6, "clicks": 2 }
+      ],
+      "recipients": [
+        { "recipientId": "rec_01", "name": "Alice Chen", "email": "alice.chen@example.com", "status": "clicked", "sentAt": "2026-08-01T10:00:00Z", "openedAt": "2026-08-01T10:14:22Z", "clickedAt": "2026-08-01T10:16:05Z", "client": "Apple Mail", "device": "macOS Desktop" },
+        { "recipientId": "rec_02", "name": "Kwame Asante", "email": "kwame.asante@example.com", "status": "clicked", "sentAt": "2026-08-01T10:00:00Z", "openedAt": "2026-08-01T11:05:10Z", "clickedAt": "2026-08-01T11:07:44Z", "client": "Gmail Mobile", "device": "iOS Mobile" },
+        { "recipientId": "rec_03", "name": "Chiara Romano", "email": "chiara.romano@example.com", "status": "opened", "sentAt": "2026-08-01T10:00:00Z", "openedAt": "2026-08-01T12:30:19Z", "client": "Chrome Webmail", "device": "Windows Desktop" },
+        { "recipientId": "rec_04", "name": "Bob Smith", "email": "bob.smith@example.com", "status": "opened", "sentAt": "2026-08-01T10:00:00Z", "openedAt": "2026-08-01T15:22:00Z", "client": "Outlook Mobile", "device": "Android Mobile" },
+        { "recipientId": "rec_05", "name": "Priya Sharma", "email": "priya.sharma@example.com", "status": "delivered", "sentAt": "2026-08-01T10:00:00Z", "client": "Unknown", "device": "Unknown" },
+        { "recipientId": "rec_06", "name": "James O'Brien", "email": "james.obrien@example.com", "status": "bounced", "sentAt": "2026-08-01T10:00:00Z", "client": "Mailbox Full", "device": "Server SMTP 550" }
+      ],
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Welcome to TalentBridge, Creator! 👋</h2><p>You've taken the first step toward showing recruiters your best work in an interactive 3D showcase room.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Start Building Your Room →</a></div><p style='color: #64748B; font-size: 13px;'>Need inspiration? Check out our <a href='#' style='color: #0F766E;'>Showcase Room Templates</a>.</p></div>"
     },
     {
       "campaignId": "showcase-tips-001",
       "campaignName": "Showcase Tips",
+      "subjectLine": "3 tips to make recruiters stay longer in your showcase room",
+      "triggerType": "Automated Journey: 3 days after room creation",
+      "targetAudience": "Creators with draft or recently published rooms",
       "sentDate": "2026-08-03",
       "sentCount": 450,
+      "deliveredCount": 449,
       "openCount": 156,
-      "openPercentage": 35,
+      "openPercentage": 35.0,
       "clickCount": 62,
-      "clickPercentage": 14,
+      "clickPercentage": 14.0,
+      "ctor": 39.7,
       "bounceCount": 1,
-      "unsubscribeCount": 1
+      "unsubscribeCount": 1,
+      "links": [
+        { "url": "https://talentbridge.io/room/edit", "label": "Update Your Bio & Headline (CTA)", "clicks": 38, "percentage": 61.3 },
+        { "url": "https://talentbridge.io/analytics/tips", "label": "Viewer Retention Best Practices", "clicks": 18, "percentage": 29.0 },
+        { "url": "https://talentbridge.io/examples/top-performers", "label": "View Top 1% Showcase Examples", "clicks": 6, "percentage": 9.7 }
+      ],
+      "hourlyEngagement": [
+        { "hour": "0h", "opens": 48, "clicks": 22 },
+        { "hour": "2h", "opens": 42, "clicks": 18 },
+        { "hour": "6h", "opens": 29, "clicks": 11 },
+        { "hour": "12h", "opens": 19, "clicks": 6 },
+        { "hour": "24h", "opens": 12, "clicks": 3 },
+        { "hour": "48h", "opens": 6, "clicks": 2 }
+      ],
+      "recipients": [
+        { "recipientId": "rec_11", "name": "Alice Chen", "email": "alice.chen@example.com", "status": "clicked", "sentAt": "2026-08-03T14:00:00Z", "openedAt": "2026-08-03T14:18:10Z", "clickedAt": "2026-08-03T14:20:45Z", "client": "Apple Mail", "device": "macOS Desktop" },
+        { "recipientId": "rec_12", "name": "Chiara Romano", "email": "chiara.romano@example.com", "status": "opened", "sentAt": "2026-08-03T14:00:00Z", "openedAt": "2026-08-03T16:45:00Z", "client": "Chrome Webmail", "device": "Windows Desktop" },
+        { "recipientId": "rec_13", "name": "Bob Smith", "email": "bob.smith@example.com", "status": "delivered", "sentAt": "2026-08-03T14:00:00Z", "client": "Gmail Mobile", "device": "Android Mobile" }
+      ],
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Want more eyes on your portfolio? 👀</h2><p>Our top creators get 4x more recruiter interactions by following these 3 simple rules: rich case study thumbnails, clear contact badges, and custom themes.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Edit Your Showcase Room →</a></div></div>"
     },
     {
       "campaignId": "feature-update-001",
       "campaignName": "Feature Update — Aug",
+      "subjectLine": "New: Viewer Intelligence & Heatmaps are now live on TalentBridge",
+      "triggerType": "Broadcast newsletter",
+      "targetAudience": "All verified creators & studio users",
       "sentDate": "2026-08-10",
       "sentCount": 620,
+      "deliveredCount": 617,
       "openCount": 248,
-      "openPercentage": 40,
+      "openPercentage": 40.0,
       "clickCount": 99,
-      "clickPercentage": 16,
+      "clickPercentage": 16.0,
+      "ctor": 39.9,
       "bounceCount": 3,
-      "unsubscribeCount": 2
+      "unsubscribeCount": 2,
+      "links": [
+        { "url": "https://talentbridge.io/insights", "label": "Explore Your New Room Analytics (CTA)", "clicks": 68, "percentage": 68.7 },
+        { "url": "https://talentbridge.io/changelog/2026-08", "label": "Read August Changelog", "clicks": 22, "percentage": 22.2 },
+        { "url": "https://talentbridge.io/feedback", "label": "Submit Feature Request", "clicks": 9, "percentage": 9.1 }
+      ],
+      "hourlyEngagement": [
+        { "hour": "0h", "opens": 88, "clicks": 42 },
+        { "hour": "2h", "opens": 64, "clicks": 26 },
+        { "hour": "6h", "opens": 45, "clicks": 16 },
+        { "hour": "12h", "opens": 28, "clicks": 9 },
+        { "hour": "24h", "opens": 15, "clicks": 4 },
+        { "hour": "48h", "opens": 8, "clicks": 2 }
+      ],
+      "recipients": [
+        { "recipientId": "rec_21", "name": "Kwame Asante", "email": "kwame.asante@example.com", "status": "clicked", "sentAt": "2026-08-10T09:00:00Z", "openedAt": "2026-08-10T09:12:30Z", "clickedAt": "2026-08-10T09:14:02Z", "client": "Gmail Mobile", "device": "iOS Mobile" },
+        { "recipientId": "rec_22", "name": "Alice Chen", "email": "alice.chen@example.com", "status": "clicked", "sentAt": "2026-08-10T09:00:00Z", "openedAt": "2026-08-10T10:05:00Z", "clickedAt": "2026-08-10T10:06:40Z", "client": "Apple Mail", "device": "macOS Desktop" }
+      ],
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>See who's viewing your showcase rooms! 🔍</h2><p>You can now see exact recruiter views, time spent, peak hours, and location breakdowns directly inside your creator portal.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>View Your Insights →</a></div></div>"
     },
     {
       "campaignId": "reengagement-001",
       "campaignName": "Re-engagement Campaign",
+      "subjectLine": "We miss you! Here's what recruiters are searching for this week",
+      "triggerType": "Automated Journey: 14 days inactive",
+      "targetAudience": "Inactive creators who haven't published a room",
       "sentDate": "2026-08-15",
       "sentCount": 310,
+      "deliveredCount": 305,
       "openCount": 68,
-      "openPercentage": 22,
+      "openPercentage": 22.0,
       "clickCount": 21,
-      "clickPercentage": 7,
+      "clickPercentage": 7.0,
+      "ctor": 30.9,
       "bounceCount": 5,
-      "unsubscribeCount": 3
+      "unsubscribeCount": 3,
+      "links": [
+        { "url": "https://talentbridge.io/room/resume", "label": "Finish Publishing Your Room (CTA)", "clicks": 14, "percentage": 66.7 },
+        { "url": "https://talentbridge.io/jobs/trending", "label": "Browse Trending Recruiter Requests", "clicks": 7, "percentage": 33.3 }
+      ],
+      "hourlyEngagement": [
+        { "hour": "0h", "opens": 22, "clicks": 8 },
+        { "hour": "2h", "opens": 18, "clicks": 6 },
+        { "hour": "6h", "opens": 14, "clicks": 4 },
+        { "hour": "12h", "opens": 8, "clicks": 2 },
+        { "hour": "24h", "opens": 4, "clicks": 1 },
+        { "hour": "48h", "opens": 2, "clicks": 0 }
+      ],
+      "recipients": [
+        { "recipientId": "rec_31", "name": "Bob Smith", "email": "bob.smith@example.com", "status": "opened", "sentAt": "2026-08-15T16:00:00Z", "openedAt": "2026-08-15T18:10:00Z", "client": "Outlook Mobile", "device": "Android Mobile" }
+      ],
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Ready to share your talent? 🌟</h2><p>Recruiter searches are up 35% this month. Finish publishing your room so you can start receiving direct inquiries.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Finish Your Room Now →</a></div></div>"
     }
   ],
   "topPerformers": [
-    { "campaignName": "Welcome Email", "clickPercentage": 17 },
-    { "campaignName": "Feature Update — Aug", "clickPercentage": 16 },
-    { "campaignName": "Showcase Tips", "clickPercentage": 14 }
+    { "campaignName": "Welcome Email", "clickPercentage": 17.0 },
+    { "campaignName": "Feature Update — Aug", "clickPercentage": 16.0 },
+    { "campaignName": "Showcase Tips", "clickPercentage": 14.0 }
   ]
 }

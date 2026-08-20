@@ -48,17 +48,51 @@ export interface RetentionDashboardResponse {
   trend: RetentionTrendEntry[];
 }
 
+export interface EmailLinkClick {
+  url: string;
+  label: string;
+  clicks: number;
+  percentage: number;
+}
+
+export interface EmailHourlyEngagement {
+  hour: string;
+  opens: number;
+  clicks: number;
+}
+
+export interface EmailRecipientLog {
+  recipientId: string;
+  name: string;
+  email: string;
+  status: 'opened' | 'clicked' | 'delivered' | 'bounced';
+  sentAt: string;
+  openedAt?: string;
+  clickedAt?: string;
+  client: string;
+  device: string;
+}
+
 export interface EmailCampaign {
   campaignId: string;
   campaignName: string;
+  subjectLine?: string;
+  triggerType?: string;
+  targetAudience?: string;
   sentDate: string;
   sentCount: number;
+  deliveredCount?: number;
   openCount: number;
   openPercentage: number;
   clickCount: number;
   clickPercentage: number;
   bounceCount: number;
   unsubscribeCount: number;
+  ctor?: number;
+  links?: EmailLinkClick[];
+  hourlyEngagement?: EmailHourlyEngagement[];
+  recipients?: EmailRecipientLog[];
+  previewHtml?: string;
 }
 
 export interface EmailDashboardResponse {
