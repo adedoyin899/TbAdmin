@@ -48,15 +48,14 @@ export const RetentionDashboard: React.FC = () => {
       {data && (
         <>
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { label: '7-Day Retention', value: data.retention7d.percentage, change: data.retention7d.change, desc: 'Users returning within 7 days of signup' },
               { label: '30-Day Retention', value: data.retention30d.percentage, change: data.retention30d.change, desc: 'Users returning within 30 days of signup' },
             ].map(stat => (
               <div
                 key={stat.label}
-                className="stat-card animate-slide-up"
-                style={{ padding: '28px 32px' }}
+                className="stat-card animate-slide-up p-5 sm:p-7"
               >
                 <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
                   {stat.label}

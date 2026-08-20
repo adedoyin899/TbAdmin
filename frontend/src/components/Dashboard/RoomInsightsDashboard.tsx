@@ -74,16 +74,16 @@ export const RoomInsightsDashboard: React.FC = () => {
       {data && (
         <>
           {/* Top 6 KPI Metric Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Rooms</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalRooms)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalRooms)}</p>
               <p style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 4 }}>{data.summary.publishedRooms} Published</p>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Views</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalViews.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalViews.count)}</p>
               <span className="badge badge-success" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowUpRight size={10} /> +{data.summary.totalViews.change}%
               </span>
@@ -91,7 +91,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Unique Views</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.uniqueViews.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.uniqueViews.count)}</p>
               <span className="badge badge-error" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowDownRight size={10} /> {data.summary.uniqueViews.change}%
               </span>
@@ -99,7 +99,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Time Spent</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.avgTimeSpent.value}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.avgTimeSpent.value}</p>
               <span className="badge badge-info" style={{ fontSize: 10, marginTop: 4 }}>
                 {data.summary.avgTimeSpent.change}
               </span>
@@ -107,7 +107,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Engagement</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.engagementQuality.percentage}%</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.engagementQuality.percentage}%</p>
               <span className="badge badge-warning" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowUpRight size={10} /> +{data.summary.engagementQuality.change}%
               </span>
@@ -115,7 +115,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Publish Rate</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Sora' }}>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Sora' }}>
                 {Math.round((data.summary.publishedRooms / data.summary.totalRooms) * 100)}%
               </p>
               <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Rooms live</p>
@@ -169,7 +169,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           </div>
 
           {/* Traffic Sources & Devices */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Traffic source */}
             <div className="card" style={{ padding: '20px 24px' }}>
               <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
@@ -231,7 +231,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
           {/* Top Performing Showcase Rooms Table */}
           <div className="table-wrap">
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Trophy size={16} color="var(--accent)" />
                 <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
@@ -241,7 +241,8 @@ export const RoomInsightsDashboard: React.FC = () => {
               <span className="badge badge-neutral" style={{ fontSize: 11 }}>Leaderboard</span>
             </div>
 
-            <table>
+            <div style={{ overflowX: 'auto' }}>
+              <table>
               <thead>
                 <tr>
                   <th>Room Name</th>
@@ -282,6 +283,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Platform Peak Engagement Heatmap */}

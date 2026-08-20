@@ -3,10 +3,9 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  BarChart2,
+  BarChart2, Menu, X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-
 import type { LucideProps } from 'lucide-react';
 
 // Icon map — keeps the sidebar config clean
@@ -25,105 +24,145 @@ const NAV_LINKS = [
   { path: '/dashboard/retention', label: 'Retention',     icon: 'RefreshCcw' },
   { path: '/dashboard/email',     label: 'Email',         icon: 'Mail' },
   { path: '/dashboard/rooms',     label: 'Room Insights', icon: 'Sparkles' },
-  { path: '/lookup',              label: 'User Lookup',   icon: 'Search' },
+  { path: '/lookup',              label: 'User Directory',icon: 'Search' },
 ];
 
 // ── Sidebar ───────────────────────────────────────────────────
 
-export const Sidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = ({
+export const Sidebar: React.FC<{
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+}> = ({
   collapsed,
   onToggle,
+  mobileOpen,
+  onMobileClose,
 }) => (
-  <aside
-    id="sidebar"
-    style={{
-      width: collapsed ? 64 : 240,
-      minHeight: '100%',
-      background: 'var(--panel)',
-      borderRight: '1px solid var(--line)',
-      display: 'flex',
-      flexDirection: 'column',
-      transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1)',
-      flexShrink: 0,
-      overflow: 'hidden',
-    }}
-  >
-    {/* Logo */}
-    <div
+  <>
+    {/* Mobile Backdrop */}
+    {mobileOpen && (
+      <div
+        onClick={onMobileClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 40,
+          backdropFilter: 'blur(2px)',
+        }}
+        className="md:hidden animate-fade-in"
+      />
+    )}
+
+    <aside
+      id="sidebar"
       style={{
-        padding: collapsed ? '18px 0' : '18px 16px',
+        background: 'var(--panel)',
+        borderRight: '1px solid var(--line)',
         display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        borderBottom: '1px solid var(--line)',
-        minHeight: 57,
+        flexDirection: 'column',
+        transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s ease',
+        flexShrink: 0,
+        overflow: 'hidden',
+        zIndex: 50,
       }}
+      className={`
+        fixed inset-y-0 left-0 md:static md:translate-x-0
+        ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+        ${collapsed ? 'w-16' : 'w-60'}
+      `}
     >
+      {/* Logo */}
       <div
         style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: 'var(--ink)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
+          padding: collapsed ? '18px 0' : '18px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          justifyContent: collapsed ? 'center' : 'space-between',
+          borderBottom: '1px solid var(--line)',
+          minHeight: 57,
         }}
       >
-        <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
-      </div>
-      {!collapsed && (
-        <div>
-          <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', marginBottom: 1 }}>
-            TalentBridge
-          </p>
-          <p style={{ fontSize: 11, color: 'var(--faint)', whiteSpace: 'nowrap' }}>Analytics Portal</p>
-        </div>
-      )}
-    </div>
-
-    {/* Nav links */}
-    <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {NAV_LINKS.map(link => {
-        const Icon = ICON_MAP[link.icon];
-        return (
-          <NavLink
-            key={link.path}
-            to={link.path}
-            id={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-            className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-            style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
-            title={collapsed ? link.label : undefined}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'var(--ink)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
           >
-            <Icon size={17} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-            {!collapsed && (
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {link.label}
-              </span>
-            )}
-          </NavLink>
-        );
-      })}
-    </nav>
+            <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
+          </div>
+          {!collapsed && (
+            <div>
+              <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', marginBottom: 1 }}>
+                TalentBridge
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--faint)', whiteSpace: 'nowrap' }}>Admin Portal</p>
+            </div>
+          )}
+        </div>
 
-    {/* Collapse toggle */}
-    <button
-      onClick={onToggle}
-      className="btn-icon"
-      style={{
-        margin: '12px auto',
-        border: 'none',
-        background: 'var(--panel-2)',
-        color: 'var(--dim)',
-      }}
-      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-    >
-      {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-    </button>
-  </aside>
+        {/* Close button on mobile */}
+        <button
+          onClick={onMobileClose}
+          className="btn-icon md:hidden"
+          style={{ width: 28, height: 28, border: 'none' }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Nav links */}
+      <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
+        {NAV_LINKS.map(link => {
+          const Icon = ICON_MAP[link.icon];
+          return (
+            <NavLink
+              key={link.path}
+              to={link.path}
+              id={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+              onClick={() => onMobileClose()}
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
+              title={collapsed ? link.label : undefined}
+            >
+              <Icon size={17} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+              {!collapsed && (
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {link.label}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Desktop Collapse toggle */}
+      <button
+        onClick={onToggle}
+        className="btn-icon hidden md:grid"
+        style={{
+          margin: '12px auto',
+          border: 'none',
+          background: 'var(--panel-2)',
+          color: 'var(--dim)',
+        }}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+      </button>
+    </aside>
+  </>
 );
 
 // ── Header ────────────────────────────────────────────────────
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ onMobileMenuClick: () => void }> = ({ onMobileMenuClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(
@@ -143,7 +182,7 @@ export const Header: React.FC = () => {
   };
 
   const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long',
+    weekday: 'short', day: 'numeric', month: 'short',
   });
 
   return (
@@ -152,16 +191,30 @@ export const Header: React.FC = () => {
       style={{
         background: 'var(--panel)',
         borderBottom: '1px solid var(--line)',
-        padding: '0 24px',
         height: 57,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
-        gap: 16,
+        gap: 12,
       }}
+      className="px-3 sm:px-6"
     >
-      <span style={{ color: 'var(--faint)', fontSize: 13 }}>{today}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Mobile menu trigger */}
+        <button
+          onClick={onMobileMenuClick}
+          className="btn-icon md:hidden"
+          title="Open menu"
+          id="mobile-menu-btn"
+        >
+          <Menu size={16} />
+        </button>
+
+        <span style={{ color: 'var(--faint)', fontSize: 13 }} className="hidden sm:inline">
+          {today}
+        </span>
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Dark mode toggle */}
@@ -177,8 +230,8 @@ export const Header: React.FC = () => {
         {/* User pill */}
         <div
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '5px 12px',
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '5px 10px',
             background: 'var(--panel-2)',
             borderRadius: 'var(--radius-xs)',
             border: '1px solid var(--line)',
@@ -186,31 +239,31 @@ export const Header: React.FC = () => {
         >
           <div
             style={{
-              width: 26, height: 26, borderRadius: '50%',
+              width: 24, height: 24, borderRadius: '50%',
               background: 'var(--ink)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <span style={{ color: '#2DD4BF', fontSize: 11, fontWeight: 700 }}>
+            <span style={{ color: '#2DD4BF', fontSize: 10, fontWeight: 700 }}>
               {user?.email?.[0]?.toUpperCase() ?? 'U'}
             </span>
           </div>
-          <span style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-2)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="hidden sm:inline">
             {user?.email}
           </span>
-          <span className="badge badge-neutral" style={{ fontSize: 11 }}>{user?.role}</span>
+          <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 6px' }}>{user?.role}</span>
         </div>
 
         {/* Logout */}
         <button
           id="logout-btn"
           className="btn btn-ghost"
-          style={{ padding: '6px 12px', fontSize: 13, gap: 6 }}
+          style={{ padding: '6px 10px', fontSize: 12, gap: 5 }}
           onClick={handleLogout}
         >
-          <LogOut size={14} strokeWidth={1.8} />
-          Sign out
+          <LogOut size={13} strokeWidth={1.8} />
+          <span className="hidden sm:inline">Sign out</span>
         </button>
       </div>
     </header>
@@ -221,17 +274,24 @@ export const Header: React.FC = () => {
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Header />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(c => !c)}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+        <Header onMobileMenuClick={() => setMobileOpen(true)} />
         <main
           id="main-content"
-          style={{ flex: 1, overflow: 'auto', padding: '24px 28px' }}
+          style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}
+          className="p-3 sm:p-5 md:p-6 lg:p-7"
         >
-          <div className="animate-fade-in" style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="animate-fade-in w-full" style={{ maxWidth: 1240, margin: '0 auto' }}>
             {children}
           </div>
         </main>

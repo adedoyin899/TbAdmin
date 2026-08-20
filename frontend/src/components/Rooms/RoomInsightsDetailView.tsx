@@ -103,7 +103,7 @@ export const RoomInsightsDetailView: React.FC<{
       </div>
 
       {/* ── 4 Top KPI Metric Cards ────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Total views */}
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -204,7 +204,7 @@ export const RoomInsightsDetailView: React.FC<{
       </div>
 
       {/* ── Traffic Source & Devices ─────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Traffic source */}
         <div className="card" style={{ padding: '20px 24px' }}>
           <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
@@ -342,7 +342,8 @@ export const RoomInsightsDetailView: React.FC<{
           </div>
         </div>
 
-        <table>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
           <thead>
             <tr>
               <th>Viewer</th>
@@ -404,6 +405,7 @@ export const RoomInsightsDetailView: React.FC<{
             )}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination */}
         <div style={{
@@ -548,7 +550,7 @@ export const RoomInsightsDetailView: React.FC<{
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-center">
           {/* Stylized world graphic container */}
           <div style={{
             height: 220,

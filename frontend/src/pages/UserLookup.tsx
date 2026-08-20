@@ -4,11 +4,14 @@ import {
   Search, ArrowLeft, ExternalLink, Clock, Mail, Globe,
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
   Share2, RefreshCcw, Palette, Repeat, User as UserIcon,
-  Zap, ChevronDown, ChevronUp, Sparkles,
+  Zap, ChevronDown, ChevronUp, Sparkles, Filter,
+  ArrowRight, Users,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
 import { formatDate, formatDateTime } from '../utils/formatters';
-import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
+import type { User, UserProfile, UserEvent, EmailEngagement, RoomInsight } from '../types';
+import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
+import MOCK_ROOMS from '../api/mockData/rooms.json';
 
 // ── Event icon map ────────────────────────────────────────────
 
@@ -40,8 +43,6 @@ function formatEventLabel(name: string): string {
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ── User Search ───────────────────────────────────────────────
-
 const COUNTRY_FLAG: Record<string, string> = {
   GB: '🇬🇧', US: '🇺🇸', IT: '🇮🇹', GH: '🇬🇭', IN: '🇮🇳', IE: '🇮🇪',
 };
@@ -53,151 +54,7 @@ const SOURCE_BADGE_CLASS: Record<string, string> = {
   paid_ad: 'badge-error',
 };
 
-const UserSearch: React.FC<{ onSelect: (userId: string) => void }> = ({ onSelect }) => {
-  const [query, setQuery] = useState('');
-  const [submitted, setSubmitted] = useState('');
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['users', submitted],
-    queryFn: () => userApi.searchUsers(submitted),
-    enabled: submitted.length > 0,
-  });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) setSubmitted(query.trim());
-  };
-
-  return (
-    <div style={{ maxWidth: 680, margin: '0 auto' }}>
-      {/* Search bar */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <Search
-            size={16}
-            style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)', pointerEvents: 'none' }}
-          />
-          <input
-            id="user-search-input"
-            type="text"
-            placeholder="Search by email, name, or user ID…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="input"
-            style={{ paddingLeft: 40, fontSize: 15, padding: '11px 14px 11px 40px' }}
-            autoFocus
-          />
-        </div>
-        <button type="submit" className="btn btn-primary" id="user-search-btn" style={{ gap: 6 }}>
-          <Search size={15} strokeWidth={2} />
-          Search
-        </button>
-      </form>
-
-      {/* Hint */}
-      {!submitted && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--dim)' }}>
-          <Search size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-          <p style={{ fontSize: 14 }}>Try searching for a name, email or user ID</p>
-          <p style={{ fontSize: 12, marginTop: 6, color: 'var(--faint)' }}>e.g. "alice", "bob@example.com", "user_321"</p>
-        </div>
-      )}
-
-      {isLoading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-          <div className="spinner" />
-        </div>
-      )}
-
-      {data && data.results.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--dim)' }}>
-          <UserIcon size={32} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-          <p>No users found for "<strong>{submitted}</strong>"</p>
-        </div>
-      )}
-
-      {data && data.results.length > 0 && (
-        <div className="animate-fade-in">
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
-            <strong style={{ color: 'var(--accent)' }}>{data.results.length}</strong> result{data.results.length !== 1 ? 's' : ''} found
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(data.results as User[]).map(user => (
-              <button
-                key={user.userId}
-                id={`user-result-${user.userId}`}
-                onClick={() => onSelect(user.userId)}
-                style={{
-                  background: 'var(--panel)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '14px 18px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s cubic-bezier(0.16,1,0.3,1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  width: '100%',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--accent)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--line)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                {/* Avatar + name */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    background: 'var(--ink)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, border: '2px solid var(--line)',
-                  }}>
-                    <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 14, fontFamily: 'Sora, sans-serif' }}>
-                      {user.firstName[0]}{user.lastName[0]}
-                    </span>
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 3, fontSize: 14 }}>
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Mail size={12} color="var(--dim)" />
-                      <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{user.email}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Meta */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: 18 }} title={user.country}>
-                    {COUNTRY_FLAG[(user as User & { countryCode?: string }).countryCode ?? ''] ?? '🌍'}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Clock size={12} color="var(--dim)" />
-                    <span style={{ fontSize: 12, color: 'var(--faint)' }}>{formatDate(user.signupDate)}</span>
-                  </div>
-                  <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`} style={{ fontSize: 11 }}>
-                    {user.signupSource}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── User Profile ──────────────────────────────────────────────
+// ── Event Timeline Sub-component ──────────────────────────────
 
 const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
   const [expanded, setExpanded] = useState(false);
@@ -222,7 +79,6 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--panel-2)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              {/* Timeline dot */}
               <div style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: `color-mix(in srgb, ${color} 14%, transparent)`,
@@ -233,7 +89,7 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
                 {EVENT_ICON[event.eventName] ?? <Zap size={14} color={color} strokeWidth={2} />}
               </div>
 
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 3, fontSize: 14 }}>
                   {formatEventLabel(event.eventName)}
                 </p>
@@ -277,10 +133,10 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
   );
 };
 
-import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
+// ── Granular User Profile View ────────────────────────────────
 
-const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ userId, onBack }) => {
-  const [activeTab, setActiveTab] = useState<'timeline' | 'rooms'>('timeline');
+const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ userId, onBack }) => {
+  const [activeTab, setActiveTab] = useState<'rooms' | 'timeline'>('rooms');
   const [selectedRoomIdx, setSelectedRoomIdx] = useState(0);
 
   const { data, isLoading } = useQuery<UserProfile>({
@@ -302,39 +158,49 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Back */}
-      <button onClick={onBack} className="btn btn-ghost" style={{ width: 'fit-content', gap: 6 }} id="user-back-btn">
-        <ArrowLeft size={15} strokeWidth={1.8} />
-        Back to search
-      </button>
+      {/* Back button */}
+      <div>
+        <button
+          onClick={onBack}
+          className="btn btn-ghost"
+          style={{ width: 'fit-content', gap: 6, padding: '8px 14px' }}
+          id="user-back-btn"
+        >
+          <ArrowLeft size={15} strokeWidth={2} />
+          Back to User Directory & Insights
+        </button>
+      </div>
 
-      {/* User hero card */}
+      {/* User Hero Card */}
       <div style={{
         background: 'var(--panel)', border: '1px solid var(--line)',
-        borderRadius: 'var(--radius)', padding: '24px 28px', boxShadow: 'var(--shadow-sm)',
+        borderRadius: 'var(--radius)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           {/* Avatar + name + email */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{
-              width: 56, height: 56, borderRadius: '50%', background: 'var(--ink)',
+              width: 52, height: 52, borderRadius: '50%', background: 'var(--ink)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '3px solid var(--line)', flexShrink: 0,
+              border: '2.5px solid var(--line)', flexShrink: 0,
             }}>
-              <span style={{ color: '#2DD4BF', fontWeight: 800, fontSize: 20, fontFamily: 'Sora, sans-serif' }}>
+              <span style={{ color: '#2DD4BF', fontWeight: 800, fontSize: 18, fontFamily: 'Sora, sans-serif' }}>
                 {user.firstName[0]}{user.lastName[0]}
               </span>
             </div>
             <div>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 5 }}>
-                {user.firstName} {user.lastName}
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Mail size={13} color="var(--text-2)" />
-                <span style={{ fontSize: 14, color: 'var(--text-2)' }}>{user.email}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>
+                  {user.firstName} {user.lastName}
+                </h3>
                 <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`} style={{ fontSize: 11 }}>
                   {user.signupSource}
                 </span>
+                <span className="badge badge-neutral" style={{ fontSize: 11 }}>Plan: {user.planTier}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Mail size={13} color="var(--text-2)" />
+                <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{user.email}</span>
               </div>
             </div>
           </div>
@@ -346,7 +212,7 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
             rel="noopener noreferrer"
             className="btn btn-dark"
             id="posthog-replay-link"
-            style={{ gap: 7 }}
+            style={{ gap: 7, fontSize: 13 }}
           >
             <ExternalLink size={14} strokeWidth={2} />
             View Session Replay
@@ -354,19 +220,19 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
         </div>
 
         {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'User ID', value: user.userId, icon: <UserIcon size={13} color="var(--dim)" />, mono: true },
-            { label: 'Country', value: `${COUNTRY_FLAG[extUser.countryCode ?? ''] ?? '🌍'} ${user.country}`, icon: <Globe size={13} color="var(--dim)" /> },
-            { label: 'Signed Up', value: formatDate(user.signupDate), icon: <Clock size={13} color="var(--dim)" /> },
-            { label: 'Last Active', value: formatDate(user.lastActive), icon: <Clock size={13} color="var(--dim)" /> },
-            { label: 'Rooms Created', value: String(extUser.roomsCreated ?? '—'), icon: <Home size={13} color="var(--dim)" /> },
-            { label: 'Rooms Published', value: String(extUser.roomsPublished ?? '—'), icon: <Megaphone size={13} color="var(--dim)" /> },
+            { label: 'User ID', value: user.userId, icon: <UserIcon size={12} color="var(--dim)" />, mono: true },
+            { label: 'Country', value: `${COUNTRY_FLAG[extUser.countryCode ?? ''] ?? '🌍'} ${user.country}`, icon: <Globe size={12} color="var(--dim)" /> },
+            { label: 'Signed Up', value: formatDate(user.signupDate), icon: <Clock size={12} color="var(--dim)" /> },
+            { label: 'Last Active', value: formatDate(user.lastActive), icon: <Clock size={12} color="var(--dim)" /> },
+            { label: 'Rooms Created', value: String(extUser.roomsCreated ?? '—'), icon: <Home size={12} color="var(--dim)" /> },
+            { label: 'Rooms Published', value: String(extUser.roomsPublished ?? '—'), icon: <Megaphone size={12} color="var(--dim)" /> },
           ].map(field => (
-            <div key={field.label} style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+            <div key={field.label} style={{ padding: '10px 12px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                 {field.icon}
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   {field.label}
                 </p>
               </div>
@@ -375,6 +241,9 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
                 fontWeight: 600,
                 fontFamily: field.mono ? 'JetBrains Mono, monospace' : undefined,
                 fontSize: field.mono ? 11 : 13,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}>
                 {field.value}
               </p>
@@ -384,24 +253,7 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
       </div>
 
       {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
-        <button
-          onClick={() => setActiveTab('timeline')}
-          className="btn"
-          style={{
-            background: activeTab === 'timeline' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'timeline' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'timeline' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
-        >
-          <Clock size={14} />
-          Activity & Timeline
-          <span className="badge badge-neutral" style={{ fontSize: 10 }}>{events.length}</span>
-        </button>
-
+      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 8, overflowX: 'auto' }}>
         <button
           onClick={() => setActiveTab('rooms')}
           className="btn"
@@ -418,12 +270,69 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
           Showcase Rooms & Insights
           <span className="badge badge-success" style={{ fontSize: 10 }}>{roomInsights.length} rooms</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className="btn"
+          style={{
+            background: activeTab === 'timeline' ? 'var(--ink)' : 'transparent',
+            color: activeTab === 'timeline' ? '#FFFFFF' : 'var(--text-2)',
+            border: activeTab === 'timeline' ? 'none' : '1px solid var(--line)',
+            fontSize: 13,
+            padding: '8px 16px',
+            gap: 6,
+          }}
+        >
+          <Clock size={14} />
+          Activity & Timeline
+          <span className="badge badge-neutral" style={{ fontSize: 10 }}>{events.length}</span>
+        </button>
       </div>
 
       {/* ── Tab Content ──────────────────────────────────────── */}
-      {activeTab === 'timeline' ? (
+      {activeTab === 'rooms' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {roomInsights.length === 0 ? (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
+              <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
+              <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
+              <p style={{ fontSize: 13 }}>This user has not initialized any showcase rooms in their TalentBridge account.</p>
+            </div>
+          ) : (
+            <>
+              {/* Room selector if user has multiple rooms */}
+              {roomInsights.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {roomInsights.map((r, idx) => (
+                      <button
+                        key={r.roomId}
+                        onClick={() => setSelectedRoomIdx(idx)}
+                        className="btn"
+                        style={{
+                          background: selectedRoomIdx === idx ? 'var(--ink)' : 'var(--panel-2)',
+                          color: selectedRoomIdx === idx ? '#2DD4BF' : 'var(--text-2)',
+                          border: '1px solid var(--line)',
+                          padding: '6px 12px',
+                          fontSize: 12,
+                        }}
+                      >
+                        {r.roomName} {r.isPublished ? '●' : '○'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Full Room Insights detail view for the chosen room */}
+              {currentRoom && <RoomInsightsDetailView room={currentRoom} />}
+            </>
+          )}
+        </div>
+      ) : (
         /* Timeline + Email side by side */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="lg:grid-cols-[1fr_360px]">
           {/* Event timeline */}
           <div style={{
             background: 'var(--panel)', border: '1px solid var(--line)',
@@ -496,71 +405,235 @@ const UserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ use
             </div>
           </div>
         </div>
-      ) : (
-        /* Showcase Rooms View */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {roomInsights.length === 0 ? (
-            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
-              <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-              <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
-              <p style={{ fontSize: 13 }}>This user has not initialized any showcase rooms in their TalentBridge account.</p>
-            </div>
-          ) : (
-            <>
-              {/* Room selector if multiple */}
-              {roomInsights.length > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)' }}>
-                  <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {roomInsights.map((r, idx) => (
-                      <button
-                        key={r.roomId}
-                        onClick={() => setSelectedRoomIdx(idx)}
-                        className="btn"
-                        style={{
-                          background: selectedRoomIdx === idx ? 'var(--ink)' : 'var(--panel-2)',
-                          color: selectedRoomIdx === idx ? '#2DD4BF' : 'var(--text-2)',
-                          border: '1px solid var(--line)',
-                          padding: '6px 12px',
-                          fontSize: 12,
-                        }}
-                      >
-                        {r.roomName} {r.isPublished ? '●' : '○'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Full Room Insights detail view for the chosen room */}
-              {currentRoom && <RoomInsightsDetailView room={currentRoom} />}
-            </>
-          )}
-        </div>
       )}
     </div>
   );
 };
 
-// ── Page ─────────────────────────────────────────────────────
+// ── Main User Lookup Page ─────────────────────────────────────
 
 export const UserLookupPage: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('all');
+
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['allUsers', searchQuery],
+    queryFn: () => userApi.searchUsers(searchQuery),
+  });
+
+  // Highlight room data for the main overview (from design)
+  const defaultRoomInsight = (MOCK_ROOMS.roomsByUser as Record<string, RoomInsight[]>)['user_123abc'][0];
+
+  const filteredUsers = (usersData?.results as User[] | undefined)?.filter(u => {
+    return sourceFilter === 'all' || u.signupSource === sourceFilter;
+  }) || [];
+
+  if (selectedUserId) {
+    return (
+      <GranularUserProfileView
+        userId={selectedUserId}
+        onBack={() => setSelectedUserId(null)}
+      />
+    );
+  }
 
   return (
-    <div>
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-          User Lookup
-        </h2>
-        <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-          Search any user by email, name, or user ID to see their full journey
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }} className="animate-fade-in">
+      {/* Page Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+              User Directory & Showcase Insights
+            </h2>
+            <span className="badge badge-success" style={{ gap: 4 }}>
+              <Users size={11} /> Directory Overview
+            </span>
+          </div>
+          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
+            Monitor high-level showcase viewer analytics and inspect granular details for any registered creator
+          </p>
+        </div>
       </div>
 
-      {selectedUserId
-        ? <UserProfileView userId={selectedUserId} onBack={() => setSelectedUserId(null)} />
-        : <UserSearch onSelect={setSelectedUserId} />}
+      {/* ── Section 1: Top Showcase Insights Overview (from design) ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+            Featured Room Insights Overview
+          </h3>
+          <span style={{ fontSize: 12, color: 'var(--faint)' }}>Sample active room analytics benchmark</span>
+        </div>
+
+        {defaultRoomInsight && <RoomInsightsDetailView room={defaultRoomInsight} />}
+      </div>
+
+      {/* ── Section 2: User Directory & List ──────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 10 }}>
+        <div>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            All Registered Users
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
+            Click on any user row to drill down into their complete granular event history, email stats, and showcase rooms
+          </p>
+        </div>
+
+        {/* Filter controls */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 360 }}>
+            <Search
+              size={15}
+              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)', pointerEvents: 'none' }}
+            />
+            <input
+              id="user-search-input"
+              type="text"
+              placeholder="Search by name, email, or user ID…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input"
+              style={{ paddingLeft: 36, fontSize: 13 }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Filter size={14} color="var(--dim)" />
+            <select
+              className="input"
+              style={{ width: 160 }}
+              value={sourceFilter}
+              onChange={e => setSourceFilter(e.target.value)}
+            >
+              <option value="all">All Sources</option>
+              <option value="organic">Organic</option>
+              <option value="email">Email</option>
+              <option value="referral">Referral</option>
+              <option value="paid_ad">Paid Ad</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <div className="table-wrap">
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>
+              Creator Directory
+            </span>
+            <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+              {filteredUsers.length} creators
+            </span>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Creator</th>
+                  <th>Country</th>
+                  <th>Signup Source</th>
+                  <th>Showcase Rooms</th>
+                  <th>Activity</th>
+                  <th>Joined Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersLoading ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>
+                      <div className="spinner" style={{ margin: '0 auto' }} />
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
+                      No creators match your search.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(user => {
+                    const ext = user as User & { countryCode?: string; roomsCreated?: number; roomsPublished?: number; totalEvents?: number };
+                    return (
+                      <tr
+                        key={user.userId}
+                        onClick={() => setSelectedUserId(user.userId)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to view granular details"
+                      >
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 34, height: 34, borderRadius: '50%', background: 'var(--ink)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                            }}>
+                              <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 12, fontFamily: 'Sora, sans-serif' }}>
+                                {user.firstName[0]}{user.lastName[0]}
+                              </span>
+                            </div>
+                            <div>
+                              <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14, marginBottom: 2 }}>
+                                {user.firstName} {user.lastName}
+                              </p>
+                              <p style={{ fontSize: 12, color: 'var(--text-2)' }}>{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 16 }}>{COUNTRY_FLAG[ext.countryCode ?? ''] ?? '🌍'}</span>
+                            <span style={{ fontSize: 13, color: 'var(--text)' }}>{user.country}</span>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`}>
+                            {user.signupSource}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{ext.roomsCreated ?? 0}</span>
+                            <span style={{ fontSize: 12, color: 'var(--faint)' }}>
+                              ({ext.roomsPublished ?? 0} published)
+                            </span>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="badge badge-neutral" style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>
+                            {ext.totalEvents ?? 0} events
+                          </span>
+                        </td>
+
+                        <td style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                          {formatDate(user.signupDate)}
+                        </td>
+
+                        <td>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedUserId(user.userId);
+                            }}
+                            className="btn btn-ghost"
+                            style={{ padding: '5px 10px', fontSize: 12, gap: 5, color: 'var(--accent2)' }}
+                          >
+                            Granular Details <ArrowRight size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

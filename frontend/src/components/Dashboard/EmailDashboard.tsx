@@ -57,7 +57,7 @@ export const EmailDashboard: React.FC = () => {
       {data && (
         <>
           {/* Summary cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: CHART_COLORS.primary, icon: <Inbox size={16} color={CHART_COLORS.primary} /> },
               { label: 'Avg Open Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.openPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.info, icon: <Mail size={16} color={CHART_COLORS.info} /> },
@@ -98,25 +98,24 @@ export const EmailDashboard: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Top performers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
-            {/* Campaigns table */}
-            <div className="table-wrap" style={{ gridColumn: '1 / -1' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                  All Campaigns
-                </h3>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {data.topPerformers.slice(0, 1).map(p => (
-                    <div key={p.campaignName} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Top performer:</span>
-                      <span className="badge badge-success" style={{ gap: 4 }}>
-                        <Trophy size={13} /> {p.campaignName} ({p.clickPercentage}% click)
-                      </span>
-                    </div>
-                  ))}
-                </div>
+          {/* Top performers & Table */}
+          <div className="table-wrap">
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                All Campaigns
+              </h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {data.topPerformers.slice(0, 1).map(p => (
+                  <div key={p.campaignName} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Top performer:</span>
+                    <span className="badge badge-success" style={{ gap: 4 }}>
+                      <Trophy size={13} /> {p.campaignName} ({p.clickPercentage}% click)
+                    </span>
+                  </div>
+                ))}
               </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
               <table>
                 <thead>
                   <tr>

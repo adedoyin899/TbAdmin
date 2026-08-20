@@ -85,15 +85,15 @@ export const FunnelDashboard: React.FC = () => {
 
       {/* Stat cards */}
       {isLoading ? (
-        <div style={{ display: 'flex', gap: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="stat-card" style={{ flex: 1, height: 80, background: 'var(--panel-2)', animation: 'pulse 1.5s infinite' }} />
+            <div key={i} className="stat-card" style={{ height: 80, background: 'var(--panel-2)', animation: 'pulse 1.5s infinite' }} />
           ))}
         </div>
       ) : error ? (
         <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>
       ) : data && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {data.funnel.map((stage, i) => (
             <div key={stage.stage} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
               <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -129,7 +129,7 @@ export const FunnelDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.4)" vertical={false} />
               <XAxis
                 dataKey="stage"
-                tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'DM Sans' }}
+                tick={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Sans' }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -163,7 +163,8 @@ export const FunnelDashboard: React.FC = () => {
               Stage Breakdown
             </h3>
           </div>
-          <table>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
             <thead>
               <tr>
                 <th>Stage</th>
@@ -201,6 +202,7 @@ export const FunnelDashboard: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
           <div style={{ padding: '10px 20px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 12, color: 'var(--faint)' }}>
               Cached at {data.cachedAt ? new Date(data.cachedAt).toLocaleTimeString('en-GB') : '—'}

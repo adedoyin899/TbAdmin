@@ -52,7 +52,7 @@ export const FeatureDashboard: React.FC = () => {
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
 
       {data && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gap: 20, alignItems: 'start' }} className="grid-cols-1 lg:grid-cols-[1fr_340px]">
           {/* Block adoption chart */}
           <div className="chart-container">
             <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
@@ -137,7 +137,8 @@ export const FeatureDashboard: React.FC = () => {
               Block Adoption Detail
             </h3>
           </div>
-          <table>
+          <div style={{ overflowX: 'auto' }}>
+            <table>
             <thead>
               <tr>
                 <th>#</th>
@@ -164,6 +165,7 @@ export const FeatureDashboard: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
