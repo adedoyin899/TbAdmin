@@ -1,15 +1,337 @@
 {
+  "totalRoomsCreated": 1080,
   "blockAdoption": [
-    { "blockType": "Experience", "count": 940, "percentage": 87 },
-    { "blockType": "Skills", "count": 884, "percentage": 82 },
-    { "blockType": "Projects", "count": 809, "percentage": 75 },
-    { "blockType": "Achievements", "count": 561, "percentage": 52 },
-    { "blockType": "Certification", "count": 442, "percentage": 41 },
-    { "blockType": "Education", "count": 398, "percentage": 37 },
-    { "blockType": "Contact", "count": 367, "percentage": 34 },
-    { "blockType": "Testimonials", "count": 280, "percentage": 26 },
-    { "blockType": "Gallery", "count": 204, "percentage": 19 },
-    { "blockType": "Links", "count": 162, "percentage": 15 }
+    {
+      "blockType": "Video intro",
+      "category": "Tell your story",
+      "description": "Embedded interactive 60-second video elevator pitch introducing creator directly to hiring managers.",
+      "count": 940,
+      "percentage": 87,
+      "growth": "+14.8% MoM",
+      "recruiterClickRate": "88% engagement",
+      "dwellTimeBoost": "+62% dwell time"
+    },
+    {
+      "blockType": "Skill tags",
+      "category": "Tell your story",
+      "description": "Interactive pill tags showcasing core tools, frameworks, and domain proficiencies with level indicators.",
+      "count": 884,
+      "percentage": 82,
+      "growth": "+9.2% MoM",
+      "recruiterClickRate": "82% engagement",
+      "dwellTimeBoost": "+45% dwell time"
+    },
+    {
+      "blockType": "Metric tile",
+      "category": "Show proof",
+      "description": "High-impact KPI callout tiles with quantified revenue, scale, and performance outcomes.",
+      "count": 809,
+      "percentage": 75,
+      "growth": "+18.4% MoM",
+      "recruiterClickRate": "79% engagement",
+      "dwellTimeBoost": "+54% dwell time"
+    },
+    {
+      "blockType": "Paragraph",
+      "category": "Tell your story",
+      "description": "Rich text narrative context covering professional background, career trajectory, and core ethos.",
+      "count": 745,
+      "percentage": 69,
+      "growth": "+6.1% MoM",
+      "recruiterClickRate": "64% engagement",
+      "dwellTimeBoost": "+38% dwell time"
+    },
+    {
+      "blockType": "Work gallery",
+      "category": "Show work",
+      "description": "Multi-asset visual showcase grid with 3D product previews, interface shots, and design artifacts.",
+      "count": 680,
+      "percentage": 63,
+      "growth": "+12.5% MoM",
+      "recruiterClickRate": "86% engagement",
+      "dwellTimeBoost": "+70% dwell time"
+    },
+    {
+      "blockType": "Profile",
+      "category": "Tell your story",
+      "description": "Core identity block featuring verified avatar, headline, location, and seniority tier.",
+      "count": 637,
+      "percentage": 59,
+      "growth": "+8.0% MoM",
+      "recruiterClickRate": "92% engagement",
+      "dwellTimeBoost": "+40% dwell time"
+    },
+    {
+      "blockType": "Availability",
+      "category": "Make contact",
+      "description": "Real-time calendar status, notice period, and preferred contract/full-time availability toggle.",
+      "count": 594,
+      "percentage": 55,
+      "growth": "+22.1% MoM",
+      "recruiterClickRate": "74% engagement",
+      "dwellTimeBoost": "+35% dwell time"
+    },
+    {
+      "blockType": "Credentials",
+      "category": "Get vouched for",
+      "description": "Cryptographically verifiable certifications, cloud architect credentials, and security badges.",
+      "count": 561,
+      "percentage": 52,
+      "growth": "+15.7% MoM",
+      "recruiterClickRate": "68% engagement",
+      "dwellTimeBoost": "+48% dwell time"
+    },
+    {
+      "blockType": "Case studies",
+      "category": "Show work",
+      "description": "Comprehensive project breakdowns with problem framing, architecture decisions, and ROI delivered.",
+      "count": 508,
+      "percentage": 47,
+      "growth": "+11.3% MoM",
+      "recruiterClickRate": "84% engagement",
+      "dwellTimeBoost": "+76% dwell time"
+    },
+    {
+      "blockType": "Call to action",
+      "category": "Make contact",
+      "description": "Direct recruiter action button for booking screening calls, downloading resume, or sending inquiries.",
+      "count": 475,
+      "percentage": 44,
+      "growth": "+19.0% MoM",
+      "recruiterClickRate": "62% engagement",
+      "dwellTimeBoost": "+28% dwell time"
+    },
+    {
+      "blockType": "Reference",
+      "category": "Get vouched for",
+      "description": "Verified quotes, peer recommendations, and leadership endorsements from former managers.",
+      "count": 442,
+      "percentage": 41,
+      "growth": "+10.4% MoM",
+      "recruiterClickRate": "58% engagement",
+      "dwellTimeBoost": "+44% dwell time"
+    },
+    {
+      "blockType": "Heading",
+      "category": "Tell your story",
+      "description": "Stylized section divider and emphasis banners organizing portfolio chapters cleanly.",
+      "count": 421,
+      "percentage": 39,
+      "growth": "+4.2% MoM",
+      "recruiterClickRate": "48% engagement",
+      "dwellTimeBoost": "+18% dwell time"
+    },
+    {
+      "blockType": "Pipeline/CI-CD",
+      "category": "Show proof",
+      "description": "Interactive deployment architecture flow visualizing staging pipelines, test suites, and uptime SLAs.",
+      "count": 398,
+      "percentage": 37,
+      "growth": "+24.6% MoM",
+      "recruiterClickRate": "72% engagement",
+      "dwellTimeBoost": "+58% dwell time"
+    },
+    {
+      "blockType": "Skill bars",
+      "category": "Show proof",
+      "description": "Visual mastery indicators illustrating proficiency depth and years in production across core languages.",
+      "count": 367,
+      "percentage": 34,
+      "growth": "+5.8% MoM",
+      "recruiterClickRate": "56% engagement",
+      "dwellTimeBoost": "+32% dwell time"
+    },
+    {
+      "blockType": "Document carousel",
+      "category": "Show work",
+      "description": "Multi-page interactive document reader for whitepapers, design tokens, and technical architecture specs.",
+      "count": 324,
+      "percentage": 30,
+      "growth": "+16.3% MoM",
+      "recruiterClickRate": "66% engagement",
+      "dwellTimeBoost": "+52% dwell time"
+    },
+    {
+      "blockType": "Before/after",
+      "category": "Show proof",
+      "description": "Side-by-side interactive comparison slider displaying refactors, system optimizations, and UI redesigns.",
+      "count": 292,
+      "percentage": 27,
+      "growth": "+21.0% MoM",
+      "recruiterClickRate": "77% engagement",
+      "dwellTimeBoost": "+65% dwell time"
+    },
+    {
+      "blockType": "Flow diagram",
+      "category": "Show work",
+      "description": "Embedded interactive flowchart highlighting distributed topologies, user journeys, or API lifecycles.",
+      "count": 270,
+      "percentage": 25,
+      "growth": "+13.9% MoM",
+      "recruiterClickRate": "69% engagement",
+      "dwellTimeBoost": "+56% dwell time"
+    },
+    {
+      "blockType": "Pull quote",
+      "category": "Tell your story",
+      "description": "Standout highlighted quote spotlighting candidate philosophy, leadership principle, or thesis statement.",
+      "count": 248,
+      "percentage": 23,
+      "growth": "+7.5% MoM",
+      "recruiterClickRate": "46% engagement",
+      "dwellTimeBoost": "+24% dwell time"
+    },
+    {
+      "blockType": "Coverage matrix",
+      "category": "Show proof",
+      "description": "Comprehensive capability grid detailing test coverage, compliance standards, or domain expertise.",
+      "count": 227,
+      "percentage": 21,
+      "growth": "+17.2% MoM",
+      "recruiterClickRate": "63% engagement",
+      "dwellTimeBoost": "+50% dwell time"
+    },
+    {
+      "blockType": "Pricing tiers",
+      "category": "Get vouched for",
+      "description": "Transparent consulting packages, fractional leadership rates, and sprint engagement deliverables.",
+      "count": 194,
+      "percentage": 18,
+      "growth": "+28.3% MoM",
+      "recruiterClickRate": "65% engagement",
+      "dwellTimeBoost": "+42% dwell time"
+    },
+    {
+      "blockType": "Statement callout",
+      "category": "Show proof",
+      "description": "High-contrast card summarizing key business value delivered and executive summary notes.",
+      "count": 184,
+      "percentage": 17,
+      "growth": "+9.8% MoM",
+      "recruiterClickRate": "51% engagement",
+      "dwellTimeBoost": "+30% dwell time"
+    },
+    {
+      "blockType": "Clause brief",
+      "category": "Show work",
+      "description": "Specialized legal and compliance memo summaries covering contract frameworks and regulatory policy.",
+      "count": 151,
+      "percentage": 14,
+      "growth": "+15.0% MoM",
+      "recruiterClickRate": "44% engagement",
+      "dwellTimeBoost": "+36% dwell time"
+    },
+    {
+      "blockType": "Retro columns",
+      "category": "Show work",
+      "description": "Agile team retrospective boards documenting what went well, lessons learned, and continuous improvement.",
+      "count": 130,
+      "percentage": 12,
+      "growth": "+18.9% MoM",
+      "recruiterClickRate": "53% engagement",
+      "dwellTimeBoost": "+41% dwell time"
+    }
+  ],
+  "templateAdoption": [
+    {
+      "templateName": "Software Eng / Architect",
+      "category": "Tech & Engineering",
+      "description": "Architecture, pipelines, uptime — optimized for senior backend, distributed systems, and DevOps engineers.",
+      "count": 388,
+      "percentage": 36,
+      "growth": "+19.4% MoM",
+      "includedBlocks": ["Video intro", "Pipeline/CI-CD", "Metric tile", "Skill tags", "Case studies", "Availability"],
+      "recruiterClickRate": "84% recruiter inquiry rate",
+      "dwellTimeBoost": "+68% dwell time"
+    },
+    {
+      "templateName": "Designer",
+      "category": "Design & Creative",
+      "description": "Product, brand, design systems — showcases high-fidelity Figma components, motion reels, and UI case studies.",
+      "count": 324,
+      "percentage": 30,
+      "growth": "+14.2% MoM",
+      "includedBlocks": ["Video intro", "Work gallery", "Before/after", "Case studies", "Skill tags", "Call to action"],
+      "recruiterClickRate": "89% recruiter inquiry rate",
+      "dwellTimeBoost": "+74% dwell time"
+    },
+    {
+      "templateName": "IAM Specialist",
+      "category": "Security & Identity",
+      "description": "Identity, access & control evidence — tailor-made for enterprise security, OAuth/SAML, and RBAC architects.",
+      "count": 270,
+      "percentage": 25,
+      "growth": "+31.0% MoM",
+      "includedBlocks": ["Profile", "Coverage matrix", "Credentials", "Flow diagram", "Metric tile", "Availability"],
+      "recruiterClickRate": "78% recruiter inquiry rate",
+      "dwellTimeBoost": "+59% dwell time"
+    },
+    {
+      "templateName": "Cybersecurity",
+      "category": "Security & Identity",
+      "description": "Incident response, SOC, threat work — highlights SIEM monitoring, threat hunts, and vulnerability triage outcomes.",
+      "count": 238,
+      "percentage": 22,
+      "growth": "+27.5% MoM",
+      "includedBlocks": ["Video intro", "Credentials", "Coverage matrix", "Metric tile", "Statement callout", "Call to action"],
+      "recruiterClickRate": "81% recruiter inquiry rate",
+      "dwellTimeBoost": "+63% dwell time"
+    },
+    {
+      "templateName": "Project Manager",
+      "category": "Product & Delivery",
+      "description": "Delivery outcomes, risk, teams — highlights sprint velocity, stakeholder roadmaps, and budget stewardship.",
+      "count": 205,
+      "percentage": 19,
+      "growth": "+12.1% MoM",
+      "includedBlocks": ["Profile", "Metric tile", "Retro columns", "Reference", "Document carousel", "Availability"],
+      "recruiterClickRate": "71% recruiter inquiry rate",
+      "dwellTimeBoost": "+51% dwell time"
+    },
+    {
+      "templateName": "Data Consultant",
+      "category": "Data & AI",
+      "description": "Analytics, models, experiments — features ML pipeline benchmarks, query throughputs, and dashboard case studies.",
+      "count": 184,
+      "percentage": 17,
+      "growth": "+23.8% MoM",
+      "includedBlocks": ["Video intro", "Metric tile", "Flow diagram", "Case studies", "Skill bars", "Availability"],
+      "recruiterClickRate": "76% recruiter inquiry rate",
+      "dwellTimeBoost": "+60% dwell time"
+    },
+    {
+      "templateName": "Student -> BA / PM",
+      "category": "Early Career & Growth",
+      "description": "Potential, projects, learning — curated for high-velocity grads and career switchers breaking into tech.",
+      "count": 151,
+      "percentage": 14,
+      "growth": "+35.2% MoM",
+      "includedBlocks": ["Video intro", "Paragraph", "Skill tags", "Work gallery", "Credentials", "Call to action"],
+      "recruiterClickRate": "68% recruiter inquiry rate",
+      "dwellTimeBoost": "+46% dwell time"
+    },
+    {
+      "templateName": "Finance / Accountant",
+      "category": "Finance & Legal",
+      "description": "Metrics, regulatory coverage — demonstrates audit trails, financial modeling, and fiscal governance.",
+      "count": 119,
+      "percentage": 11,
+      "growth": "+16.7% MoM",
+      "includedBlocks": ["Profile", "Metric tile", "Coverage matrix", "Credentials", "Reference", "Availability"],
+      "recruiterClickRate": "64% recruiter inquiry rate",
+      "dwellTimeBoost": "+49% dwell time"
+    },
+    {
+      "templateName": "Legal & Compliance",
+      "category": "Finance & Legal",
+      "description": "Matters, regulatory coverage — spotlights data privacy compliance (GDPR, HIPAA), contract policy, and risk briefs.",
+      "count": 97,
+      "percentage": 9,
+      "growth": "+18.0% MoM",
+      "includedBlocks": ["Profile", "Clause brief", "Coverage matrix", "Credentials", "Reference", "Call to action"],
+      "recruiterClickRate": "61% recruiter inquiry rate",
+      "dwellTimeBoost": "+45% dwell time"
+    }
   ],
   "themeDistribution": [
     { "theme": "Dark", "count": 648, "percentage": 60 },

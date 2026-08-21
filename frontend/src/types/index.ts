@@ -21,8 +21,25 @@ export interface FunnelDashboardResponse {
 
 export interface BlockAdoption {
   blockType: string;
+  category?: string;
+  description?: string;
   count: number;
   percentage: number;
+  growth?: string;
+  recruiterClickRate?: string;
+  dwellTimeBoost?: string;
+}
+
+export interface TemplateAdoption {
+  templateName: string;
+  category?: string;
+  description?: string;
+  count: number;
+  percentage: number;
+  growth?: string;
+  includedBlocks?: string[];
+  recruiterClickRate?: string;
+  dwellTimeBoost?: string;
 }
 
 export interface ThemeEntry {
@@ -32,8 +49,13 @@ export interface ThemeEntry {
 }
 
 export interface FeaturesDashboardResponse {
+  totalRoomsCreated?: number;
+  topBlocks?: BlockAdoption[];
   blockAdoption: BlockAdoption[];
+  templateAdoption?: TemplateAdoption[];
   themeDistribution: ThemeEntry[];
+  cachedAt?: string;
+  expiresAt?: string;
 }
 
 export interface RetentionTrendEntry {
