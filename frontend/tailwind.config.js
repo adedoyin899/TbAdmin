@@ -14,9 +14,9 @@ export default {
         info: '#3B82F6',
       },
       fontFamily: {
-        sora: ['Sora', 'system-ui', 'sans-serif'],
-        dm: ['DM Sans', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        geist: ['Geist', 'system-ui', 'sans-serif'],
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['Geist Mono', 'JetBrains Mono', 'monospace'],
       },
       borderRadius: {
         DEFAULT: '16px',

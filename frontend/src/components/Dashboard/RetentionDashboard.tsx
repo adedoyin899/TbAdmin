@@ -40,7 +40,7 @@ export const RetentionDashboard: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+          <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
             Retention
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>How many users come back after signing up?</p>
@@ -115,7 +115,7 @@ export const RetentionDashboard: React.FC = () => {
                   {stat.label}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontSize: 52, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif', lineHeight: 1 }}>
+                  <span style={{ fontSize: 52, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif', lineHeight: 1 }}>
                     {formatPercentage(stat.value)}
                   </span>
                   <span
@@ -145,7 +145,7 @@ export const RetentionDashboard: React.FC = () => {
 
           {/* Trend chart */}
           <div className="chart-container">
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
               Retention Trend (Weekly)
             </h3>
             <ResponsiveContainer width="100%" height={280}>
@@ -153,22 +153,22 @@ export const RetentionDashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.4)" vertical={false} />
                 <XAxis
                   dataKey="week"
-                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'DM Sans' }}
+                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
                   axisLine={false} tickLine={false}
                 />
                 <YAxis
                   tickFormatter={v => `${v}%`}
                   domain={[0, 60]}
-                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'DM Sans' }}
+                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
                   axisLine={false} tickLine={false}
                 />
                 <Tooltip
                   formatter={(v: unknown, name: unknown) => [`${v}%`, name === 'retention7d' ? '7-Day Retention' : '30-Day Retention']}
                   contentStyle={{
                     background: 'var(--panel)', border: '1px solid var(--line)',
-                    borderRadius: 10, fontFamily: 'DM Sans',
+                    borderRadius: 10, fontFamily: 'Geist',
                   }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
                 />
                 <Legend
                   formatter={v => <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{v === 'retention7d' ? '7-Day' : '30-Day'}</span>}

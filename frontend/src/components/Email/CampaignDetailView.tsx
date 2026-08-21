@@ -53,7 +53,7 @@ export const CampaignDetailView: React.FC<{
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 18 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-              <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+              <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
                 {campaign.campaignName}
               </h2>
               <span className="badge badge-success" style={{ gap: 4 }}>
@@ -83,37 +83,37 @@ export const CampaignDetailView: React.FC<{
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Total Sent</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(campaign.sentCount)}</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{formatNumber(campaign.sentCount)}</p>
             <p style={{ fontSize: 10, color: 'var(--accent)', marginTop: 2 }}>{campaign.deliveredCount || campaign.sentCount} delivered</p>
           </div>
 
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Open Rate</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6', fontFamily: 'Sora' }}>{campaign.openPercentage}%</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6', fontFamily: 'Geist' }}>{campaign.openPercentage}%</p>
             <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{formatNumber(campaign.openCount)} opens</p>
           </div>
 
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Click Rate</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#2DD4BF', fontFamily: 'Sora' }}>{campaign.clickPercentage}%</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: '#2DD4BF', fontFamily: 'Geist' }}>{campaign.clickPercentage}%</p>
             <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{formatNumber(campaign.clickCount)} clicks</p>
           </div>
 
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>CTOR</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#10B981', fontFamily: 'Sora' }}>{campaign.ctor || 40.5}%</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: '#10B981', fontFamily: 'Geist' }}>{campaign.ctor || 40.5}%</p>
             <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>Click-to-open ratio</p>
           </div>
 
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Bounces</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: campaign.bounceCount > 0 ? '#EF4444' : 'var(--text)', fontFamily: 'Sora' }}>{campaign.bounceCount}</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: campaign.bounceCount > 0 ? '#EF4444' : 'var(--text)', fontFamily: 'Geist' }}>{campaign.bounceCount}</p>
             <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{((campaign.bounceCount / campaign.sentCount) * 100).toFixed(1)}% rate</p>
           </div>
 
           <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Unsubscribes</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{campaign.unsubscribeCount}</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{campaign.unsubscribeCount}</p>
             <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>Opt-outs</p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export const CampaignDetailView: React.FC<{
             <div className="chart-container">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
                 <div>
-                  <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                  <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                     Hourly Engagement Curve
                   </h3>
                   <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Opens and click interactions after email delivery</p>
@@ -213,7 +213,7 @@ export const CampaignDetailView: React.FC<{
                   <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-                    labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+                    labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
                   />
                   <Area type="monotone" dataKey="opens" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill="url(#emailOpenGrad)" name="Opens" />
                   <Area type="monotone" dataKey="clicks" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#emailClickGrad)" name="Clicks" />
@@ -226,7 +226,7 @@ export const CampaignDetailView: React.FC<{
           <div className="card" style={{ padding: '20px 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                   Links & CTA Performance
                 </h3>
                 <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Which buttons and hyperlinks drove recipient actions</p>
@@ -247,7 +247,7 @@ export const CampaignDetailView: React.FC<{
                       </a>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', fontFamily: 'Sora' }}>{link.clicks} clicks</p>
+                      <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', fontFamily: 'Geist' }}>{link.clicks} clicks</p>
                       <span style={{ fontSize: 11, color: 'var(--faint)' }}>{link.percentage}% of total clicks</span>
                     </div>
                   </div>
@@ -360,7 +360,7 @@ export const CampaignDetailView: React.FC<{
                       </td>
                     </tr>
                   ) : (
-                    filteredRecipients.map(r => (
+                    (filteredRecipients || []).map(r => (
                       <tr key={r.recipientId}>
                         <td>
                           <div>

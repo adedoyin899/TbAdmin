@@ -61,7 +61,7 @@ export const RoomInsightsDashboard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
               Showcase Room Intelligence
             </h2>
             <span className="badge badge-success" style={{ gap: 4 }}>
@@ -121,13 +121,13 @@ export const RoomInsightsDashboard: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Rooms</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalRooms)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{formatNumber(data.summary.totalRooms)}</p>
               <p style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 4 }}>{data.summary.publishedRooms || 0} Published</p>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Views</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalViews?.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{formatNumber(data.summary.totalViews?.count)}</p>
               <span className="badge badge-success" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowUpRight size={10} /> +{data.summary.totalViews?.change || 0}%
               </span>
@@ -135,7 +135,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Unique Views</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.uniqueViews?.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{formatNumber(data.summary.uniqueViews?.count)}</p>
               <span className="badge badge-error" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowDownRight size={10} /> {data.summary.uniqueViews?.change || 0}%
               </span>
@@ -143,7 +143,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Time Spent</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.avgTimeSpent?.value || '—'}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{data.summary.avgTimeSpent?.value || '—'}</p>
               <span className="badge badge-info" style={{ fontSize: 10, marginTop: 4 }}>
                 {data.summary.avgTimeSpent?.change || '—'}
               </span>
@@ -151,7 +151,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Engagement</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.engagementQuality?.percentage || 0}%</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{data.summary.engagementQuality?.percentage || 0}%</p>
               <span className="badge badge-warning" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
                 <ArrowUpRight size={10} /> +{data.summary.engagementQuality?.change || 0}%
               </span>
@@ -159,7 +159,7 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Publish Rate</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Sora' }}>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Geist' }}>
                 {data.summary.totalRooms ? Math.round(((data.summary.publishedRooms || 0) / data.summary.totalRooms) * 100) : 0}%
               </p>
               <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Rooms live</p>
@@ -170,7 +170,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           <div className="chart-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                   Macro Views Trend
                 </h3>
                 <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Platform-wide views trajectory across all published showcase rooms</p>
@@ -204,7 +204,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                 <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
                 />
                 <Area type="monotone" dataKey="totalViews" stroke="#FB923C" strokeWidth={2.5} fillOpacity={1} fill="url(#platformTotalGrad)" name="Total Views (k)" />
                 <Area type="monotone" dataKey="uniqueViews" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#platformUniqueGrad)" name="Unique Views (k)" />
@@ -216,17 +216,17 @@ export const RoomInsightsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Traffic source */}
             <div className="card" style={{ padding: '20px 24px' }}>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                 Global Traffic Sources
               </h3>
               <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>How viewers across all rooms find talent</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.trafficSources.map(s => (
+                {(data.trafficSources || []).map(s => (
                   <div key={s.name}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                       <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.name}</span>
-                      <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{s.count}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{s.count}</span>
                     </div>
                     <div style={{ height: 16, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
                       <div
@@ -245,17 +245,17 @@ export const RoomInsightsDashboard: React.FC = () => {
 
             {/* Devices */}
             <div className="card" style={{ padding: '20px 24px' }}>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                 Global Devices Distribution
               </h3>
               <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Operating systems and devices used by viewers</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {data.devices.map(d => (
+                {(data.devices || []).map(d => (
                   <div key={d.name}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                       <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{d.name}</span>
-                      <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{d.count}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{d.count}</span>
                     </div>
                     <div style={{ height: 16, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
                       <div
@@ -278,7 +278,7 @@ export const RoomInsightsDashboard: React.FC = () => {
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Trophy size={16} color="var(--accent)" />
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                   Top Performing Showcase Rooms
                 </h3>
               </div>
@@ -298,7 +298,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.topPerformingRooms.map(room => (
+                {(data.topPerformingRooms || []).map(room => (
                   <tr key={room.roomId}>
                     <td>
                       <span style={{ fontWeight: 600, color: 'var(--text)' }}>{room.roomName}</span>
@@ -309,8 +309,8 @@ export const RoomInsightsDashboard: React.FC = () => {
                         <p style={{ fontSize: 12, color: 'var(--text-2)' }}>{room.ownerEmail}</p>
                       </div>
                     </td>
-                    <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{formatNumber(room.views)}</td>
-                    <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{formatNumber(room.uniqueViews)}</td>
+                    <td style={{ fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}>{formatNumber(room.views)}</td>
+                    <td style={{ fontFamily: 'Geist Mono, monospace' }}>{formatNumber(room.uniqueViews)}</td>
                     <td>
                       <span className="badge badge-success">{room.engagement}% quality</span>
                     </td>
@@ -334,7 +334,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                   Platform Engagement Heatmap
                 </h3>
                 <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Aggregate view frequency across 24-hour cycles and weekdays</p>
@@ -383,7 +383,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                             justifyContent: 'center',
                             fontSize: 11,
                             fontWeight: 600,
-                            fontFamily: 'JetBrains Mono, monospace',
+                            fontFamily: 'Geist Mono, monospace',
                           }}
                         >
                           {val}

@@ -123,7 +123,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
                   Notifications & Alerts
                 </h3>
                 {unreadCount > 0 && (
@@ -354,7 +354,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
                         background: 'var(--panel-2)',
                         border: '1px solid var(--line)',
                         color: 'var(--dim)',
-                        fontFamily: 'JetBrains Mono, monospace',
+                        fontFamily: 'Geist Mono, monospace',
                       }}
                     >
                       {n.triggerRule}

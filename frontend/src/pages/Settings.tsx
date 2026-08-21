@@ -50,7 +50,7 @@ export const SettingsPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
               Settings & Alert Triggers
             </h2>
             <span className="badge badge-success" style={{ gap: 4 }}>
@@ -99,7 +99,7 @@ export const SettingsPage: React.FC = () => {
               <Flame size={18} />
             </div>
             <div>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                 Anomaly Alert Triggers & Baking Rules
               </h3>
               <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
@@ -130,7 +130,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <span
                   style={{
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontFamily: 'Geist Mono, monospace',
                     fontWeight: 700,
                     fontSize: 13,
                     color: 'var(--accent2)',
@@ -184,7 +184,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <span
                   style={{
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontFamily: 'Geist Mono, monospace',
                     fontWeight: 700,
                     fontSize: 13,
                     color: 'var(--accent2)',
@@ -209,7 +209,7 @@ export const SettingsPage: React.FC = () => {
                   value={formData.emailBounceThreshold}
                   onChange={e => setFormData({ ...formData, emailBounceThreshold: Number(e.target.value) })}
                   className="input"
-                  style={{ width: 100, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}
+                  style={{ width: 100, fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}
                 />
                 <span style={{ fontSize: 12, color: 'var(--dim)' }}>total bounce events per campaign</span>
               </div>
@@ -340,7 +340,7 @@ export const SettingsPage: React.FC = () => {
                 <Mail size={18} />
               </div>
               <div>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                   Signed-in User Email Updates & Digest
                 </h3>
                 <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>

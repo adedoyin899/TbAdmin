@@ -64,7 +64,7 @@ export const RoomInsightsDetailView: React.FC<{
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
               Insights for <span style={{ color: 'var(--accent)' }}>{room.roomName}</span>
             </h2>
             {room.isPublished ? (
@@ -119,7 +119,7 @@ export const RoomInsightsDetailView: React.FC<{
               <ArrowUpRight size={11} /> +{room.totalViews.change}%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             {formatNumber(room.totalViews.count)}
           </p>
         </div>
@@ -132,7 +132,7 @@ export const RoomInsightsDetailView: React.FC<{
               <ArrowDownRight size={11} /> {room.uniqueViews.change}%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             {formatNumber(room.uniqueViews.count)}
           </p>
         </div>
@@ -145,7 +145,7 @@ export const RoomInsightsDetailView: React.FC<{
               {room.avgTimeSpent.change}
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             {room.avgTimeSpent.value}
           </p>
         </div>
@@ -158,7 +158,7 @@ export const RoomInsightsDetailView: React.FC<{
               <ArrowUpRight size={11} /> +{room.engagementQuality.change}%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             {room.engagementQuality.percentage}%
           </p>
         </div>
@@ -168,7 +168,7 @@ export const RoomInsightsDetailView: React.FC<{
       <div className="chart-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               Views Trend
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 12 }}>How your views are growing</p>
@@ -202,7 +202,7 @@ export const RoomInsightsDetailView: React.FC<{
             <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
             />
             <Area type="monotone" dataKey="totalViews" stroke="#FB923C" strokeWidth={2.5} fillOpacity={1} fill="url(#totalViewsGrad)" name="Total Views" />
             <Area type="monotone" dataKey="uniqueViews" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#uniqueViewsGrad)" name="Unique Views" />
@@ -214,17 +214,17 @@ export const RoomInsightsDetailView: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Traffic source */}
         <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             Traffic source
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>How people find your room</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {room.trafficSources.map(s => (
+            {(room.trafficSources || []).map(s => (
               <div key={s.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                   <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.name}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{s.count}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{s.count}</span>
                 </div>
                 <div style={{ height: 18, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <div
@@ -244,17 +244,17 @@ export const RoomInsightsDetailView: React.FC<{
 
         {/* Devices */}
         <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             Devices
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>How your room is being viewed</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {room.devices.map(d => (
+            {(room.devices || []).map(d => (
               <div key={d.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                   <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{d.name}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{d.count}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{d.count}</span>
                 </div>
                 <div style={{ height: 18, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <div
@@ -285,7 +285,7 @@ export const RoomInsightsDetailView: React.FC<{
           gap: 14,
         }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               Who's viewing
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Who's checking out your work</p>
@@ -379,7 +379,7 @@ export const RoomInsightsDetailView: React.FC<{
                         background: v.avatarBg || 'var(--ink)',
                         color: '#2DD4BF',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: 12, fontFamily: 'Sora',
+                        fontWeight: 700, fontSize: 12, fontFamily: 'Geist',
                       }}>
                         {v.name.split(' ').map(n => n[0]).join('')}
                       </div>
@@ -393,8 +393,8 @@ export const RoomInsightsDetailView: React.FC<{
                     </div>
                   </td>
                   <td style={{ color: 'var(--text-2)', fontSize: 13 }}>{v.location}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>{v.timeSpent}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}>{v.views}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace', fontSize: 13 }}>{v.timeSpent}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace', fontSize: 13 }}>{v.views}</td>
                   <td>
                     <span className={`badge ${
                       v.status === 'high_value'
@@ -448,7 +448,7 @@ export const RoomInsightsDetailView: React.FC<{
       <div className="card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               Engagement Heatmap
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 12 }}>See when your room gets the most views throughout the day</p>
@@ -501,7 +501,7 @@ export const RoomInsightsDetailView: React.FC<{
                         justifyContent: 'center',
                         fontSize: 11,
                         fontWeight: 600,
-                        fontFamily: 'JetBrains Mono, monospace',
+                        fontFamily: 'Geist Mono, monospace',
                         transition: 'transform 0.12s',
                         cursor: 'default',
                       }}
@@ -521,7 +521,7 @@ export const RoomInsightsDetailView: React.FC<{
       <div className="card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 20 }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               Traffic by Location
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Where your audience is located</p>
@@ -583,14 +583,14 @@ export const RoomInsightsDetailView: React.FC<{
               Top 6 Countries
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {room.geoTraffic.map(g => (
+              {(room.geoTraffic || []).map(g => (
                 <div key={g.code}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 16 }}>{g.flag}</span>
                       <span style={{ fontWeight: 600, color: 'var(--text)' }}>{g.country}</span>
                     </div>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-2)' }}>
+                    <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: 12, color: 'var(--text-2)' }}>
                       {g.views > 1000 ? `${(g.views / 1000).toFixed(1)}k` : g.views}
                     </span>
                   </div>
@@ -614,14 +614,14 @@ export const RoomInsightsDetailView: React.FC<{
       {/* ── Smart Recommendations ─────────────────────────────── */}
       <div>
         <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             Smart Recommendations
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Personalized suggestions to improve your room's performance</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-          {room.recommendations.map(rec => (
+          {(room.recommendations || []).map(rec => (
             <div
               key={rec.id}
               className="card"
@@ -642,7 +642,7 @@ export const RoomInsightsDetailView: React.FC<{
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                  <h4 style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                  <h4 style={{ fontFamily: 'Geist, sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
                     {rec.title}
                   </h4>
                   <span className={`badge ${

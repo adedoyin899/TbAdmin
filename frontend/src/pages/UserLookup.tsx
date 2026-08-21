@@ -95,7 +95,7 @@ const GeneralUserOverviewSection: React.FC = () => {
       {/* Date filter bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             User Base Overview
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Systemic user growth, account verification, and engagement status</p>
@@ -116,7 +116,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <ArrowUpRight size={11} /> +8.4%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             12,450
           </p>
           <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>+960 registered accounts this month</p>
@@ -129,7 +129,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <UserCheck size={11} /> 71.6%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             8,920
           </p>
           <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Logged in within last 30 days</p>
@@ -142,7 +142,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <CheckCircle2 size={11} /> 86.8%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             10,810
           </p>
           <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Completed email verification</p>
@@ -155,7 +155,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <UserPlus size={11} /> +16%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
             1,247
           </p>
           <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>In selected time horizon</p>
@@ -166,7 +166,7 @@ const GeneralUserOverviewSection: React.FC = () => {
       <div className="chart-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               User Signups Trend
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Monthly growth comparing Total Signups vs Verified Accounts</p>
@@ -200,7 +200,7 @@ const GeneralUserOverviewSection: React.FC = () => {
             <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
             />
             <Area type="monotone" dataKey="totalUsers" stroke="#FB923C" strokeWidth={2.5} fillOpacity={1} fill="url(#userSignupsGrad)" name="Total Signups" />
             <Area type="monotone" dataKey="verifiedUsers" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#userVerifiedGrad)" name="Verified Users" />
@@ -212,7 +212,7 @@ const GeneralUserOverviewSection: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Acquisition Sources */}
         <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             User Acquisition Sources
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Where registered users join TalentBridge from</p>
@@ -222,7 +222,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <div key={s.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
                   <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.name}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>{s.count} users ({s.percentage}%)</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{s.count} users ({s.percentage}%)</span>
                 </div>
                 <div style={{ height: 14, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <div
@@ -241,7 +241,7 @@ const GeneralUserOverviewSection: React.FC = () => {
 
         {/* User Geo Distribution */}
         <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             User Distribution by Country
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Top geographic regions for registered users</p>
@@ -254,7 +254,7 @@ const GeneralUserOverviewSection: React.FC = () => {
                     <span style={{ fontSize: 14 }}>{g.flag}</span>
                     <span style={{ fontWeight: 600, color: 'var(--text)' }}>{g.country}</span>
                   </div>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-2)' }}>
+                  <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11, color: 'var(--text-2)' }}>
                     {formatNumber(g.users)} ({g.percentage}%)
                   </span>
                 </div>
@@ -324,7 +324,7 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {Object.entries(event.properties).map(([k, v]) => (
                       <span key={k} className="badge badge-neutral"
-                        style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>
+                        style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace' }}>
                         {k}: {String(v)}
                       </span>
                     ))}
@@ -407,13 +407,13 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '2.5px solid var(--line)', flexShrink: 0,
             }}>
-              <span style={{ color: '#2DD4BF', fontWeight: 800, fontSize: 18, fontFamily: 'Sora, sans-serif' }}>
+              <span style={{ color: '#2DD4BF', fontWeight: 800, fontSize: 18, fontFamily: 'Geist, sans-serif' }}>
                 {user.firstName[0]}{user.lastName[0]}
               </span>
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>
+                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>
                   {user.firstName} {user.lastName}
                 </h3>
                 <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`} style={{ fontSize: 11 }}>
@@ -462,7 +462,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
               <p style={{
                 color: 'var(--text)',
                 fontWeight: 600,
-                fontFamily: field.mono ? 'JetBrains Mono, monospace' : undefined,
+                fontFamily: field.mono ? 'Geist Mono, monospace' : undefined,
                 fontSize: field.mono ? 11 : 13,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -518,17 +518,17 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           {roomInsights.length === 0 ? (
             <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
               <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-              <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
+              <h4 style={{ fontFamily: 'Geist', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
               <p style={{ fontSize: 13 }}>This user has not created or published any showcase rooms yet.</p>
             </div>
           ) : (
             <>
               {/* Room selector if user has multiple rooms */}
-              {roomInsights.length > 1 && (
+              {(roomInsights || []).length > 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {roomInsights.map((r, idx) => (
+                    {(roomInsights || []).map((r, idx) => (
                       <button
                         key={r.roomId}
                         onClick={() => setSelectedRoomIdx(idx)}
@@ -562,14 +562,14 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
             borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                 Event Timeline
               </h3>
               <span className="badge badge-neutral" style={{ fontSize: 11 }}>
-                {events.length} events
+                {(events || []).length} events
               </span>
             </div>
-            <EventTimeline events={events as UserEvent[]} />
+            <EventTimeline events={(events || []) as UserEvent[]} />
           </div>
 
           {/* Email engagement */}
@@ -579,12 +579,12 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Mail size={15} color="var(--text-2)" />
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                 Email Engagement
               </h3>
             </div>
             <div style={{ padding: '8px 0' }}>
-              {(emailEngagement as EmailEngagement[]).map((e, i) => (
+              {((emailEngagement as EmailEngagement[]) || []).map((e, i) => (
                 <div
                   key={e.campaignName}
                   style={{
@@ -670,7 +670,7 @@ export const UserLookupPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
               User Directory
             </h2>
             <span className="badge badge-success" style={{ gap: 4 }}>
@@ -712,7 +712,7 @@ export const UserLookupPage: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 4 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               Registered Users List
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
@@ -815,7 +815,7 @@ export const UserLookupPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map(user => {
+                  (filteredUsers || []).map(user => {
                     const ext = user as User & { countryCode?: string; totalEvents?: number };
                     return (
                       <tr
@@ -830,7 +830,7 @@ export const UserLookupPage: React.FC = () => {
                               width: 34, height: 34, borderRadius: '50%', background: 'var(--ink)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                             }}>
-                              <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 12, fontFamily: 'Sora, sans-serif' }}>
+                              <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 12, fontFamily: 'Geist, sans-serif' }}>
                                 {user.firstName[0]}{user.lastName[0]}
                               </span>
                             </div>
@@ -863,7 +863,7 @@ export const UserLookupPage: React.FC = () => {
                         </td>
 
                         <td>
-                          <span className="badge badge-neutral" style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>
+                          <span className="badge badge-neutral" style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace' }}>
                             {ext.totalEvents ?? 0} events
                           </span>
                         </td>

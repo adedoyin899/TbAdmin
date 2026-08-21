@@ -23,8 +23,11 @@ export const FeatureDashboard: React.FC = () => {
     queryFn: () => dashboardApi.getFeatures(dateRange.preset) as Promise<FeaturesDashboardResponse>,
   });
 
+  const blockList = data?.blockAdoption || [];
+  const themeList = data?.themeDistribution || [];
+
   const handleExportCsv = () => {
-    if (!data?.blockAdoption?.length) return;
+    if (!blockList.length) return;
     exportToCsv({
       filename: `talentbridge_feature_adoption_${dateRange.preset}`,
       columns: [
@@ -32,18 +35,18 @@ export const FeatureDashboard: React.FC = () => {
         { header: 'User Count', accessor: row => row.count },
         { header: 'Adoption Rate (%)', accessor: row => `${row.percentage}%` },
       ],
-      data: data.blockAdoption,
+      data: blockList,
     });
   };
 
-  const topBlock = data?.blockAdoption?.[0];
+  const topBlock = blockList[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+          <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
             Feature Adoption
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Which content blocks and themes are users choosing?</p>
@@ -56,7 +59,7 @@ export const FeatureDashboard: React.FC = () => {
           />
           <button
             onClick={handleExportCsv}
-            disabled={!data?.blockAdoption?.length}
+            disabled={!blockList.length}
             className="btn btn-ghost"
             style={{
               display: 'inline-flex',
@@ -66,7 +69,7 @@ export const FeatureDashboard: React.FC = () => {
               padding: '7px 12px',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-xs)',
-              cursor: data?.blockAdoption?.length ? 'pointer' : 'not-allowed',
+              cursor: blockList.length ? 'pointer' : 'not-allowed',
             }}
             title="Export Block Adoption to CSV"
           >
@@ -98,12 +101,12 @@ export const FeatureDashboard: React.FC = () => {
         <div style={{ display: 'grid', gap: 20, alignItems: 'start' }} className="grid-cols-1 lg:grid-cols-[1fr_340px]">
           {/* Block adoption chart */}
           <div className="chart-container">
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
               Block Adoption (Top 10)
             </h3>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
-                data={data.blockAdoption}
+                data={blockList}
                 layout="vertical"
                 margin={{ top: 0, right: 60, left: 80, bottom: 0 }}
               >
@@ -111,14 +114,14 @@ export const FeatureDashboard: React.FC = () => {
                 <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`}
                   tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="blockType"
-                  tick={{ fill: 'var(--text-2)', fontSize: 13, fontFamily: 'DM Sans' }} axisLine={false} tickLine={false} />
+                  tick={{ fill: 'var(--text-2)', fontSize: 13, fontFamily: 'Geist, sans-serif' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   formatter={(v: unknown) => [`${v}%`, 'Adoption']}
                   contentStyle={{
                     background: 'var(--panel)', border: '1px solid var(--line)',
-                    borderRadius: 10, fontFamily: 'DM Sans',
+                    borderRadius: 10, fontFamily: 'Geist, sans-serif',
                   }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}
                 />
                 <Bar dataKey="percentage" radius={[0, 6, 6, 0]} fill={CHART_COLORS.primary}
                   label={{ position: 'right', formatter: (v: unknown) => `${v}%`, fill: 'var(--text-2)', fontSize: 12 }}
@@ -129,13 +132,13 @@ export const FeatureDashboard: React.FC = () => {
 
           {/* Theme distribution */}
           <div className="chart-container" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
               Theme Distribution
             </h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={data.themeDistribution || []}
+                  data={themeList}
                   dataKey="percentage"
                   nameKey="theme"
                   cx="50%"
@@ -144,7 +147,7 @@ export const FeatureDashboard: React.FC = () => {
                   innerRadius={50}
                   paddingAngle={3}
                 >
-                  {(data.themeDistribution || []).map((_, i) => (
+                  {themeList.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -157,13 +160,13 @@ export const FeatureDashboard: React.FC = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
-            {(data.themeDistribution || []).map((t, i) => (
+            {themeList.map((t, i) => (
               <div key={t.theme || i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length] }} />
                   <span style={{ fontSize: 14, color: 'var(--text-2)' }}>{t.theme}</span>
                 </div>
-                <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
                   {formatPercentage(t.percentage)}
                 </span>
               </div>
@@ -176,7 +179,7 @@ export const FeatureDashboard: React.FC = () => {
       {data && (
         <div className="table-wrap">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
               Block Adoption Detail
             </h3>
           </div>
@@ -191,11 +194,11 @@ export const FeatureDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data.blockAdoption.map((block, i) => (
+              {blockList.map((block, i) => (
                 <tr key={block.blockType}>
-                  <td style={{ color: 'var(--faint)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>{i + 1}</td>
+                  <td style={{ color: 'var(--faint)', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>{i + 1}</td>
                   <td style={{ fontWeight: 600 }}>{block.blockType}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{formatNumber(block.count)}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace' }}>{formatNumber(block.count)}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden', maxWidth: 120 }}>

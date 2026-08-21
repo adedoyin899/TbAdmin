@@ -78,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <h2
               style={{
-                fontFamily: 'Sora, sans-serif',
+                fontFamily: 'Geist, sans-serif',
                 fontSize: 20,
                 fontWeight: 700,
                 color: 'var(--text, #11202A)',
@@ -107,7 +107,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   borderRadius: 'var(--radius-xs, 8px)',
                   padding: '12px',
                   fontSize: 12,
-                  fontFamily: 'JetBrains Mono, monospace',
+                  fontFamily: 'Geist Mono, monospace',
                   color: '#EF4444',
                   textAlign: 'left',
                   overflowX: 'auto',

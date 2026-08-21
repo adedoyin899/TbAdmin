@@ -75,7 +75,7 @@ export const FunnelDashboard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
               Funnel Conversion
             </h2>
             {isFetching && <div className="spinner" style={{ width: 14, height: 14 }} />}
@@ -152,7 +152,7 @@ export const FunnelDashboard: React.FC = () => {
               <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {stage.stage}
               </p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif', marginBottom: 2 }}>
+              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif', marginBottom: 2 }}>
                 {formatNumber(stage.count)}
               </p>
               <p style={{ fontSize: 13, color: STAGE_COLORS[i % STAGE_COLORS.length], fontWeight: 600 }}>
@@ -174,7 +174,7 @@ export const FunnelDashboard: React.FC = () => {
       {/* Chart */}
       {data && data.funnel && data.funnel.length > 0 && (
         <div className="chart-container">
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
             Funnel Visualisation
           </h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -182,12 +182,12 @@ export const FunnelDashboard: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.4)" vertical={false} />
               <XAxis
                 dataKey="stage"
-                tick={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Sans' }}
+                tick={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'Geist' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'DM Sans' }}
+                tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -197,7 +197,7 @@ export const FunnelDashboard: React.FC = () => {
                   dataKey="count"
                   position="top"
                   formatter={(v) => formatNumber(v as number)}
-                  style={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Sans' }}
+                  style={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'Geist' }}
                 />
                 {data.funnel.map((_, i) => (
                   <Cell key={i} fill={STAGE_COLORS[i % STAGE_COLORS.length]} />
@@ -212,7 +212,7 @@ export const FunnelDashboard: React.FC = () => {
       {data && data.funnel && data.funnel.length > 0 && (
         <div className="table-wrap">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
               Stage Breakdown
             </h3>
           </div>
@@ -235,7 +235,7 @@ export const FunnelDashboard: React.FC = () => {
                       <span style={{ fontWeight: 500 }}>{stage.stage}</span>
                     </div>
                   </td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{formatNumber(stage.count)}</td>
+                  <td style={{ fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}>{formatNumber(stage.count)}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 80, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>

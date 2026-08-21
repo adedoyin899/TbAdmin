@@ -103,7 +103,7 @@ export const Sidebar: React.FC<{
           </div>
           {!collapsed && (
             <div>
-              <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', lineHeight: 1.2 }}>
+              <p style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', lineHeight: 1.2 }}>
                 TalentBridge
               </p>
               <p style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>

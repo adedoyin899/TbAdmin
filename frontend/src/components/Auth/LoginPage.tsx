@@ -58,7 +58,7 @@ export const LoginPage: React.FC = () => {
             <BarChart2 size={28} color="#2DD4BF" strokeWidth={2.5} />
           </div>
           <h1
-            style={{ fontFamily: 'Sora, sans-serif', color: 'var(--text)', fontSize: 28, fontWeight: 700, marginBottom: 6 }}
+            style={{ fontFamily: 'Geist, sans-serif', color: 'var(--text)', fontSize: 28, fontWeight: 700, marginBottom: 6 }}
           >
             TalentBridge Analytics
           </h1>
@@ -77,7 +77,7 @@ export const LoginPage: React.FC = () => {
             boxShadow: 'var(--shadow)',
           }}
         >
-          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 600, marginBottom: 24, color: 'var(--text)' }}>
+          <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 18, fontWeight: 600, marginBottom: 24, color: 'var(--text)' }}>
             Sign in to your account
           </h2>
 
