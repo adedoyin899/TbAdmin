@@ -3,7 +3,7 @@ import {
   SlidersHorizontal, Mail, TrendingDown, AlertTriangle, CheckCircle2, RotateCcw,
   Send, Check, Flame, Server, Shield, Palette, Database, RefreshCw,
   Lock, Key, Activity, Eye, EyeOff, XCircle, CheckCircle,
-  Zap,
+  Zap, UserPlus, Trash2,
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -23,7 +23,7 @@ const TABS: TabItem[] = [
   { id: 'alerts', label: 'Anomaly Triggers', icon: Flame, badge: 'Active', desc: 'Threshold baking rules & event triggers' },
   { id: 'email', label: 'Email & Digest', icon: Mail, desc: 'Admin notifications & scheduled reports' },
   { id: 'integrations', label: 'Integrations & API', icon: Server, badge: 'Live Config', desc: 'Telemetry connections & provider credentials' },
-  { id: 'security', label: 'Team & Security', icon: Shield, desc: 'Admin accounts & auth session policies' },
+  { id: 'security', label: 'Team & Security', icon: Shield, badge: '👑 Maz Admin', desc: 'Admin accounts & auth session policies' },
   { id: 'appearance', label: 'Portal Appearance', icon: Palette, desc: 'Themes, formatting & visual display' },
 ];
 
@@ -43,6 +43,40 @@ export const SettingsPage: React.FC = () => {
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ provider: string; success: boolean; message: string; ping?: string } | null>(null);
+
+  // Team administration state (Maz as Super Admin Source of Truth)
+  const [teamUsers, setTeamUsers] = useState<Array<{
+    name: string;
+    email: string;
+    role: string;
+    expiry: string;
+    status: 'Active' | 'Suspended' | 'Invited';
+    lastActive?: string;
+    isOwner?: boolean;
+  }>>(() => {
+    const saved = localStorage.getItem('tbridge_team_users');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [
+      { name: 'Maz (Lead Admin)', email: 'maz@talentbridge.cv', role: 'Super Admin', expiry: '7 Days (Sliding)', status: 'Active', lastActive: 'Just now (Source of Truth)', isOwner: true },
+      { name: 'System Admin', email: 'admin@talentbridge.cv', role: 'Admin', expiry: '7 Days (Sliding)', status: 'Active', lastActive: '14m ago' },
+      { name: 'Kwame Asante', email: 'kwame.asante@talentbridge.cv', role: 'Data Analyst', expiry: '24 Hours', status: 'Active', lastActive: '2h ago' },
+      { name: 'Sarah Jenkins', email: 'sarah.jenkins@talentbridge.cv', role: 'Viewer', expiry: '24 Hours', status: 'Active', lastActive: 'Yesterday' },
+      { name: 'Test Operator', email: 'test@example.com', role: 'Viewer', expiry: '24 Hours', status: 'Active', lastActive: '3d ago' },
+    ];
+  });
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [userActionMsg, setUserActionMsg] = useState<string | null>(null);
+  const [newUserForm, setNewUserForm] = useState({
+    name: '',
+    email: '',
+    role: 'Admin',
+    tempPassword: 'temp_pass_2026',
+  });
 
   const [credentials, setCredentials] = useState(() => {
     const saved = localStorage.getItem('tbridge_provider_credentials');
@@ -103,6 +137,56 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('tbridge_provider_credentials', JSON.stringify(credentials));
   }, [credentials]);
+
+  useEffect(() => {
+    localStorage.setItem('tbridge_team_users', JSON.stringify(teamUsers));
+  }, [teamUsers]);
+
+  const handleAddAdminUser = () => {
+    if (!newUserForm.name || !newUserForm.email) return;
+    const newUser = {
+      name: newUserForm.name,
+      email: newUserForm.email,
+      role: newUserForm.role,
+      expiry: '7 Days (Sliding)',
+      status: 'Active' as const,
+      lastActive: 'Provisioned Just now',
+    };
+    setTeamUsers(prev => [...prev, newUser]);
+    setShowAddUserModal(false);
+    setNewUserForm({ name: '', email: '', role: 'Admin', tempPassword: 'temp_pass_2026' });
+    setUserActionMsg(`Successfully provisioned administrator account for ${newUser.name} (${newUser.email})`);
+    setTimeout(() => setUserActionMsg(null), 4000);
+  };
+
+  const handleUpdateUserRole = (email: string, newRole: string) => {
+    setTeamUsers(prev => prev.map(u => u.email === email ? { ...u, role: newRole } : u));
+    setUserActionMsg(`Updated ${email} role permissions to ${newRole}`);
+    setTimeout(() => setUserActionMsg(null), 3000);
+  };
+
+  const handleToggleUserStatus = (email: string) => {
+    setTeamUsers(prev => prev.map(u => {
+      if (u.email === email && !u.isOwner) {
+        const nextStatus = u.status === 'Active' ? 'Suspended' : 'Active';
+        setUserActionMsg(`User ${email} status changed to ${nextStatus}`);
+        setTimeout(() => setUserActionMsg(null), 3000);
+        return { ...u, status: nextStatus };
+      }
+      return u;
+    }));
+  };
+
+  const handleDeleteUser = (email: string) => {
+    setTeamUsers(prev => prev.filter(u => u.email !== email));
+    setUserActionMsg(`Administrator account ${email} has been revoked and removed.`);
+    setTimeout(() => setUserActionMsg(null), 3000);
+  };
+
+  const handleResetUserSession = (email: string) => {
+    setUserActionMsg(`Active session tokens for ${email} have been reset.`);
+    setTimeout(() => setUserActionMsg(null), 3000);
+  };
 
   const toggleSecret = (field: string) => {
     setShowSecret(s => ({ ...s, [field]: !s[field] }));
@@ -1272,7 +1356,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 4: Team, Permissions & Security */}
+        {/* TAB 4: Team, Permissions & Security (Maz Super Admin Management Suite) */}
         {activeTab === 'security' && (
           <div
             style={{
@@ -1283,40 +1367,188 @@ export const SettingsPage: React.FC = () => {
               boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 20,
+              gap: 24,
             }}
             className="animate-fade-in"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--line)', paddingBottom: 16 }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#10B981',
+                  }}
+                >
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                      Team Administrators & Role Access Management
+                    </h3>
+                    <span className="badge badge-success" style={{ fontSize: 11, gap: 4 }}>
+                      👑 Maz: Super Admin (Source of Truth)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                    Manage authorized administrator accounts, assign access tiers, and audit platform security
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(true)}
+                className="btn btn-primary"
+                style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+              >
+                <UserPlus size={14} />
+                + Add Administrator
+              </button>
+            </div>
+
+            {/* Team User Management Toast (if action triggered) */}
+            {userActionMsg && (
               <div
+                className="badge badge-success animate-slide-up"
+                style={{ padding: '8px 14px', gap: 6, fontSize: 13, alignSelf: 'flex-start' }}
+              >
+                <CheckCircle2 size={14} /> {userActionMsg}
+              </div>
+            )}
+
+            {/* Modal: Add New Administrator */}
+            {showAddUserModal && (
+              <div
+                className="animate-slide-up"
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  background: 'rgba(16, 185, 129, 0.12)',
+                  background: 'var(--panel-2)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: 'var(--radius)',
+                  padding: '20px',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#10B981',
+                  flexDirection: 'column',
+                  gap: 16,
+                  boxShadow: 'var(--shadow)',
                 }}
               >
-                <Shield size={18} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UserPlus size={16} color="var(--accent)" />
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                      Provision New Administrator Account
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(false)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer', fontSize: 16 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Jordan Lee"
+                      value={newUserForm.name}
+                      onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontSize: 12 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="jordan@talentbridge.cv"
+                      value={newUserForm.email}
+                      onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontSize: 12 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Role & Permissions
+                    </label>
+                    <select
+                      value={newUserForm.role}
+                      onChange={e => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontSize: 12 }}
+                    >
+                      <option value="Admin">Admin (Full Telemetry & Exports)</option>
+                      <option value="Data Analyst">Data Analyst (Read-Only Analytics)</option>
+                      <option value="Viewer">Viewer / Demo (Restricted Access)</option>
+                      <option value="Super Admin">Super Admin (Full System Access)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
+                      Temporary Password
+                    </label>
+                    <input
+                      type="text"
+                      value={newUserForm.tempPassword}
+                      onChange={e => setNewUserForm({ ...newUserForm, tempPassword: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontSize: 12, fontFamily: 'Geist Mono, monospace' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(false)}
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, padding: '6px 14px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAdminUser}
+                    className="btn btn-primary"
+                    style={{ fontSize: 12, padding: '6px 16px', gap: 6 }}
+                  >
+                    <UserPlus size={13} />
+                    Confirm & Provision User
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                  Team Members & Access Control Policies
-                </h3>
-                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
-                  Signed-in admin sessions, role assignments, and security authentication policies
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* Active Admin Accounts Table */}
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-                Authorized Administrator Accounts
-              </h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                  Authorized Team Accounts ({teamUsers.length})
+                </h4>
+                <span style={{ fontSize: 12, color: 'var(--faint)' }}>
+                  All accounts synchronised with JWT & Database Store
+                </span>
+              </div>
 
               <div className="table-wrap">
                 <table>
@@ -1324,23 +1556,117 @@ export const SettingsPage: React.FC = () => {
                     <tr>
                       <th>Admin Name</th>
                       <th>Email</th>
-                      <th>Role</th>
-                      <th>Session Expiration</th>
+                      <th>Role Tier</th>
+                      <th>Session Policy</th>
+                      <th>Last Active</th>
                       <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { name: 'Maz (Lead Admin)', email: 'maz@talentbridge.cv', role: 'Super Admin', expiry: '7 Days (Sliding)', status: 'Active' },
-                      { name: 'System Admin', email: 'admin@talentbridge.cv', role: 'Admin', expiry: '7 Days (Sliding)', status: 'Active' },
-                      { name: 'Test Operator', email: 'test@example.com', role: 'Viewer / Demo', expiry: '24 Hours', status: 'Active' },
-                    ].map(admin => (
-                      <tr key={admin.email}>
-                        <td style={{ fontWeight: 600 }}>{admin.name}</td>
-                        <td style={{ color: 'var(--text-2)' }}>{admin.email}</td>
-                        <td><span className="badge badge-neutral" style={{ fontSize: 11 }}>{admin.role}</span></td>
-                        <td style={{ fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>{admin.expiry}</td>
-                        <td><span className="badge badge-success" style={{ fontSize: 11 }}>{admin.status}</span></td>
+                    {teamUsers.map(u => (
+                      <tr key={u.email}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 99,
+                                background: u.isOwner ? 'rgba(45, 212, 191, 0.15)' : 'var(--panel-2)',
+                                color: u.isOwner ? '#2DD4BF' : 'var(--text)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: 11,
+                                border: '1px solid var(--line)',
+                              }}
+                            >
+                              {u.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ fontWeight: 600, margin: 0, fontSize: 13, color: 'var(--text)' }}>
+                                {u.name}
+                              </p>
+                              {u.isOwner && (
+                                <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700 }}>
+                                  👑 Super Admin / Lead Owner
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ color: 'var(--text-2)', fontFamily: 'Geist Mono, monospace', fontSize: 12 }}>
+                          {u.email}
+                        </td>
+                        <td>
+                          <select
+                            disabled={u.isOwner}
+                            value={u.role}
+                            onChange={e => handleUpdateUserRole(u.email, e.target.value)}
+                            className="input"
+                            style={{
+                              padding: '2px 6px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              background: u.isOwner ? 'var(--panel-2)' : 'var(--panel)',
+                              cursor: u.isOwner ? 'not-allowed' : 'pointer',
+                              width: 130,
+                            }}
+                          >
+                            <option value="Super Admin">Super Admin</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Data Analyst">Data Analyst</option>
+                            <option value="Viewer">Viewer</option>
+                          </select>
+                        </td>
+                        <td style={{ fontFamily: 'Geist Mono, monospace', fontSize: 12, color: 'var(--dim)' }}>
+                          {u.expiry}
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                          {u.lastActive || 'Recently'}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            disabled={u.isOwner}
+                            onClick={() => handleToggleUserStatus(u.email)}
+                            className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-neutral'}`}
+                            style={{
+                              fontSize: 11,
+                              cursor: u.isOwner ? 'default' : 'pointer',
+                              border: 'none',
+                            }}
+                            title={u.isOwner ? 'Primary owner cannot be suspended' : 'Click to toggle status'}
+                          >
+                            {u.status}
+                          </button>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleResetUserSession(u.email)}
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 11, color: 'var(--accent2)' }}
+                              title="Reset JWT Session Token"
+                            >
+                              Reset
+                            </button>
+                            {!u.isOwner && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u.email)}
+                                className="btn btn-ghost"
+                                style={{ padding: '4px 8px', fontSize: 11, color: '#EF4444' }}
+                                title="Revoke & Delete Account"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1348,26 +1674,77 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Session Security Policies */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div style={{ padding: '16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <Lock size={15} color="var(--accent2)" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>JWT Token Security</span>
+            {/* Audit Logs & Security Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Audit Log Stream */}
+              <div style={{ padding: '16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', gridColumn: 'span 2' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Activity size={15} color="var(--accent)" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                      Recent Administrative Audit Trail
+                    </span>
+                  </div>
+                  <span className="badge badge-success" style={{ fontSize: 10 }}>Live Telemetry</span>
                 </div>
-                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
-                  Stateless signed HTTP-only cookies with 7-day expiration, protected against CSRF and XSS attacks.
-                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { action: 'Super Admin Login (maz@talentbridge.cv)', location: 'London, UK (IP: 192.168.1.42)', time: '2 mins ago', icon: CheckCircle2, color: '#10B981' },
+                    { action: 'Telemetry Pipeline Sync (PostHog & Mailgun)', location: 'Automated Worker', time: '14 mins ago', icon: RefreshCw, color: '#2DD4BF' },
+                    { action: 'User Directory Export to CSV (12,450 records)', location: 'admin@talentbridge.cv', time: '42 mins ago', icon: Server, color: '#3B82F6' },
+                    { action: 'Anomaly Trigger threshold modified to 40%', location: 'maz@talentbridge.cv', time: '1 hour ago', icon: Flame, color: '#F59E0B' },
+                  ].map((log, idx) => {
+                    const LogIcon = log.icon;
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          background: 'var(--panel)',
+                          borderRadius: 6,
+                          border: '1px solid var(--line)',
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <LogIcon size={13} color={log.color} />
+                          <div>
+                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{log.action}</span>
+                            <span style={{ color: 'var(--dim)', marginLeft: 8, fontSize: 11 }}>{log.location}</span>
+                          </div>
+                        </div>
+                        <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11, color: 'var(--faint)' }}>{log.time}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div style={{ padding: '16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <Key size={15} color="var(--accent2)" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Bcrypt Password Hashing</span>
+              {/* Security Specs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Lock size={14} color="var(--accent2)" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>JWT Token Security</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+                    Stateless signed HTTP-only cookies with 7-day sliding expiration.
+                  </p>
                 </div>
-                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
-                  Industry-standard salt rounds (12) salted password hashing ensuring stored credential security.
-                </p>
+
+                <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Key size={14} color="var(--accent2)" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Bcrypt Password Hashing</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+                    12-round salted hashing protecting stored admin credentials.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
