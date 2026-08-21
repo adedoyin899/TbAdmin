@@ -13,7 +13,7 @@ async function runTests() {
   const address = server.address() as { port: number };
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
-  const token = generateToken({ id: 'usr_maz', email: 'maz@talentbridge.cv', role: 'Super Admin' });
+  const token = generateToken({ id: 'usr_maz', email: 'maz@talentbridge.cv', role: 'admin' });
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,

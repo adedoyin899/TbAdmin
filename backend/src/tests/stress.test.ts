@@ -54,7 +54,7 @@ async function runStressTests() {
   const address = server.address() as { port: number };
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
-  const token = generateToken({ id: 'usr_admin', email: 'admin@talentbridge.cv', role: 'Admin' });
+  const token = generateToken({ id: 'usr_admin', email: 'admin@talentbridge.cv', role: 'admin' });
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
