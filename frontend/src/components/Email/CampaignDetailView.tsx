@@ -420,17 +420,18 @@ export const CampaignDetailView: React.FC<{
             </p>
           </div>
 
-          {/* Email Body HTML rendered safely */}
+          {/* Email Body HTML rendered safely with realistic email canvas frame */}
           <div
             style={{
-              padding: '24px',
-              background: 'var(--panel-2)',
+              padding: '32px 28px',
+              background: '#FFFFFF',
               borderRadius: 12,
               border: '1px solid var(--line)',
-              color: 'var(--text)',
+              color: '#0F172A',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
             }}
             dangerouslySetInnerHTML={{
-              __html: campaign.previewHtml || '<p>Email template preview loading...</p>',
+              __html: campaign.previewHtml || '<p style="color: #64748B;">Email template preview loading...</p>',
             }}
           />
 

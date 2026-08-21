@@ -37,7 +37,7 @@
         { "recipientId": "rec_05", "name": "Priya Sharma", "email": "priya.sharma@example.com", "status": "delivered", "sentAt": "2026-08-01T10:00:00Z", "client": "Unknown", "device": "Unknown" },
         { "recipientId": "rec_06", "name": "James O'Brien", "email": "james.obrien@example.com", "status": "bounced", "sentAt": "2026-08-01T10:00:00Z", "client": "Mailbox Full", "device": "Server SMTP 550" }
       ],
-      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Welcome to TalentBridge, Creator! 👋</h2><p>You've taken the first step toward showing recruiters your best work in an interactive 3D showcase room.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Start Building Your Room →</a></div><p style='color: #64748B; font-size: 13px;'>Need inspiration? Check out our <a href='#' style='color: #0F766E;'>Showcase Room Templates</a>.</p></div>"
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #334155;'><h2 style='color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0;'>Welcome to TalentBridge, Creator! 👋</h2><p style='font-size: 14px; margin: 12px 0;'>You've taken the first step toward showing recruiters your best work in an interactive 3D showcase room.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #0F766E; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block;'>Start Building Your Room →</a></div><p style='color: #64748B; font-size: 13px;'>Need inspiration? Check out our <a href='#' style='color: #0F766E; font-weight: 600;'>Showcase Room Templates</a>.</p></div>"
     },
     {
       "campaignId": "showcase-tips-001",
@@ -73,7 +73,7 @@
         { "recipientId": "rec_12", "name": "Chiara Romano", "email": "chiara.romano@example.com", "status": "opened", "sentAt": "2026-08-03T14:00:00Z", "openedAt": "2026-08-03T16:45:00Z", "client": "Chrome Webmail", "device": "Windows Desktop" },
         { "recipientId": "rec_13", "name": "Bob Smith", "email": "bob.smith@example.com", "status": "delivered", "sentAt": "2026-08-03T14:00:00Z", "client": "Gmail Mobile", "device": "Android Mobile" }
       ],
-      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Want more eyes on your portfolio? 👀</h2><p>Our top creators get 4x more recruiter interactions by following these 3 simple rules: rich case study thumbnails, clear contact badges, and custom themes.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Edit Your Showcase Room →</a></div></div>"
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #334155;'><h2 style='color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0;'>Want more eyes on your portfolio? 👀</h2><p style='font-size: 14px; margin: 12px 0;'>Our top creators get 4x more recruiter interactions by following these 3 simple rules: rich case study thumbnails, clear contact badges, and custom themes.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #0F766E; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block;'>Edit Your Showcase Room →</a></div></div>"
     },
     {
       "campaignId": "feature-update-001",
@@ -108,7 +108,7 @@
         { "recipientId": "rec_21", "name": "Kwame Asante", "email": "kwame.asante@example.com", "status": "clicked", "sentAt": "2026-08-10T09:00:00Z", "openedAt": "2026-08-10T09:12:30Z", "clickedAt": "2026-08-10T09:14:02Z", "client": "Gmail Mobile", "device": "iOS Mobile" },
         { "recipientId": "rec_22", "name": "Alice Chen", "email": "alice.chen@example.com", "status": "clicked", "sentAt": "2026-08-10T09:00:00Z", "openedAt": "2026-08-10T10:05:00Z", "clickedAt": "2026-08-10T10:06:40Z", "client": "Apple Mail", "device": "macOS Desktop" }
       ],
-      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>See who's viewing your showcase rooms! 🔍</h2><p>You can now see exact recruiter views, time spent, peak hours, and location breakdowns directly inside your creator portal.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>View Your Insights →</a></div></div>"
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #334155;'><h2 style='color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0;'>See who's viewing your showcase rooms! 🔍</h2><p style='font-size: 14px; margin: 12px 0;'>You can now see exact recruiter views, time spent, peak hours, and location breakdowns directly inside your creator portal.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #0F766E; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block;'>View Your Insights →</a></div></div>"
     },
     {
       "campaignId": "reengagement-001",
@@ -141,7 +141,7 @@
       "recipients": [
         { "recipientId": "rec_31", "name": "Bob Smith", "email": "bob.smith@example.com", "status": "opened", "sentAt": "2026-08-15T16:00:00Z", "openedAt": "2026-08-15T18:10:00Z", "client": "Outlook Mobile", "device": "Android Mobile" }
       ],
-      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #1E293B;'><h2 style='color: #0D1F1E; margin-top: 0;'>Ready to share your talent? 🌟</h2><p>Recruiter searches are up 35% this month. Finish publishing your room so you can start receiving direct inquiries.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #2DD4BF; color: #0D1F1E; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;'>Finish Your Room Now →</a></div></div>"
+      "previewHtml": "<div style='font-family: sans-serif; line-height: 1.6; color: #334155;'><h2 style='color: #0F172A; font-size: 20px; font-weight: 700; margin-top: 0;'>Ready to share your talent? 🌟</h2><p style='font-size: 14px; margin: 12px 0;'>Recruiter searches are up 35% this month. Finish publishing your room so you can start receiving direct inquiries.</p><div style='text-align: center; margin: 28px 0;'><a href='#' style='background: #0F766E; color: #FFFFFF; padding: 12px 26px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block;'>Finish Your Room Now →</a></div></div>"
     }
   ],
   "topPerformers": [

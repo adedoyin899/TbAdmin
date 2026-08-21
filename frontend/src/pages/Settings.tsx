@@ -356,29 +356,30 @@ export const SettingsPage: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '9px 16px',
+                padding: '8px 14px',
                 borderRadius: 'var(--radius-xs)',
-                background: isActive ? 'var(--ink)' : 'transparent',
-                color: isActive ? '#2DD4BF' : 'var(--text-2)',
-                border: 'none',
+                background: isActive ? 'var(--panel-2)' : 'transparent',
+                color: isActive ? 'var(--text)' : 'var(--text-2)',
+                border: isActive ? '1px solid var(--line-2)' : '1px solid transparent',
                 cursor: 'pointer',
                 fontWeight: isActive ? 700 : 500,
                 fontSize: 13,
                 whiteSpace: 'nowrap',
                 transition: 'all 0.15s ease',
               }}
-              className="hover:text-[var(--text)]"
+              className="hover:text-[var(--text)] hover:bg-[var(--panel-2)]"
             >
-              <Icon size={16} />
+              <Icon size={15} color={isActive ? 'var(--accent)' : 'var(--dim)'} />
               <span>{tab.label}</span>
               {tab.badge && (
                 <span
                   style={{
                     fontSize: 10,
-                    padding: '1px 6px',
+                    padding: '2px 7px',
                     borderRadius: 99,
-                    background: isActive ? 'rgba(45, 212, 191, 0.2)' : 'var(--panel-2)',
-                    color: isActive ? '#2DD4BF' : 'var(--faint)',
+                    background: isActive ? 'rgba(45, 212, 191, 0.14)' : 'var(--panel-2)',
+                    color: isActive ? 'var(--accent2)' : 'var(--faint)',
+                    border: '1px solid var(--line)',
                     fontWeight: 700,
                   }}
                 >
@@ -1879,20 +1880,21 @@ export const SettingsPage: React.FC = () => {
                   style={{
                     padding: '16px',
                     borderRadius: 'var(--radius-sm)',
-                    background: appearance.themeMode === 'dark' ? 'var(--ink)' : 'var(--panel-2)',
-                    border: appearance.themeMode === 'dark' ? '2px solid #2DD4BF' : '1px solid var(--line)',
+                    background: appearance.themeMode === 'dark' ? 'rgba(45, 212, 191, 0.08)' : 'var(--panel-2)',
+                    border: appearance.themeMode === 'dark' ? '1.5px solid var(--accent)' : '1px solid var(--line)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     cursor: 'pointer',
                     textAlign: 'left',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: 14, color: '#FFFFFF', margin: 0 }}>Deep Dark Mode</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '4px 0 0 0' }}>High contrast dark theme (#070C0B)</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', margin: 0 }}>Deep Dark Mode</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '4px 0 0 0' }}>Sleek dark theme (#0C0F14)</p>
                   </div>
-                  {appearance.themeMode === 'dark' && <CheckCircle2 size={18} color="#2DD4BF" />}
+                  {appearance.themeMode === 'dark' && <CheckCircle2 size={18} color="var(--accent)" />}
                 </button>
 
                 <button
@@ -1901,20 +1903,21 @@ export const SettingsPage: React.FC = () => {
                   style={{
                     padding: '16px',
                     borderRadius: 'var(--radius-sm)',
-                    background: appearance.themeMode === 'light' ? '#FFFFFF' : 'var(--panel-2)',
-                    border: appearance.themeMode === 'light' ? '2px solid #2DD4BF' : '1px solid var(--line)',
+                    background: appearance.themeMode === 'light' ? 'rgba(45, 212, 191, 0.08)' : 'var(--panel-2)',
+                    border: appearance.themeMode === 'light' ? '1.5px solid var(--accent)' : '1px solid var(--line)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     cursor: 'pointer',
                     textAlign: 'left',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: 14, color: '#000000', margin: 0 }}>Clean Light Mode</p>
-                    <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '4px 0 0 0' }}>Crisp slate light theme (#F4F7F6)</p>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', margin: 0 }}>Clean Light Mode</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '4px 0 0 0' }}>Crisp slate light theme (#F4F6F8)</p>
                   </div>
-                  {appearance.themeMode === 'light' && <CheckCircle2 size={18} color="#2DD4BF" />}
+                  {appearance.themeMode === 'light' && <CheckCircle2 size={18} color="var(--accent)" />}
                 </button>
               </div>
             </div>

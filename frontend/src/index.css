@@ -247,17 +247,61 @@ select.input {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  gap: 5px;
+  padding: 3px 9px;
   border-radius: var(--radius-xs);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: all 0.15s ease;
 }
 
-.badge-success { background: color-mix(in srgb, #10B981 15%, transparent); color: #10B981; }
-.badge-error   { background: color-mix(in srgb, #EF4444 15%, transparent); color: #EF4444; }
-.badge-warning { background: color-mix(in srgb, #F59E0B 15%, transparent); color: #F59E0B; }
-.badge-info    { background: color-mix(in srgb, #3B82F6 15%, transparent); color: #3B82F6; }
-.badge-neutral { background: var(--panel-2); color: var(--text-2); }
+.badge-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.badge-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.badge-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.badge-info {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563EB;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.badge-neutral {
+  background: var(--panel-2);
+  color: var(--text-2);
+  border: 1px solid var(--line);
+}
+
+:root[data-mode='dark'] .badge-success {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+:root[data-mode='dark'] .badge-error {
+  background: rgba(239, 68, 68, 0.16);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+:root[data-mode='dark'] .badge-warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #FBBF24;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+:root[data-mode='dark'] .badge-info {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60A5FA;
+  border-color: rgba(59, 130, 246, 0.25);
+}
 
 /* =====================
    TABLES
@@ -271,17 +315,24 @@ select.input {
   box-shadow: var(--shadow-sm);
 }
 
-table { width: 100%; border-collapse: collapse; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-thead tr { background: var(--ink); }
+thead tr {
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+}
 thead th {
-  color: #FFFFFF;
+  color: var(--text-2);
   font-weight: 700;
   font-family: 'Geist', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
-  padding: 12px 16px;
+  padding: 11px 16px;
 }
 
 tbody tr {
@@ -290,7 +341,7 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--panel-2); }
-tbody td { padding: 12px 16px; color: var(--text); font-size: 14px; }
+tbody td { padding: 12px 16px; color: var(--text); font-size: 13px; }
 
 /* =====================
    CHART CONTAINER
