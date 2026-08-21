@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Mail, MousePointerClick, AlertTriangle, Trophy,
-  Inbox, ArrowRight,
+  Inbox, ArrowRight, Download,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { EmailDashboardResponse, EmailCampaign } from '../../types';
@@ -14,6 +14,8 @@ import { formatNumber, formatDate } from '../../utils/formatters';
 import { CHART_COLORS } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { CampaignDetailView } from '../Email/CampaignDetailView';
+import { exportToCsv } from '../../utils/exportCsv';
+import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 export const EmailDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
@@ -23,6 +25,25 @@ export const EmailDashboard: React.FC = () => {
     queryKey: ['email', dateRange.preset, dateRange.startDate, dateRange.endDate],
     queryFn: () => dashboardApi.getEmail(dateRange.preset) as Promise<EmailDashboardResponse>,
   });
+
+  const handleExportCsv = () => {
+    if (!data?.campaigns?.length) return;
+    exportToCsv({
+      filename: `talentbridge_email_campaigns_${dateRange.preset}`,
+      columns: [
+        { header: 'Campaign Name', accessor: row => row.campaignName },
+        { header: 'Subject Line', accessor: row => row.subjectLine || '' },
+        { header: 'Sent Date', accessor: row => row.sentDate },
+        { header: 'Sent Count', accessor: row => row.sentCount },
+        { header: 'Open Count', accessor: row => row.openCount },
+        { header: 'Open Rate (%)', accessor: row => `${row.openPercentage}%` },
+        { header: 'Click Count', accessor: row => row.clickCount },
+        { header: 'Click Rate (%)', accessor: row => `${row.clickPercentage}%` },
+        { header: 'Bounce Count', accessor: row => row.bounceCount },
+      ],
+      data: data.campaigns,
+    });
+  };
 
   const chartData = data?.campaigns.map(c => ({
     name: c.campaignName.length > 16 ? c.campaignName.slice(0, 16) + '…' : c.campaignName,
@@ -40,6 +61,8 @@ export const EmailDashboard: React.FC = () => {
     );
   }
 
+  const totalBounces = data?.campaigns.reduce((a, c) => a + c.bounceCount, 0) || 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-in">
       {/* Header */}
@@ -52,12 +75,44 @@ export const EmailDashboard: React.FC = () => {
             Open rates, click rates, and bounce data from Mailgun. Click any campaign to explore granular details.
           </p>
         </div>
-        <DateRangeSelector
-          value={dateRange}
-          onChange={setDateRange}
-          idPrefix="email-date-range"
-        />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix="email-date-range"
+          />
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.campaigns?.length}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              padding: '7px 12px',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-xs)',
+              cursor: data?.campaigns?.length ? 'pointer' : 'not-allowed',
+            }}
+            title="Export Email Campaigns to CSV"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
       </div>
+
+      {/* Bounce alert if bounces detected */}
+      {data && totalBounces > 15 && (
+        <MetricAlertBanner
+          severity="warning"
+          title="Elevated Email Bounces Detected"
+          metricLabel="Total Bounces"
+          metricValue={`${totalBounces} across campaigns`}
+          message="Deliverability audit recommended to prevent domain sender reputation degradation with Mailgun."
+        />
+      )}
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}

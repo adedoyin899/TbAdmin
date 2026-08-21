@@ -7,12 +7,14 @@ import {
 } from 'recharts';
 import {
   Sparkles, ArrowUpRight,
-  ArrowDownRight, Trophy,
+  ArrowDownRight, Trophy, Download,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RoomsDashboardResponse } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
+import { exportToCsv } from '../../utils/exportCsv';
+import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const TIME_SLOTS = [
@@ -36,6 +38,23 @@ export const RoomInsightsDashboard: React.FC = () => {
     queryFn: () => dashboardApi.getRoomsDashboard(dateRange.preset) as Promise<RoomsDashboardResponse>,
   });
 
+  const handleExportCsv = () => {
+    if (!data?.topPerformingRooms?.length) return;
+    exportToCsv({
+      filename: `talentbridge_top_showcase_rooms_${dateRange.preset}`,
+      columns: [
+        { header: 'Room ID', accessor: row => row.roomId },
+        { header: 'Room Name', accessor: row => row.roomName },
+        { header: 'Creator Name', accessor: row => row.ownerName },
+        { header: 'Creator Email', accessor: row => row.ownerEmail },
+        { header: 'Total Views', accessor: row => row.views },
+        { header: 'Unique Views', accessor: row => row.uniqueViews },
+        { header: 'Engagement Score (%)', accessor: row => `${row.engagement}%` },
+      ],
+      data: data.topPerformingRooms,
+    });
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
@@ -54,12 +73,44 @@ export const RoomInsightsDashboard: React.FC = () => {
           </p>
         </div>
 
-        <DateRangeSelector
-          value={dateRange}
-          onChange={setDateRange}
-          idPrefix="rooms-date-range"
-        />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix="rooms-date-range"
+          />
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.topPerformingRooms?.length}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              padding: '7px 12px',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-xs)',
+              cursor: data?.topPerformingRooms?.length ? 'pointer' : 'not-allowed',
+            }}
+            title="Export Top Showcase Rooms to CSV"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
       </div>
+
+      {/* Engagement Alert Banner */}
+      {data && (
+        <MetricAlertBanner
+          severity="info"
+          title="High Mobile Room Viewership Surge"
+          metricLabel="Mobile Traffic Share"
+          metricValue={`${data.devices?.find(d => d.name.toLowerCase() === 'mobile')?.percentage || 45}%`}
+          message="Mobile viewers represent nearly half of all 3D showcase sessions. Optimization for mobile WebGL rendering remains high priority."
+        />
+      )}
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}

@@ -4,11 +4,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { Download } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FeaturesDashboardResponse } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
 import { CHART_COLORS } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
+import { exportToCsv } from '../../utils/exportCsv';
+import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 const PIE_COLORS = ['#0D1F1E', '#2DD4BF'];
 
@@ -20,6 +23,21 @@ export const FeatureDashboard: React.FC = () => {
     queryFn: () => dashboardApi.getFeatures(dateRange.preset) as Promise<FeaturesDashboardResponse>,
   });
 
+  const handleExportCsv = () => {
+    if (!data?.blockAdoption?.length) return;
+    exportToCsv({
+      filename: `talentbridge_feature_adoption_${dateRange.preset}`,
+      columns: [
+        { header: 'Block Type', accessor: row => row.blockType },
+        { header: 'User Count', accessor: row => row.count },
+        { header: 'Adoption Rate (%)', accessor: row => `${row.percentage}%` },
+      ],
+      data: data.blockAdoption,
+    });
+  };
+
+  const topBlock = data?.blockAdoption?.[0];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
@@ -30,12 +48,44 @@ export const FeatureDashboard: React.FC = () => {
           </h2>
           <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Which content blocks and themes are users choosing?</p>
         </div>
-        <DateRangeSelector
-          value={dateRange}
-          onChange={setDateRange}
-          idPrefix="features-date-range"
-        />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DateRangeSelector
+            value={dateRange}
+            onChange={setDateRange}
+            idPrefix="features-date-range"
+          />
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.blockAdoption?.length}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              padding: '7px 12px',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-xs)',
+              cursor: data?.blockAdoption?.length ? 'pointer' : 'not-allowed',
+            }}
+            title="Export Block Adoption to CSV"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
       </div>
+
+      {/* Feature Health / Highlight Banner */}
+      {data && topBlock && topBlock.percentage >= 60 && (
+        <MetricAlertBanner
+          severity="success"
+          title="Strong Core Feature Engagement"
+          metricLabel="Top Block"
+          metricValue={`${topBlock.blockType} (${formatPercentage(topBlock.percentage)})`}
+          message={`Creator adoption is highly concentrated on ${topBlock.blockType}. Consider offering expanded templates for this block.`}
+        />
+      )}
 
       {isLoading && (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>

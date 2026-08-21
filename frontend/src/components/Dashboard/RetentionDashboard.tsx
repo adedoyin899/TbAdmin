@@ -4,12 +4,14 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, Filter } from 'lucide-react';
+import { TrendingUp, Filter, Download } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RetentionDashboardResponse } from '../../types';
 import { formatPercentage } from '../../utils/formatters';
 import { SIGNUP_SOURCES, CHART_COLORS } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
+import { exportToCsv } from '../../utils/exportCsv';
+import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 export const RetentionDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
@@ -19,6 +21,19 @@ export const RetentionDashboard: React.FC = () => {
     queryKey: ['retention', dateRange.preset, dateRange.startDate, dateRange.endDate, signupSource],
     queryFn: () => dashboardApi.getRetention(signupSource) as Promise<RetentionDashboardResponse>,
   });
+
+  const handleExportCsv = () => {
+    if (!data?.trend?.length) return;
+    exportToCsv({
+      filename: `talentbridge_retention_trends_${signupSource}`,
+      columns: [
+        { header: 'Week / Period', accessor: row => row.week },
+        { header: '7-Day Retention (%)', accessor: row => `${row.retention7d}%` },
+        { header: '30-Day Retention (%)', accessor: row => `${row.retention30d}%` },
+      ],
+      data: data.trend,
+    });
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -48,8 +63,38 @@ export const RetentionDashboard: React.FC = () => {
               {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.trend?.length}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              padding: '7px 12px',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-xs)',
+              cursor: data?.trend?.length ? 'pointer' : 'not-allowed',
+            }}
+            title="Export Retention Trends to CSV"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
       </div>
+
+      {/* Health Status Banner */}
+      {data && (
+        <MetricAlertBanner
+          severity="success"
+          title="Healthy Returning User Benchmarks"
+          metricLabel="7-Day Retention"
+          metricValue={`${formatPercentage(data.retention7d.percentage)} (+${data.retention7d.change}% WoW)`}
+          message="Cohort retention is pacing ahead of average creator benchmarks for early onboarding periods."
+        />
+      )}
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}

@@ -5,13 +5,15 @@ import {
   ResponsiveContainer, Cell, LabelList,
 } from 'recharts';
 import {
-  Filter, ArrowDownRight,
+  Filter, ArrowDownRight, Download,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
-import type { FunnelDashboardResponse } from '../../types';
+import type { FunnelDashboardResponse, Dropoff } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
 import { SIGNUP_SOURCES } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
+import { exportToCsv } from '../../utils/exportCsv';
+import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 const STAGE_COLORS = [
   '#2DD4BF', '#1FB8A7', '#13A090', '#0A8A7A', '#057060',
@@ -44,6 +46,29 @@ export const FunnelDashboard: React.FC = () => {
     queryFn: () => dashboardApi.getFunnel(dateRange.preset, signupSource) as Promise<FunnelDashboardResponse>,
   });
 
+  const handleExportCsv = () => {
+    if (!data?.funnel?.length) return;
+    exportToCsv({
+      filename: `talentbridge_funnel_conversion_${signupSource}`,
+      columns: [
+        { header: 'Funnel Stage', accessor: row => row.stage },
+        { header: 'User Count', accessor: row => row.count },
+        { header: 'Conversion Rate (%)', accessor: row => `${row.percentage}%` },
+        {
+          header: 'Drop-off Rate (%)',
+          accessor: (_, index) => {
+            const drop = data.dropoff[index];
+            return drop ? `${drop.percentage}%` : '0%';
+          },
+        },
+      ],
+      data: data.funnel,
+    });
+  };
+
+  // Check for critical drop-off (> 40%)
+  const maxDropoff = data?.dropoff?.reduce<Dropoff | null>((max, curr) => (!max || curr.percentage > max.percentage ? curr : max), null);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header */}
@@ -59,7 +84,7 @@ export const FunnelDashboard: React.FC = () => {
             Track conversion and drop-off across key user onboarding stages
           </p>
         </div>
-        {/* Filters */}
+        {/* Filters & Export */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <DateRangeSelector
             value={dateRange}
@@ -78,8 +103,38 @@ export const FunnelDashboard: React.FC = () => {
               {SIGNUP_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.funnel?.length}
+            className="btn btn-ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              padding: '7px 12px',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-xs)',
+              cursor: data?.funnel?.length ? 'pointer' : 'not-allowed',
+            }}
+            title="Export Funnel Breakdown to CSV"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
       </div>
+
+      {/* Anomaly / Alert Banner */}
+      {data && maxDropoff && maxDropoff.percentage >= 40 && (
+        <MetricAlertBanner
+          severity="warning"
+          title="High Funnel Drop-off Detected"
+          metricLabel="Peak Drop-off Stage"
+          metricValue={`${maxDropoff.from} → ${maxDropoff.to} (${formatPercentage(maxDropoff.percentage)})`}
+          message={`A significant drop-off occurred between ${maxDropoff.from} and ${maxDropoff.to}. Consider reviewing onboarding friction and guidance.`}
+        />
+      )}
 
       {/* Stat cards */}
       {isLoading ? (

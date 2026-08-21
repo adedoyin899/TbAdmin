@@ -5,10 +5,11 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, ExternalLink, CheckCircle2, Eye,
-  User, Search, TrendingUp, Filter,
+  User, Search, TrendingUp, Filter, Download,
 } from 'lucide-react';
 import type { EmailCampaign } from '../../types';
 import { formatNumber, formatDate, formatDateTime } from '../../utils/formatters';
+import { exportToCsv } from '../../utils/exportCsv';
 
 export const CampaignDetailView: React.FC<{
   campaign: EmailCampaign;
@@ -285,7 +286,7 @@ export const CampaignDetailView: React.FC<{
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <Filter size={14} color="var(--dim)" />
               <select
                 className="input"
@@ -299,6 +300,41 @@ export const CampaignDetailView: React.FC<{
                 <option value="delivered">Delivered</option>
                 <option value="bounced">Bounced</option>
               </select>
+
+              <button
+                onClick={() => {
+                  if (!filteredRecipients.length) return;
+                  exportToCsv({
+                    filename: `${campaign.campaignName.toLowerCase().replace(/\s+/g, '_')}_recipients`,
+                    columns: [
+                      { header: 'Name', accessor: r => r.name },
+                      { header: 'Email', accessor: r => r.email },
+                      { header: 'Status', accessor: r => r.status },
+                      { header: 'Sent At', accessor: r => r.sentAt },
+                      { header: 'Opened At', accessor: r => r.openedAt || '' },
+                      { header: 'Clicked At', accessor: r => r.clickedAt || '' },
+                      { header: 'Client / Device', accessor: r => r.client || '' },
+                    ],
+                    data: filteredRecipients,
+                  });
+                }}
+                disabled={!filteredRecipients.length}
+                className="btn btn-ghost"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 13,
+                  padding: '7px 12px',
+                  border: '1px solid var(--line)',
+                  borderRadius: 'var(--radius-xs)',
+                  cursor: filteredRecipients.length ? 'pointer' : 'not-allowed',
+                }}
+                title="Export Filtered Recipients to CSV"
+              >
+                <Download size={14} />
+                Export CSV
+              </button>
             </div>
           </div>
 

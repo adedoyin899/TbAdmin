@@ -9,13 +9,14 @@ import {
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
   Share2, RefreshCcw, Palette, Repeat, User as UserIcon,
   Zap, ChevronDown, ChevronUp, Sparkles, Filter,
-  ArrowRight, Users, UserCheck, UserPlus, ArrowUpRight,
+  ArrowRight, Users, UserCheck, UserPlus, ArrowUpRight, Download,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
 import { formatDate, formatDateTime, formatNumber } from '../utils/formatters';
 import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
 import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
 import { DateRangeSelector, type DateRangeValue } from '../components/Common/DateRangeSelector';
+import { exportToCsv } from '../utils/exportCsv';
 
 // ── Event Icon & Color Config ─────────────────────────────────
 
@@ -719,7 +720,7 @@ export const UserLookupPage: React.FC = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <Filter size={14} color="var(--dim)" />
             <select
               className="input"
@@ -733,6 +734,43 @@ export const UserLookupPage: React.FC = () => {
               <option value="referral">Referral</option>
               <option value="paid_ad">Paid Ad</option>
             </select>
+
+            <button
+              onClick={() => {
+                if (!filteredUsers.length) return;
+                exportToCsv({
+                  filename: `talentbridge_users_${sourceFilter}`,
+                  columns: [
+                    { header: 'User ID', accessor: u => u.userId },
+                    { header: 'Full Name', accessor: u => `${u.firstName} ${u.lastName}` },
+                    { header: 'Email', accessor: u => u.email },
+                    { header: 'Country', accessor: u => u.country },
+                    { header: 'Signup Source', accessor: u => u.signupSource },
+                    { header: 'Plan Tier', accessor: u => u.planTier },
+                    { header: 'Signup Date', accessor: u => u.signupDate },
+                    { header: 'Last Active', accessor: u => u.lastActive },
+                  ],
+                  data: filteredUsers,
+                });
+              }}
+              disabled={!filteredUsers.length}
+              className="btn btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                padding: '7px 12px',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius-xs)',
+                cursor: filteredUsers.length ? 'pointer' : 'not-allowed',
+                height: 36,
+              }}
+              title="Export Users to CSV"
+            >
+              <Download size={14} />
+              Export CSV
+            </button>
           </div>
         </div>
 
