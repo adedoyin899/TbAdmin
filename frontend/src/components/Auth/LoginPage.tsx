@@ -161,6 +161,40 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Quick Fill Demo Credentials */}
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+              Quick-Fill Admin Credentials
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('maz@talentbridge.cv');
+                  setPassword('temp_password_123');
+                }}
+                className="btn btn-ghost"
+                style={{ justifyContent: 'space-between', padding: '7px 10px', fontSize: 12, border: '1px solid var(--line)', background: 'var(--panel-2)' }}
+              >
+                <span style={{ fontWeight: 600, color: 'var(--text)' }}>maz@talentbridge.cv</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>Fill Admin Credentials →</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('newuser@talentbridge.cv');
+                  setPassword('password123');
+                }}
+                className="btn btn-ghost"
+                style={{ justifyContent: 'space-between', padding: '7px 10px', fontSize: 12, border: '1px solid var(--line)', background: 'var(--panel-2)' }}
+              >
+                <span style={{ fontWeight: 600, color: 'var(--text)' }}>newuser@talentbridge.cv</span>
+                <span style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 11 }}>Fill New User →</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20, color: 'var(--faint)', fontSize: 12 }}>

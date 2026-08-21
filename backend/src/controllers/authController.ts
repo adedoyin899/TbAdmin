@@ -41,15 +41,22 @@ export async function login(req: AuthenticatedRequest, res: Response) {
 
     // 2. Dev fallback for seeded credentials if DB is not populated yet
     if (!userRow) {
-      if (normalizedEmail === 'maz@talentbridge.cv' || normalizedEmail === 'test@example.com') {
-        const fallbackPassword = normalizedEmail === 'maz@talentbridge.cv' ? 'temp_password_123' : 'password';
-        const isMatch = password === fallbackPassword;
+      const VALID_DEV_ACCOUNTS: Record<string, string> = {
+        'maz@talentbridge.cv': 'temp_password_123',
+        'admin@talentbridge.cv': 'password123',
+        'newuser@talentbridge.cv': 'password123',
+        'test@example.com': 'password',
+      };
+
+      if (normalizedEmail in VALID_DEV_ACCOUNTS) {
+        const expectedPassword = VALID_DEV_ACCOUNTS[normalizedEmail];
+        const isMatch = password === expectedPassword;
         if (!isMatch) {
           return sendError(res, 'Invalid email or password.', 401);
         }
 
         const fallbackUser: AuthUser = {
-          id: '00000000-0000-0000-0000-000000000001',
+          id: normalizedEmail === 'newuser@talentbridge.cv' ? 'usr_new_01' : '00000000-0000-0000-0000-000000000001',
           email: normalizedEmail,
           role: 'admin',
           createdAt: new Date().toISOString(),

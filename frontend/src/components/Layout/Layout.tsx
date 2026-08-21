@@ -197,9 +197,11 @@ export const Header: React.FC<{
     navigate('/');
   };
 
-  const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short',
-  });
+  const getDisplayName = (email?: string) => {
+    if (!email) return 'Admin';
+    const namePart = email.split('@')[0];
+    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+  };
 
   return (
     <header
@@ -227,9 +229,14 @@ export const Header: React.FC<{
           <Menu size={16} />
         </button>
 
-        <span style={{ color: 'var(--faint)', fontSize: 13 }} className="hidden sm:inline">
-          {today}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
+            Welcome, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{getDisplayName(user?.email)}</strong>
+          </span>
+          <span className="hidden md:inline" style={{ color: 'var(--faint)', fontSize: 12 }}>
+            • Admin Portal
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

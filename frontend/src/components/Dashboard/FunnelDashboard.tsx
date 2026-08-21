@@ -145,6 +145,18 @@ export const FunnelDashboard: React.FC = () => {
         </div>
       ) : error ? (
         <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>
+      ) : data && (!data.funnel || data.funnel.length === 0) ? (
+        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <Filter size={24} color="#2DD4BF" />
+          </div>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            No Onboarding Funnel Telemetry Yet
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
+            As new users register, verify their email, and create showcase rooms on TalentBridge, their progression across the 5 onboarding milestones will visualize here automatically.
+          </p>
+        </div>
       ) : data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {(data.funnel || []).map((stage, i) => (

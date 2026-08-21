@@ -117,15 +117,27 @@ export const EmailDashboard: React.FC = () => {
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
 
-      {data && (
+      {data && (!data.campaigns || data.campaigns.length === 0) ? (
+        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <Mail size={24} color="#2DD4BF" />
+          </div>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            No Email Campaigns Sent Yet
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
+            When onboarding or lifecycle emails are delivered through Mailgun, live delivery rates, open percentages, clicks, and bounce logs will stream here.
+          </p>
+        </div>
+      ) : data && data.campaigns && data.campaigns.length > 0 && (
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: CHART_COLORS.primary, icon: <Inbox size={16} color={CHART_COLORS.primary} /> },
-              { label: 'Avg Open Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.openPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.info, icon: <Mail size={16} color={CHART_COLORS.info} /> },
-              { label: 'Avg Click Rate', value: Math.round(data.campaigns.reduce((a, c) => a + c.clickPercentage, 0) / data.campaigns.length), suffix: '%', color: CHART_COLORS.success, icon: <MousePointerClick size={16} color={CHART_COLORS.success} /> },
-              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + c.bounceCount, 0), suffix: '', color: CHART_COLORS.warning, icon: <AlertTriangle size={16} color={CHART_COLORS.warning} /> },
+              { label: 'Avg Open Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.openPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: CHART_COLORS.info, icon: <Mail size={16} color={CHART_COLORS.info} /> },
+              { label: 'Avg Click Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.clickPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: CHART_COLORS.success, icon: <MousePointerClick size={16} color={CHART_COLORS.success} /> },
+              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + (c.bounceCount || 0), 0), suffix: '', color: CHART_COLORS.warning, icon: <AlertTriangle size={16} color={CHART_COLORS.warning} /> },
             ].map(card => (
               <div key={card.label} className="stat-card animate-slide-up">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>

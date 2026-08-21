@@ -97,7 +97,21 @@ export const FeatureDashboard: React.FC = () => {
       )}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
 
-      {data && (
+      {data && blockList.length === 0 && (
+        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <Download size={24} color="#2DD4BF" />
+          </div>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            No Block Adoption Telemetry Yet
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
+            When users customize their 3D showcase rooms by adding Bio, Skills, Project Media, or Spotify embed blocks, adoption breakdown will appear here.
+          </p>
+        </div>
+      )}
+
+      {data && blockList.length > 0 && (
         <div style={{ display: 'grid', gap: 20, alignItems: 'start' }} className="grid-cols-1 lg:grid-cols-[1fr_340px]">
           {/* Block adoption chart */}
           <div className="chart-container">
@@ -176,7 +190,7 @@ export const FeatureDashboard: React.FC = () => {
       )}
 
       {/* Block adoption table */}
-      {data && (
+      {data && blockList.length > 0 && (
         <div className="table-wrap">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
             <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>

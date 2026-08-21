@@ -99,7 +99,19 @@ export const RetentionDashboard: React.FC = () => {
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
 
-      {data && (
+      {data && (!data.trend || data.trend.length === 0) ? (
+        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <TrendingUp size={24} color="#2DD4BF" />
+          </div>
+          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+            No Retention Cohort Data Yet
+          </h3>
+          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
+            Cohort analytics begin tracking returning creators 7 days and 30 days after their initial signup. Weekly trends will populate here once enough session history is established.
+          </p>
+        </div>
+      ) : data && (
         <>
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
