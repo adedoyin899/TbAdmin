@@ -3,9 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  BarChart2, Menu, X,
+  BarChart2, Menu, X, Bell, Settings,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { NotificationDrawer } from '../Notifications/NotificationDrawer';
 import type { LucideProps } from 'lucide-react';
 
 // Icon map — keeps the sidebar config clean
@@ -16,6 +18,7 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   Mail,
   Search,
   Sparkles,
+  Settings,
 };
 
 const NAV_LINKS = [
@@ -25,6 +28,7 @@ const NAV_LINKS = [
   { path: '/dashboard/email',     label: 'Email',         icon: 'Mail' },
   { path: '/dashboard/rooms',     label: 'Room Insights', icon: 'Sparkles' },
   { path: '/lookup',              label: 'User Directory',icon: 'Search' },
+  { path: '/settings',            label: 'Settings',      icon: 'Settings' },
 ];
 
 // ── Sidebar ───────────────────────────────────────────────────
@@ -99,10 +103,12 @@ export const Sidebar: React.FC<{
           </div>
           {!collapsed && (
             <div>
-              <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', marginBottom: 1 }}>
+              <p style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', lineHeight: 1.2 }}>
                 TalentBridge
               </p>
-              <p style={{ fontSize: 11, color: 'var(--faint)', whiteSpace: 'nowrap' }}>Admin Portal</p>
+              <p style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Admin Portal
+              </p>
             </div>
           )}
         </div>
@@ -117,35 +123,41 @@ export const Sidebar: React.FC<{
         </button>
       </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
+      {/* Nav Section Label */}
+      {!collapsed && (
+        <div style={{ padding: '14px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Dashboards & Tools
+        </div>
+      )}
+
+      {/* Nav Links */}
+      <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV_LINKS.map(link => {
           const Icon = ICON_MAP[link.icon];
           return (
             <NavLink
               key={link.path}
               to={link.path}
-              id={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-              onClick={() => onMobileClose()}
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-              style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
+              onClick={onMobileClose}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              style={{
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                padding: collapsed ? '10px 0' : '9px 12px',
+                borderRadius: 'var(--radius-xs)',
+              }}
               title={collapsed ? link.label : undefined}
             >
-              <Icon size={17} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-              {!collapsed && (
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {link.label}
-                </span>
-              )}
+              {Icon && <Icon size={16} strokeWidth={1.8} />}
+              {!collapsed && <span>{link.label}</span>}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Desktop Collapse toggle */}
+      {/* Collapse Toggle */}
       <button
         onClick={onToggle}
-        className="btn-icon hidden md:grid"
+        className="btn-icon hidden md:flex"
         style={{
           margin: '12px auto',
           border: 'none',
@@ -162,8 +174,12 @@ export const Sidebar: React.FC<{
 
 // ── Header ────────────────────────────────────────────────────
 
-export const Header: React.FC<{ onMobileMenuClick: () => void }> = ({ onMobileMenuClick }) => {
+export const Header: React.FC<{
+  onMobileMenuClick: () => void;
+  onOpenNotifications: () => void;
+}> = ({ onMobileMenuClick, onOpenNotifications }) => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useSettings();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-mode') === 'dark'
@@ -217,6 +233,40 @@ export const Header: React.FC<{ onMobileMenuClick: () => void }> = ({ onMobileMe
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Notifications Bell */}
+        <button
+          className="btn-icon"
+          onClick={onOpenNotifications}
+          title="View Notifications & Alert Triggers"
+          style={{ position: 'relative' }}
+          id="notification-bell-btn"
+        >
+          <Bell size={16} strokeWidth={1.8} />
+          {unreadCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                minWidth: 16,
+                height: 16,
+                padding: '0 4px',
+                borderRadius: 99,
+                background: '#EF4444',
+                color: '#FFFFFF',
+                fontSize: 9,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid var(--panel)',
+              }}
+            >
+              {unreadCount}
+            </span>
+          )}
+        </button>
+
         {/* Dark mode toggle */}
         <button
           className="btn-icon"
@@ -227,15 +277,28 @@ export const Header: React.FC<{ onMobileMenuClick: () => void }> = ({ onMobileMe
           {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
         </button>
 
+        {/* Settings button */}
+        <button
+          className="btn-icon"
+          onClick={() => navigate('/settings')}
+          title="Settings & Anomaly Triggers"
+          id="header-settings-btn"
+        >
+          <Settings size={15} strokeWidth={1.8} />
+        </button>
+
         {/* User pill */}
         <div
+          onClick={() => navigate('/settings')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '5px 10px',
             background: 'var(--panel-2)',
             borderRadius: 'var(--radius-xs)',
             border: '1px solid var(--line)',
+            cursor: 'pointer',
           }}
+          title="Account Settings"
         >
           <div
             style={{
@@ -275,6 +338,7 @@ export const Header: React.FC<{ onMobileMenuClick: () => void }> = ({ onMobileMe
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
@@ -285,7 +349,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         onMobileClose={() => setMobileOpen(false)}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <Header onMobileMenuClick={() => setMobileOpen(true)} />
+        <Header
+          onMobileMenuClick={() => setMobileOpen(true)}
+          onOpenNotifications={() => setNotificationsOpen(true)}
+        />
         <main
           id="main-content"
           style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}
@@ -296,6 +363,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </main>
       </div>
+
+      {/* In-App Notification Drawer */}
+      <NotificationDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   );
 };

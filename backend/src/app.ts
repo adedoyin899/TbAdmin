@@ -11,6 +11,7 @@ import { authRouter } from './routes/auth.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { userRouter } from './routes/users.js';
 import { webhookRouter } from './routes/webhooks.js';
+import { notificationRouter } from './routes/notifications.js';
 
 export const app = express();
 
@@ -60,6 +61,10 @@ app.use('/dashboard', dashboardRouter);
 // User Lookup Routes (Fresh data, real-time)
 app.use('/api/users', userRouter);
 app.use('/users', userRouter);
+
+// Notifications & Settings Routes
+app.use('/api/notifications', notificationRouter);
+app.use('/api/settings', notificationRouter);
 
 // Webhook Routes (Server-to-server, HMAC verification)
 app.use('/api/webhooks', webhookRouter);
