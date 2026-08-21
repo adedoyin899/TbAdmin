@@ -38,7 +38,8 @@ describe('Auth Flow', () => {
     cy.get('input[type="email"]').clear().type('maz@talentbridge.cv');
     cy.get('input[type="password"]').clear().type('temp_password_123');
     cy.get('button[type="submit"]').click();
-    cy.get('#logout-btn').click();
+    cy.get('#user-avatar-btn').click();
+    cy.get('#header-logout-btn').click();
     cy.url().should('equal', 'http://localhost:5173/');
   });
 });

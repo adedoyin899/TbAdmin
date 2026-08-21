@@ -325,6 +325,7 @@ export const Sidebar: React.FC<{
                 </button>
 
                 <button
+                  id="logout-btn"
                   onClick={handleLogout}
                   className="btn btn-ghost"
                   style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8, color: '#EF4444' }}
@@ -645,6 +646,7 @@ export const Header: React.FC<{
               <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
 
               <button
+                id="header-logout-btn"
                 onClick={handleLogout}
                 className="btn btn-ghost"
                 style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8, color: '#EF4444' }}
