@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
-import tbicon from '../../assets/tbicon.svg';
 import tblogo from '../../assets/tblogo.svg';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/formatters';
@@ -53,19 +52,14 @@ export const LoginPage: React.FC = () => {
       <div className="relative w-full max-w-md animate-slide-up">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-3">
-            <img
-              src={tbicon}
-              alt="TalentBridge"
-              style={{ width: 48, height: 48, borderRadius: 12, boxShadow: '0 4px 20px rgba(2,171,172,0.3)' }}
-            />
+          <div className="inline-flex items-center justify-center mb-4">
             <img
               src={tblogo}
               alt="TalentBridge"
-              style={{ height: 26, width: 'auto' }}
+              style={{ height: 34, width: 'auto' }}
             />
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 4 }}>
+          <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 2 }}>
             Admin portal — team access only
           </p>
         </div>

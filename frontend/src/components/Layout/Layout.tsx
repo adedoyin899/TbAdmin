@@ -6,7 +6,6 @@ import {
   Menu, X, Bell, Settings,
   ChevronsUpDown, ShieldCheck,
 } from 'lucide-react';
-import tbicon from '../../assets/tbicon.svg';
 import tblogo from '../../assets/tblogo.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -167,21 +166,30 @@ export const Sidebar: React.FC<{
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* TB Icon — always visible, collapsed or expanded */}
-            <img
-              src={tbicon}
-              alt="TalentBridge"
-              style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 7 }}
-            />
-            {/* TB Wordmark Logo — only when sidebar is expanded */}
-            {!collapsed && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            {/* TB Logo — full wordmark when expanded, cropped icon portion when collapsed */}
+            {collapsed ? (
+              <img
+                src={tblogo}
+                alt="TalentBridge"
+                style={{ height: 26, width: 'auto', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <img
                   src={tblogo}
                   alt="TalentBridge"
-                  style={{ height: 22, width: 'auto' }}
+                  style={{ height: 24, width: 'auto' }}
                 />
-                <span style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginLeft: 6, marginTop: 2 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text-2)',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    paddingLeft: 2,
+                  }}
+                >
                   Admin
                 </span>
               </div>
