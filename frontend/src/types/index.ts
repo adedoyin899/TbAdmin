@@ -231,10 +231,12 @@ export interface UserProfile {
 
 // ── Auth Types ───────────────────────────────────────────────
 
-export type UserRole = 'admin' | 'product' | 'marketing' | 'operations' | 'intern';
+export type UserRole = 'Super Admin' | 'Admin' | 'Data Analyst' | 'Viewer' | 'admin' | 'product' | 'marketing' | 'operations' | 'intern' | string;
 
 export interface AuthUser {
   id: string;
   email: string;
+  name?: string;
   role: UserRole;
+  isOwner?: boolean;
 }

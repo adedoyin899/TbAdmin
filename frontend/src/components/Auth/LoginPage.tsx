@@ -162,12 +162,13 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Fill Demo Credentials */}
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+          {/* Quick Fill RBAC Role Accounts */}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-              Quick-Fill Admin Credentials
+              Quick-Fill Role-Based Access (RBAC)
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Super Admin */}
               <button
                 type="button"
                 onClick={() => {
@@ -175,23 +176,64 @@ export const LoginPage: React.FC = () => {
                   setPassword('temp_password_123');
                 }}
                 className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '7px 10px', fontSize: 12, border: '1px solid var(--line)', background: 'var(--panel-2)' }}
+                style={{ justifyContent: 'space-between', padding: '6px 8px', fontSize: 11, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
               >
-                <span style={{ fontWeight: 600, color: 'var(--text)' }}>maz@talentbridge.cv</span>
-                <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>Fill Admin Credentials →</span>
+                <div>
+                  <span style={{ fontWeight: 700, color: '#2DD4BF', display: 'block' }}>👑 Maz (Super Admin)</span>
+                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Full Read/Write/Admin</span>
+                </div>
+                <span style={{ color: 'var(--accent)', fontSize: 10 }}>Fill →</span>
               </button>
 
+              {/* System Admin */}
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('newuser@talentbridge.cv');
+                  setEmail('admin@talentbridge.cv');
                   setPassword('password123');
                 }}
                 className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '7px 10px', fontSize: 12, border: '1px solid var(--line)', background: 'var(--panel-2)' }}
+                style={{ justifyContent: 'space-between', padding: '6px 8px', fontSize: 11, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
               >
-                <span style={{ fontWeight: 600, color: 'var(--text)' }}>newuser@talentbridge.cv</span>
-                <span style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 11 }}>Fill New User →</span>
+                <div>
+                  <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>🛠️ System Admin</span>
+                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Full Analytics & Config</span>
+                </div>
+                <span style={{ color: 'var(--accent)', fontSize: 10 }}>Fill →</span>
+              </button>
+
+              {/* Data Analyst */}
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('kwame.asante@talentbridge.cv');
+                  setPassword('password123');
+                }}
+                className="btn btn-ghost"
+                style={{ justifyContent: 'space-between', padding: '6px 8px', fontSize: 11, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
+              >
+                <div>
+                  <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>📊 Kwame (Analyst)</span>
+                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Analytics & CSV Export</span>
+                </div>
+                <span style={{ color: 'var(--accent)', fontSize: 10 }}>Fill →</span>
+              </button>
+
+              {/* Viewer / Read-Only */}
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('sarah.jenkins@talentbridge.cv');
+                  setPassword('password123');
+                }}
+                className="btn btn-ghost"
+                style={{ justifyContent: 'space-between', padding: '6px 8px', fontSize: 11, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
+              >
+                <div>
+                  <span style={{ fontWeight: 700, color: '#F59E0B', display: 'block' }}>👁️ Sarah (Viewer)</span>
+                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Strict Read-Only Mode</span>
+                </div>
+                <span style={{ color: 'var(--accent)', fontSize: 10 }}>Fill →</span>
               </button>
             </div>
           </div>

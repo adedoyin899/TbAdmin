@@ -15,6 +15,7 @@ import { formatNumber } from '../../utils/formatters';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
+import { useRbac } from '../../utils/rbac';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const TIME_SLOTS = [
@@ -30,6 +31,7 @@ const HEATMAP_BG: Record<number, string> = {
 };
 
 export const RoomInsightsDashboard: React.FC = () => {
+  const rbac = useRbac();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const navigate = useNavigate();
 
@@ -81,7 +83,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           />
           <button
             onClick={handleExportCsv}
-            disabled={!data?.topPerformingRooms?.length}
+            disabled={!data?.topPerformingRooms?.length || !rbac.canExportData}
             className="btn btn-ghost"
             style={{
               display: 'inline-flex',
@@ -91,12 +93,13 @@ export const RoomInsightsDashboard: React.FC = () => {
               padding: '7px 12px',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-xs)',
-              cursor: data?.topPerformingRooms?.length ? 'pointer' : 'not-allowed',
+              cursor: data?.topPerformingRooms?.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+              opacity: !rbac.canExportData ? 0.6 : 1,
             }}
-            title="Export Top Showcase Rooms to CSV"
+            title={!rbac.canExportData ? 'Export restricted for Viewer role' : 'Export Top Showcase Rooms to CSV'}
           >
             <Download size={14} />
-            Export CSV
+            {!rbac.canExportData ? 'Export (Locked)' : 'Export CSV'}
           </button>
         </div>
       </div>

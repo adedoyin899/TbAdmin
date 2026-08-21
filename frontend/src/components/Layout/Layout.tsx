@@ -474,12 +474,31 @@ export const Header: React.FC<{
           <Menu size={16} />
         </button>
 
-        {/* Header Greeting */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {/* Header Greeting & RBAC Role Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
-            Hello, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{getDisplayName(user?.email)}</strong>
+            Hello, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{user?.name || getDisplayName(user?.email)}</strong>
           </span>
           <span style={{ fontSize: 14 }}>👋</span>
+
+          {/* Role Tier Badge */}
+          {user?.role === 'Super Admin' || user?.email?.toLowerCase() === 'maz@talentbridge.cv' ? (
+            <span className="badge badge-success" style={{ fontSize: 10, padding: '2px 7px' }}>
+              👑 Super Admin
+            </span>
+          ) : user?.role === 'Admin' ? (
+            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 7px' }}>
+              🛠️ Admin
+            </span>
+          ) : user?.role === 'Data Analyst' ? (
+            <span className="badge" style={{ fontSize: 10, padding: '2px 7px', background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', fontWeight: 700 }}>
+              📊 Data Analyst
+            </span>
+          ) : (
+            <span className="badge" style={{ fontSize: 10, padding: '2px 7px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', fontWeight: 700 }}>
+              👁️ Read-Only
+            </span>
+          )}
         </div>
       </div>
 
@@ -665,9 +684,12 @@ export const Header: React.FC<{
 // ── Layout shell ──────────────────────────────────────────────
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const isReadOnly = user?.role === 'Viewer' || user?.role === 'Data Analyst';
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
@@ -682,6 +704,31 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           onMobileMenuClick={() => setMobileOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
         />
+
+        {/* Read-Only Mode Banner */}
+        {isReadOnly && (
+          <div
+            style={{
+              background: 'rgba(245, 158, 11, 0.09)',
+              borderBottom: '1px solid rgba(245, 158, 11, 0.22)',
+              padding: '6px 20px',
+              fontSize: 12,
+              color: '#F59E0B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+            }}
+          >
+            <span>
+              👁️ <strong>Read-Only Mode:</strong> Browsing as <strong>{user?.name || user?.email}</strong> ({user?.role || 'Viewer'}). Administrative mutations, team provisioning, and API key editing are view-only.
+            </span>
+            <span style={{ fontSize: 10, background: 'rgba(245, 158, 11, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+              RBAC PROTECTED
+            </span>
+          </div>
+        )}
+
         <main
           id="main-content"
           style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
+import { useRbac } from '../utils/rbac';
 
 type TabKey = 'alerts' | 'email' | 'integrations' | 'security' | 'appearance';
 type ProviderKey = 'posthog' | 'mailgun' | 'redis' | 'postgres';
@@ -23,13 +24,14 @@ const TABS: TabItem[] = [
   { id: 'alerts', label: 'Anomaly Triggers', icon: Flame, badge: 'Active', desc: 'Threshold baking rules & event triggers' },
   { id: 'email', label: 'Email & Digest', icon: Mail, desc: 'Admin notifications & scheduled reports' },
   { id: 'integrations', label: 'Integrations & API', icon: Server, badge: 'Live Config', desc: 'Telemetry connections & provider credentials' },
-  { id: 'security', label: 'Team & Security', icon: Shield, badge: '👑 Maz Admin', desc: 'Admin accounts & auth session policies' },
+  { id: 'security', label: 'Team & Security', icon: Shield, badge: 'RBAC', desc: 'Admin accounts & auth session policies' },
   { id: 'appearance', label: 'Portal Appearance', icon: Palette, desc: 'Themes, formatting & visual display' },
 ];
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSettings, resetSettings, sendTestEmailAlert } = useSettings();
   const { user } = useAuth();
+  const rbac = useRbac();
 
   const [activeTab, setActiveTab] = useState<TabKey>('alerts');
   const [formData, setFormData] = useState({ ...settings });
@@ -474,9 +476,10 @@ export const SettingsPage: React.FC = () => {
                   min="15"
                   max="75"
                   step="5"
+                  disabled={rbac.isReadOnly}
                   value={formData.funnelDropoffThreshold}
                   onChange={e => setFormData({ ...formData, funnelDropoffThreshold: Number(e.target.value) })}
-                  style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+                  style={{ width: '100%', accentColor: 'var(--accent)', cursor: rbac.isReadOnly ? 'not-allowed' : 'pointer' }}
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--dim)' }}>
                   <span>15% (Sensitive)</span>
@@ -528,6 +531,7 @@ export const SettingsPage: React.FC = () => {
                     type="number"
                     min="5"
                     max="100"
+                    disabled={rbac.isReadOnly}
                     value={formData.emailBounceThreshold}
                     onChange={e => setFormData({ ...formData, emailBounceThreshold: Number(e.target.value) })}
                     className="input"
@@ -554,11 +558,12 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--panel-2)',
                     border: '1px solid var(--line)',
-                    cursor: 'pointer',
+                    cursor: rbac.isReadOnly ? 'not-allowed' : 'pointer',
                   }}
                 >
                   <input
                     type="checkbox"
+                    disabled={rbac.isReadOnly}
                     checked={formData.enableRoomLeadAlerts}
                     onChange={e => setFormData({ ...formData, enableRoomLeadAlerts: e.target.checked })}
                     style={{ marginTop: 2, accentColor: 'var(--accent)' }}
@@ -582,11 +587,12 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--panel-2)',
                     border: '1px solid var(--line)',
-                    cursor: 'pointer',
+                    cursor: rbac.isReadOnly ? 'not-allowed' : 'pointer',
                   }}
                 >
                   <input
                     type="checkbox"
+                    disabled={rbac.isReadOnly}
                     checked={formData.enableRetentionMilestones}
                     onChange={e => setFormData({ ...formData, enableRetentionMilestones: e.target.checked })}
                     style={{ marginTop: 2, accentColor: 'var(--accent)' }}
@@ -596,7 +602,7 @@ export const SettingsPage: React.FC = () => {
                       Retention Benchmarks
                     </p>
                     <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
-                      Notify when weekly cohorts gain +3% WoW
+                      Notify weekly when 30d cohort retention exceeds 30%
                     </p>
                   </div>
                 </label>
@@ -610,18 +616,19 @@ export const SettingsPage: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--panel-2)',
                     border: '1px solid var(--line)',
-                    cursor: 'pointer',
+                    cursor: rbac.isReadOnly ? 'not-allowed' : 'pointer',
                   }}
                 >
                   <input
                     type="checkbox"
+                    disabled={rbac.isReadOnly}
                     checked={formData.enableSystemHealthAlerts}
                     onChange={e => setFormData({ ...formData, enableSystemHealthAlerts: e.target.checked })}
                     style={{ marginTop: 2, accentColor: 'var(--accent)' }}
                   />
                   <div>
                     <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', margin: 0 }}>
-                      Telemetry Fallbacks
+                      Telemetry Fallbacks & Sync
                     </p>
                     <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
                       Alert when Redis/PostHog cache fallback triggers
@@ -699,6 +706,7 @@ export const SettingsPage: React.FC = () => {
                   id="settings-recipient-email"
                   type="email"
                   required
+                  disabled={rbac.isReadOnly}
                   value={formData.recipientEmail}
                   onChange={e => setFormData({ ...formData, recipientEmail: e.target.value })}
                   className="input"
@@ -717,6 +725,7 @@ export const SettingsPage: React.FC = () => {
                 </label>
                 <select
                   id="settings-email-frequency"
+                  disabled={rbac.isReadOnly}
                   value={formData.emailFrequency}
                   onChange={e => setFormData({ ...formData, emailFrequency: e.target.value as any })}
                   className="input"
@@ -757,11 +766,12 @@ export const SettingsPage: React.FC = () => {
                       borderRadius: 'var(--radius-sm)',
                       background: 'var(--panel-2)',
                       border: '1px solid var(--line)',
-                      cursor: 'pointer',
+                      cursor: rbac.isReadOnly ? 'not-allowed' : 'pointer',
                     }}
                   >
                     <input
                       type="checkbox"
+                      disabled={rbac.isReadOnly}
                       checked={(formData.subscribedTopics as any)[topic.key]}
                       onChange={e =>
                         setFormData({
@@ -819,7 +829,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSendTestEmail}
-                disabled={isSendingTest}
+                disabled={isSendingTest || rbac.isReadOnly}
                 className="btn btn-ghost"
                 style={{
                   padding: '7px 14px',
@@ -980,12 +990,19 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('posthog')}
-                      disabled={testingProvider === 'posthog'}
+                      disabled={testingProvider === 'posthog' || !rbac.canManageIntegrations}
                       className="btn btn-primary"
-                      style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
+                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                      }}
+                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Verify & Test Connection'}
                     >
                       <RefreshCw size={13} className={testingProvider === 'posthog' ? 'animate-spin' : ''} />
-                      {testingProvider === 'posthog' ? 'Testing Handshake…' : 'Verify & Test Connection'}
+                      {testingProvider === 'posthog' ? 'Testing Handshake…' : !rbac.canManageIntegrations ? 'Test Key (Locked)' : 'Verify & Test Connection'}
                     </button>
                   </div>
 
@@ -1080,12 +1097,19 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('mailgun')}
-                      disabled={testingProvider === 'mailgun'}
+                      disabled={testingProvider === 'mailgun' || !rbac.canManageIntegrations}
                       className="btn btn-primary"
-                      style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
+                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                      }}
+                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Verify & Test Connection'}
                     >
                       <RefreshCw size={13} className={testingProvider === 'mailgun' ? 'animate-spin' : ''} />
-                      {testingProvider === 'mailgun' ? 'Verifying Key…' : 'Verify & Test Connection'}
+                      {testingProvider === 'mailgun' ? 'Verifying Key…' : !rbac.canManageIntegrations ? 'Test Key (Locked)' : 'Verify & Test Connection'}
                     </button>
                   </div>
 
@@ -1097,6 +1121,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        disabled={!rbac.canManageIntegrations}
                         value={credentials.mailgun.domain}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1119,6 +1144,7 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_key'] ? 'text' : 'password'}
+                          disabled={!rbac.canManageIntegrations}
                           value={credentials.mailgun.apiKey}
                           onChange={e => setCredentials({
                             ...credentials,
@@ -1149,6 +1175,7 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_wh'] ? 'text' : 'password'}
+                          disabled={!rbac.canManageIntegrations}
                           value={credentials.mailgun.webhookKey}
                           onChange={e => setCredentials({
                             ...credentials,
@@ -1189,12 +1216,19 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('redis')}
-                      disabled={testingProvider === 'redis'}
+                      disabled={testingProvider === 'redis' || !rbac.canManageIntegrations}
                       className="btn btn-primary"
-                      style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
+                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                      }}
+                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Ping Redis Node'}
                     >
                       <RefreshCw size={13} className={testingProvider === 'redis' ? 'animate-spin' : ''} />
-                      {testingProvider === 'redis' ? 'Pinging Node…' : 'Ping Redis Node'}
+                      {testingProvider === 'redis' ? 'Pinging Node…' : !rbac.canManageIntegrations ? 'Ping (Locked)' : 'Ping Redis Node'}
                     </button>
                   </div>
 
@@ -1205,6 +1239,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        disabled={!rbac.canManageIntegrations}
                         value={credentials.redis.url}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1221,6 +1256,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="password"
+                        disabled={!rbac.canManageIntegrations}
                         value={credentials.redis.password || ''}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1250,12 +1286,19 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('postgres')}
-                      disabled={testingProvider === 'postgres'}
+                      disabled={testingProvider === 'postgres' || !rbac.canManageIntegrations}
                       className="btn btn-primary"
-                      style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
+                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                      }}
+                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Test Database Query'}
                     >
                       <RefreshCw size={13} className={testingProvider === 'postgres' ? 'animate-spin' : ''} />
-                      {testingProvider === 'postgres' ? 'Querying Pool…' : 'Test Database Query'}
+                      {testingProvider === 'postgres' ? 'Querying Pool…' : !rbac.canManageIntegrations ? 'Test Query (Locked)' : 'Test Database Query'}
                     </button>
                   </div>
 
@@ -1265,6 +1308,7 @@ export const SettingsPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      disabled={!rbac.canManageIntegrations}
                       value={credentials.postgres.url}
                       onChange={e => setCredentials({
                         ...credentials,
@@ -1292,12 +1336,21 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <button
                   type="button"
+                  disabled={!rbac.canFlushCache}
                   onClick={handleFlushCache}
                   className="btn btn-ghost"
-                  style={{ fontSize: 12, padding: '6px 12px', gap: 6, border: '1px solid var(--line)' }}
+                  style={{
+                    fontSize: 12,
+                    padding: '6px 12px',
+                    gap: 6,
+                    border: '1px solid var(--line)',
+                    opacity: !rbac.canFlushCache ? 0.5 : 1,
+                    cursor: !rbac.canFlushCache ? 'not-allowed' : 'pointer',
+                  }}
+                  title={!rbac.canFlushCache ? 'Admin permissions required to purge cache' : 'Flush Local Cache'}
                 >
                   <RefreshCw size={13} />
-                  {cacheFlushSuccess ? 'Cache Cleared! ✓' : 'Flush Local Cache'}
+                  {cacheFlushSuccess ? 'Cache Cleared! ✓' : !rbac.canFlushCache ? 'Flush (Locked)' : 'Flush Local Cache'}
                 </button>
               </div>
 
@@ -1405,12 +1458,20 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 type="button"
+                disabled={!rbac.canManageTeam}
                 onClick={() => setShowAddUserModal(true)}
                 className="btn btn-primary"
-                style={{ fontSize: 12, padding: '7px 14px', gap: 6 }}
+                style={{
+                  fontSize: 12,
+                  padding: '7px 14px',
+                  gap: 6,
+                  opacity: !rbac.canManageTeam ? 0.5 : 1,
+                  cursor: !rbac.canManageTeam ? 'not-allowed' : 'pointer',
+                }}
+                title={!rbac.canManageTeam ? 'Only Super Admin (Maz) can provision administrator accounts' : '+ Add Administrator'}
               >
                 <UserPlus size={14} />
-                + Add Administrator
+                {!rbac.canManageTeam ? '+ Add Admin (Locked)' : '+ Add Administrator'}
               </button>
             </div>
 
@@ -1602,7 +1663,7 @@ export const SettingsPage: React.FC = () => {
                         </td>
                         <td>
                           <select
-                            disabled={u.isOwner}
+                            disabled={!rbac.canManageTeam || u.isOwner}
                             value={u.role}
                             onChange={e => handleUpdateUserRole(u.email, e.target.value)}
                             className="input"
@@ -1610,9 +1671,10 @@ export const SettingsPage: React.FC = () => {
                               padding: '2px 6px',
                               fontSize: 11,
                               fontWeight: 600,
-                              background: u.isOwner ? 'var(--panel-2)' : 'var(--panel)',
-                              cursor: u.isOwner ? 'not-allowed' : 'pointer',
+                              background: !rbac.canManageTeam || u.isOwner ? 'var(--panel-2)' : 'var(--panel)',
+                              cursor: !rbac.canManageTeam || u.isOwner ? 'not-allowed' : 'pointer',
                               width: 130,
+                              opacity: !rbac.canManageTeam && !u.isOwner ? 0.7 : 1,
                             }}
                           >
                             <option value="Super Admin">Super Admin</option>
@@ -1630,15 +1692,16 @@ export const SettingsPage: React.FC = () => {
                         <td>
                           <button
                             type="button"
-                            disabled={u.isOwner}
+                            disabled={!rbac.canManageTeam || u.isOwner}
                             onClick={() => handleToggleUserStatus(u.email)}
                             className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-neutral'}`}
                             style={{
                               fontSize: 11,
-                              cursor: u.isOwner ? 'default' : 'pointer',
+                              cursor: !rbac.canManageTeam || u.isOwner ? 'default' : 'pointer',
                               border: 'none',
+                              opacity: !rbac.canManageTeam && !u.isOwner ? 0.7 : 1,
                             }}
-                            title={u.isOwner ? 'Primary owner cannot be suspended' : 'Click to toggle status'}
+                            title={u.isOwner ? 'Primary owner cannot be suspended' : !rbac.canManageTeam ? 'Only Super Admin can change account status' : 'Click to toggle status'}
                           >
                             {u.status}
                           </button>
@@ -1647,22 +1710,36 @@ export const SettingsPage: React.FC = () => {
                           <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                             <button
                               type="button"
+                              disabled={!rbac.canManageTeam || u.isOwner}
                               onClick={() => handleResetUserSession(u.email)}
                               className="btn btn-ghost"
-                              style={{ padding: '4px 8px', fontSize: 11, color: 'var(--accent2)' }}
-                              title="Reset JWT Session Token"
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: 11,
+                                color: 'var(--accent2)',
+                                opacity: !rbac.canManageTeam || u.isOwner ? 0.4 : 1,
+                                cursor: !rbac.canManageTeam || u.isOwner ? 'not-allowed' : 'pointer',
+                              }}
+                              title={!rbac.canManageTeam ? 'Super Admin only' : 'Reset JWT Session Token'}
                             >
                               Reset
                             </button>
                             {!u.isOwner && (
                               <button
                                 type="button"
+                                disabled={!rbac.canManageTeam}
                                 onClick={() => handleDeleteUser(u.email)}
-                                className="btn btn-ghost"
-                                style={{ padding: '4px 8px', fontSize: 11, color: '#EF4444' }}
-                                title="Revoke & Delete Account"
+                                className="btn-icon"
+                                style={{
+                                  color: '#EF4444',
+                                  width: 26,
+                                  height: 26,
+                                  opacity: !rbac.canManageTeam ? 0.3 : 1,
+                                  cursor: !rbac.canManageTeam ? 'not-allowed' : 'pointer',
+                                }}
+                                title={!rbac.canManageTeam ? 'Super Admin only' : 'Revoke & Delete Administrator Account'}
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={13} />
                               </button>
                             )}
                           </div>

@@ -17,6 +17,7 @@ import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
 import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
 import { DateRangeSelector, type DateRangeValue } from '../components/Common/DateRangeSelector';
 import { exportToCsv } from '../utils/exportCsv';
+import { useRbac } from '../utils/rbac';
 
 // ── Event Icon & Color Config ─────────────────────────────────
 
@@ -636,6 +637,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
 // ── Main User Directory Page ──────────────────────────────────
 
 export const UserLookupPage: React.FC = () => {
+  const rbac = useRbac();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchSubmitted, setSearchSubmitted] = useState('');
@@ -753,7 +755,7 @@ export const UserLookupPage: React.FC = () => {
                   data: filteredUsers,
                 });
               }}
-              disabled={!filteredUsers.length}
+              disabled={!filteredUsers.length || !rbac.canExportData}
               className="btn btn-ghost"
               style={{
                 display: 'inline-flex',
@@ -763,13 +765,14 @@ export const UserLookupPage: React.FC = () => {
                 padding: '7px 12px',
                 border: '1px solid var(--line)',
                 borderRadius: 'var(--radius-xs)',
-                cursor: filteredUsers.length ? 'pointer' : 'not-allowed',
+                cursor: filteredUsers.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+                opacity: !rbac.canExportData ? 0.6 : 1,
                 height: 36,
               }}
-              title="Export Users to CSV"
+              title={!rbac.canExportData ? 'Export restricted for Viewer role' : 'Export Users to CSV'}
             >
               <Download size={14} />
-              Export CSV
+              {!rbac.canExportData ? 'Export (Locked)' : 'Export CSV'}
             </button>
           </div>
         </div>

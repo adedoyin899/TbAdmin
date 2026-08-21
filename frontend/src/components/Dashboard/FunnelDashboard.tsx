@@ -14,6 +14,7 @@ import { SIGNUP_SOURCES } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
+import { useRbac } from '../../utils/rbac';
 
 const STAGE_COLORS = [
   '#2DD4BF', '#1FB8A7', '#13A090', '#0A8A7A', '#057060',
@@ -38,6 +39,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payl
 };
 
 export const FunnelDashboard: React.FC = () => {
+  const rbac = useRbac();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [signupSource, setSignupSource] = useState('all');
 
@@ -105,7 +107,7 @@ export const FunnelDashboard: React.FC = () => {
           </div>
           <button
             onClick={handleExportCsv}
-            disabled={!data?.funnel?.length}
+            disabled={!data?.funnel?.length || !rbac.canExportData}
             className="btn btn-ghost"
             style={{
               display: 'inline-flex',
@@ -115,12 +117,13 @@ export const FunnelDashboard: React.FC = () => {
               padding: '7px 12px',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-xs)',
-              cursor: data?.funnel?.length ? 'pointer' : 'not-allowed',
+              cursor: data?.funnel?.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+              opacity: !rbac.canExportData ? 0.6 : 1,
             }}
-            title="Export Funnel Breakdown to CSV"
+            title={!rbac.canExportData ? 'Export restricted for Viewer role' : 'Export Funnel Breakdown to CSV'}
           >
             <Download size={14} />
-            Export CSV
+            {!rbac.canExportData ? 'Export (Locked)' : 'Export CSV'}
           </button>
         </div>
       </div>
