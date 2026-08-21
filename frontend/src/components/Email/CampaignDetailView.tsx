@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import {
   ArrowLeft, ExternalLink, CheckCircle2, Eye,
-  User, Search, TrendingUp, Filter, Download,
+  User, Search, TrendingUp, Filter, Download, ChevronRight,
 } from 'lucide-react';
 import type { EmailCampaign } from '../../types';
 import { formatNumber, formatDate, formatDateTime } from '../../utils/formatters';
@@ -15,6 +16,7 @@ export const CampaignDetailView: React.FC<{
   campaign: EmailCampaign;
   onBack: () => void;
 }> = ({ campaign, onBack }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'performance' | 'recipients' | 'template'>('performance');
   const [recipientSearch, setRecipientSearch] = useState('');
   const [recipientFilter, setRecipientFilter] = useState<string>('all');
@@ -350,18 +352,24 @@ export const CampaignDetailView: React.FC<{
                     <th>Opened At</th>
                     <th>Clicked At</th>
                     <th>Email Client / Device</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRecipients.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
                         No recipient records match your query.
                       </td>
                     </tr>
                   ) : (
                     (filteredRecipients || []).map(r => (
-                      <tr key={r.recipientId}>
+                      <tr
+                        key={r.recipientId}
+                        onClick={() => navigate('/lookup')}
+                        className="hover:bg-[var(--panel-2)] cursor-pointer transition-colors"
+                        title={`Click to inspect ${r.name}'s profile in directory`}
+                      >
                         <td>
                           <div>
                             <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>{r.name}</p>
@@ -394,6 +402,11 @@ export const CampaignDetailView: React.FC<{
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
                           {r.client} ({r.device})
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span className="btn btn-ghost" style={{ padding: '3px 8px', fontSize: 11, gap: 4, display: 'inline-flex' }}>
+                            Profile <ChevronRight size={11} />
+                          </span>
                         </td>
                       </tr>
                     ))
