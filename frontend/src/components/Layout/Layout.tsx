@@ -3,9 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
-  BarChart2, Menu, X, Bell, Settings,
+  Menu, X, Bell, Settings,
   ChevronsUpDown, ShieldCheck,
 } from 'lucide-react';
+import tbicon from '../../assets/tbicon.svg';
+import tblogo from '../../assets/tblogo.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { NotificationDrawer } from '../Notifications/NotificationDrawer';
@@ -165,24 +167,23 @@ export const Sidebar: React.FC<{
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'var(--ink)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
-            </div>
+            {/* TB Icon — always visible, collapsed or expanded */}
+            <img
+              src={tbicon}
+              alt="TalentBridge"
+              style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 7 }}
+            />
+            {/* TB Wordmark Logo — only when sidebar is expanded */}
             {!collapsed && (
-              <div>
-                <p style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)', lineHeight: 1.2 }}>
-                  TalentBridge
-                </p>
-                <p style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  Admin Portal
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <img
+                  src={tblogo}
+                  alt="TalentBridge"
+                  style={{ height: 22, width: 'auto' }}
+                />
+                <span style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginLeft: 6, marginTop: 2 }}>
+                  Admin
+                </span>
               </div>
             )}
           </div>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, Mail, Lock, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
+import tbicon from '../../assets/tbicon.svg';
+import tblogo from '../../assets/tblogo.svg';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/formatters';
 
@@ -51,18 +53,19 @@ export const LoginPage: React.FC = () => {
       <div className="relative w-full max-w-md animate-slide-up">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-[16px] mb-4 shadow-lg"
-            style={{ background: 'var(--ink)' }}
-          >
-            <BarChart2 size={28} color="#2DD4BF" strokeWidth={2.5} />
+          <div className="inline-flex items-center gap-3 mb-3">
+            <img
+              src={tbicon}
+              alt="TalentBridge"
+              style={{ width: 48, height: 48, borderRadius: 12, boxShadow: '0 4px 20px rgba(2,171,172,0.3)' }}
+            />
+            <img
+              src={tblogo}
+              alt="TalentBridge"
+              style={{ height: 26, width: 'auto' }}
+            />
           </div>
-          <h1
-            style={{ fontFamily: 'Geist, sans-serif', color: 'var(--text)', fontSize: 28, fontWeight: 700, marginBottom: 6 }}
-          >
-            TalentBridge Analytics
-          </h1>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
+          <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 4 }}>
             Admin portal — team access only
           </p>
         </div>
