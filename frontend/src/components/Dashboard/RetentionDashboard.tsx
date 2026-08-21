@@ -86,12 +86,12 @@ export const RetentionDashboard: React.FC = () => {
       </div>
 
       {/* Health Status Banner */}
-      {data && (
+      {data && data.retention7d && (
         <MetricAlertBanner
           severity="success"
           title="Healthy Returning User Benchmarks"
           metricLabel="7-Day Retention"
-          metricValue={`${formatPercentage(data.retention7d.percentage)} (+${data.retention7d.change}% WoW)`}
+          metricValue={`${formatPercentage(data.retention7d.percentage)} (+${data.retention7d.change || 0}% WoW)`}
           message="Cohort retention is pacing ahead of average creator benchmarks for early onboarding periods."
         />
       )}
@@ -104,8 +104,8 @@ export const RetentionDashboard: React.FC = () => {
           {/* Stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { label: '7-Day Retention', value: data.retention7d.percentage, change: data.retention7d.change, desc: 'Users returning within 7 days of signup' },
-              { label: '30-Day Retention', value: data.retention30d.percentage, change: data.retention30d.change, desc: 'Users returning within 30 days of signup' },
+              { label: '7-Day Retention', value: data.retention7d?.percentage ?? 0, change: data.retention7d?.change ?? 0, desc: 'Users returning within 7 days of signup' },
+              { label: '30-Day Retention', value: data.retention30d?.percentage ?? 0, change: data.retention30d?.change ?? 0, desc: 'Users returning within 30 days of signup' },
             ].map(stat => (
               <div
                 key={stat.label}

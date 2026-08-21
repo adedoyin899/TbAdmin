@@ -18,19 +18,26 @@ export const useAuth = (): AuthContextValue => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const stored = localStorage.getItem('auth_user');
+      if (stored) return JSON.parse(stored) as AuthUser;
+    } catch {}
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Restore session on mount
+  // Restore session / verify in background on mount
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (token) {
       authApi.me().then((u) => {
-        if (u) setUser(u as AuthUser);
-        setIsLoading(false);
+        if (u) {
+          setUser(u as AuthUser);
+        }
+      }).catch(() => {
+        // Keep fallback stored user if network fails
       });
-    } else {
-      setIsLoading(false);
     }
   }, []);
 

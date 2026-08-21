@@ -12,6 +12,7 @@ import { EmailDashboard } from './components/Dashboard/EmailDashboard';
 import { RoomInsightsDashboard } from './components/Dashboard/RoomInsightsDashboard';
 import { UserLookupPage } from './pages/UserLookup';
 import { SettingsPage } from './pages/Settings';
+import { ErrorBoundary } from './components/Common/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,13 +29,14 @@ document.documentElement.setAttribute('data-mode', savedMode);
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <SettingsProvider>
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<LoginPage />} />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <SettingsProvider>
+              <Routes>
+                {/* Public */}
+                <Route path="/" element={<LoginPage />} />
 
               {/* Protected dashboard routes */}
               <Route
@@ -101,6 +103,7 @@ function App() {
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
+  </ErrorBoundary>
   );
 }
 

@@ -147,22 +147,22 @@ export const FunnelDashboard: React.FC = () => {
         <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>
       ) : data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {data.funnel.map((stage, i) => (
-            <div key={stage.stage} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
+          {(data.funnel || []).map((stage, i) => (
+            <div key={stage.stage || i} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
               <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {stage.stage}
               </p>
               <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif', marginBottom: 2 }}>
                 {formatNumber(stage.count)}
               </p>
-              <p style={{ fontSize: 13, color: STAGE_COLORS[i], fontWeight: 600 }}>
+              <p style={{ fontSize: 13, color: STAGE_COLORS[i % STAGE_COLORS.length], fontWeight: 600 }}>
                 {formatPercentage(stage.percentage)} of total
               </p>
-              {i < data.dropoff.length && (
+              {data.dropoff && i < data.dropoff.length && data.dropoff[i] && (
                 <div style={{ marginTop: 8, padding: '4px 8px', background: 'color-mix(in srgb, #EF4444 10%, transparent)', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <ArrowDownRight size={12} color="#EF4444" />
                   <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600 }}>
-                    {formatPercentage(data.dropoff[i].percentage)} drop-off
+                    {formatPercentage(data.dropoff[i]?.percentage)} drop-off
                   </span>
                 </div>
               )}
@@ -172,7 +172,7 @@ export const FunnelDashboard: React.FC = () => {
       )}
 
       {/* Chart */}
-      {data && (
+      {data && data.funnel && data.funnel.length > 0 && (
         <div className="chart-container">
           <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
             Funnel Visualisation
@@ -200,7 +200,7 @@ export const FunnelDashboard: React.FC = () => {
                   style={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Sans' }}
                 />
                 {data.funnel.map((_, i) => (
-                  <Cell key={i} fill={STAGE_COLORS[i]} />
+                  <Cell key={i} fill={STAGE_COLORS[i % STAGE_COLORS.length]} />
                 ))}
               </Bar>
             </BarChart>
@@ -209,7 +209,7 @@ export const FunnelDashboard: React.FC = () => {
       )}
 
       {/* Drop-off table */}
-      {data && (
+      {data && data.funnel && data.funnel.length > 0 && (
         <div className="table-wrap">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
             <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
@@ -228,10 +228,10 @@ export const FunnelDashboard: React.FC = () => {
             </thead>
             <tbody>
               {data.funnel.map((stage, i) => (
-                <tr key={stage.stage}>
+                <tr key={stage.stage || i}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: STAGE_COLORS[i], flexShrink: 0 }} />
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: STAGE_COLORS[i % STAGE_COLORS.length], flexShrink: 0 }} />
                       <span style={{ fontWeight: 500 }}>{stage.stage}</span>
                     </div>
                   </td>
@@ -239,14 +239,14 @@ export const FunnelDashboard: React.FC = () => {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 80, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${stage.percentage}%`, height: '100%', background: STAGE_COLORS[i], borderRadius: 99 }} />
+                        <div style={{ width: `${stage.percentage || 0}%`, height: '100%', background: STAGE_COLORS[i % STAGE_COLORS.length], borderRadius: 99 }} />
                       </div>
-                      <span style={{ fontWeight: 600, color: STAGE_COLORS[i] }}>{formatPercentage(stage.percentage)}</span>
+                      <span style={{ fontWeight: 600, color: STAGE_COLORS[i % STAGE_COLORS.length] }}>{formatPercentage(stage.percentage)}</span>
                     </div>
                   </td>
                   <td>
-                    {i < data.dropoff.length ? (
-                      <span className="badge badge-error">↓ {formatPercentage(data.dropoff[i].percentage)}</span>
+                    {data.dropoff && i < data.dropoff.length && data.dropoff[i] ? (
+                      <span className="badge badge-error">↓ {formatPercentage(data.dropoff[i]?.percentage)}</span>
                     ) : (
                       <span style={{ color: 'var(--faint)' }}>—</span>
                     )}

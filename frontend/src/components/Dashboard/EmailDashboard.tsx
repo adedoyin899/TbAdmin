@@ -45,10 +45,10 @@ export const EmailDashboard: React.FC = () => {
     });
   };
 
-  const chartData = data?.campaigns.map(c => ({
-    name: c.campaignName.length > 16 ? c.campaignName.slice(0, 16) + '…' : c.campaignName,
-    'Open %': c.openPercentage,
-    'Click %': c.clickPercentage,
+  const chartData = (data?.campaigns || []).map(c => ({
+    name: (c.campaignName || '').length > 16 ? (c.campaignName || '').slice(0, 16) + '…' : (c.campaignName || ''),
+    'Open %': c.openPercentage ?? 0,
+    'Click %': c.clickPercentage ?? 0,
   }));
 
   // If a campaign is selected, render its granular drill-down view!
@@ -61,7 +61,7 @@ export const EmailDashboard: React.FC = () => {
     );
   }
 
-  const totalBounces = data?.campaigns.reduce((a, c) => a + c.bounceCount, 0) || 0;
+  const totalBounces = (data?.campaigns || []).reduce((a, c) => a + (c.bounceCount || 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-in">

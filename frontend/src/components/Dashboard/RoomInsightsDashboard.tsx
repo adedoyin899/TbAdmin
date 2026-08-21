@@ -107,7 +107,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           severity="info"
           title="High Mobile Room Viewership Surge"
           metricLabel="Mobile Traffic Share"
-          metricValue={`${data.devices?.find(d => d.name.toLowerCase() === 'mobile')?.percentage || 45}%`}
+          metricValue={`${(data.devices || []).find(d => (d.name || '').toLowerCase().includes('mobile'))?.percentage || 45}%`}
           message="Mobile viewers represent nearly half of all 3D showcase sessions. Optimization for mobile WebGL rendering remains high priority."
         />
       )}
@@ -115,52 +115,52 @@ export const RoomInsightsDashboard: React.FC = () => {
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
 
-      {data && (
+      {data && data.summary && (
         <>
           {/* Top 6 KPI Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Rooms</p>
               <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalRooms)}</p>
-              <p style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 4 }}>{data.summary.publishedRooms} Published</p>
+              <p style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 4 }}>{data.summary.publishedRooms || 0} Published</p>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Total Views</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalViews.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.totalViews?.count)}</p>
               <span className="badge badge-success" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
-                <ArrowUpRight size={10} /> +{data.summary.totalViews.change}%
+                <ArrowUpRight size={10} /> +{data.summary.totalViews?.change || 0}%
               </span>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Unique Views</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.uniqueViews.count)}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{formatNumber(data.summary.uniqueViews?.count)}</p>
               <span className="badge badge-error" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
-                <ArrowDownRight size={10} /> {data.summary.uniqueViews.change}%
+                <ArrowDownRight size={10} /> {data.summary.uniqueViews?.change || 0}%
               </span>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Time Spent</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.avgTimeSpent.value}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.avgTimeSpent?.value || '—'}</p>
               <span className="badge badge-info" style={{ fontSize: 10, marginTop: 4 }}>
-                {data.summary.avgTimeSpent.change}
+                {data.summary.avgTimeSpent?.change || '—'}
               </span>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Avg Engagement</p>
-              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.engagementQuality.percentage}%</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora' }}>{data.summary.engagementQuality?.percentage || 0}%</p>
               <span className="badge badge-warning" style={{ gap: 2, fontSize: 10, marginTop: 4 }}>
-                <ArrowUpRight size={10} /> +{data.summary.engagementQuality.change}%
+                <ArrowUpRight size={10} /> +{data.summary.engagementQuality?.change || 0}%
               </span>
             </div>
 
             <div className="stat-card">
               <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Publish Rate</p>
               <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Sora' }}>
-                {Math.round((data.summary.publishedRooms / data.summary.totalRooms) * 100)}%
+                {data.summary.totalRooms ? Math.round(((data.summary.publishedRooms || 0) / data.summary.totalRooms) * 100) : 0}%
               </p>
               <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Rooms live</p>
             </div>

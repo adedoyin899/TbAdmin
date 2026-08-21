@@ -135,7 +135,7 @@ export const FeatureDashboard: React.FC = () => {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={data.themeDistribution}
+                  data={data.themeDistribution || []}
                   dataKey="percentage"
                   nameKey="theme"
                   cx="50%"
@@ -144,7 +144,7 @@ export const FeatureDashboard: React.FC = () => {
                   innerRadius={50}
                   paddingAngle={3}
                 >
-                  {data.themeDistribution.map((_, i) => (
+                  {(data.themeDistribution || []).map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -157,10 +157,10 @@ export const FeatureDashboard: React.FC = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
-            {data.themeDistribution.map((t, i) => (
-              <div key={t.theme} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {(data.themeDistribution || []).map((t, i) => (
+              <div key={t.theme || i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i] }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length] }} />
                   <span style={{ fontSize: 14, color: 'var(--text-2)' }}>{t.theme}</span>
                 </div>
                 <span style={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>

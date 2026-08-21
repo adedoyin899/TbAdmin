@@ -19,17 +19,21 @@ export async function getFunnelDashboard(req: AuthenticatedRequest, res: Respons
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
 
+    const stages = funnelData.stages || [];
+    const dropoff = stages.slice(1).map((s: any, idx: number) => ({
+      from: stages[idx]?.stage || '',
+      to: s.stage || '',
+      percentage: Number(s.dropOff || 0),
+    }));
+
     const responsePayload = {
       dateRange,
       signupSource,
-      totalUsers: funnelData.totalUsers,
-      overallConversion: funnelData.overallConversion,
-      stages: funnelData.stages,
-      funnel: funnelData.stages,
-      dropoff: funnelData.stages.map((s: any) => ({
-        stage: s.stage,
-        dropOff: s.dropOff,
-      })),
+      totalUsers: funnelData.totalUsers || 0,
+      overallConversion: funnelData.overallConversion || 0,
+      stages,
+      funnel: stages,
+      dropoff,
       cachedAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
     };
