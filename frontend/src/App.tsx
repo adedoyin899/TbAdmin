@@ -23,8 +23,8 @@ const queryClient = new QueryClient({
   },
 });
 
-// On app load — restore dark mode preference
-const savedMode = localStorage.getItem('theme-mode') || 'light';
+// On app load — default to dark mode for executive portal
+const savedMode = localStorage.getItem('theme-mode') || 'dark';
 document.documentElement.setAttribute('data-mode', savedMode);
 
 function App() {

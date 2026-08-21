@@ -14,7 +14,7 @@ export const dashboardApi = {
         const res: any = await apiClient.get('/dashboard/funnel', {
           params: { dateRange, signupSource },
         });
-        if (res) return res;
+        if (res && res.funnel && res.funnel.length > 0) return res;
       } catch {}
     }
     return MOCK_FUNNEL;
@@ -26,7 +26,7 @@ export const dashboardApi = {
         const res: any = await apiClient.get('/dashboard/features', {
           params: { dateRange },
         });
-        if (res) return res;
+        if (res && res.topBlocks && res.topBlocks.length > 0) return res;
       } catch {}
     }
     return MOCK_FEATURES;
@@ -38,7 +38,7 @@ export const dashboardApi = {
         const res: any = await apiClient.get('/dashboard/retention', {
           params: { signupSource },
         });
-        if (res) return res;
+        if (res && (res.retention7d || res.trend)) return res;
       } catch {}
     }
     return MOCK_RETENTION;
@@ -50,7 +50,7 @@ export const dashboardApi = {
         const res: any = await apiClient.get('/dashboard/email', {
           params: { dateRange },
         });
-        if (res) return res;
+        if (res && res.campaigns && res.campaigns.length > 0) return res;
       } catch {}
     }
     return MOCK_EMAIL;
@@ -62,7 +62,7 @@ export const dashboardApi = {
         const res: any = await apiClient.get('/dashboard/rooms', {
           params: { dateRange },
         });
-        if (res) return res;
+        if (res && res.topPerformingRooms && res.topPerformingRooms.length > 0) return res;
       } catch {}
     }
     return {
@@ -80,7 +80,7 @@ export const dashboardApi = {
           ownerName: 'Alice Chen',
           ownerEmail: 'alice@example.com',
           views: 1247,
-          uniqueViews: 10922,
+          uniqueViews: 1092,
           engagement: 68.5,
         },
         {
@@ -100,6 +100,15 @@ export const dashboardApi = {
           views: 980,
           uniqueViews: 720,
           engagement: 74.1,
+        },
+        {
+          roomId: 'room_sarah_01',
+          roomName: 'Sarah Jenkins — Creative',
+          ownerName: 'Sarah Jenkins',
+          ownerEmail: 'sarah.jenkins@example.com',
+          views: 1650,
+          uniqueViews: 1210,
+          engagement: 79.3,
         },
       ],
     };
