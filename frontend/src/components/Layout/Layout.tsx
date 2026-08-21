@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   BarChart2, Menu, X, Bell, Settings,
+  ChevronsUpDown, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -21,15 +22,63 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   Settings,
 };
 
-const NAV_LINKS = [
-  { path: '/dashboard/funnel',    label: 'Funnel',        icon: 'TrendingDown' },
-  { path: '/dashboard/features',  label: 'Features',      icon: 'Puzzle' },
-  { path: '/dashboard/retention', label: 'Retention',     icon: 'RefreshCcw' },
-  { path: '/dashboard/email',     label: 'Email',         icon: 'Mail' },
-  { path: '/dashboard/rooms',     label: 'Room Insights', icon: 'Sparkles' },
-  { path: '/lookup',              label: 'User Directory',icon: 'Search' },
-  { path: '/settings',            label: 'Settings',      icon: 'Settings' },
+interface NavItem {
+  path: string;
+  label: string;
+  icon: string;
+  badge?: string;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Main Navigation',
+    items: [
+      { path: '/dashboard/funnel', label: 'Funnel Conversion', icon: 'TrendingDown' },
+      { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle' },
+      { path: '/dashboard/retention', label: 'Cohort Retention', icon: 'RefreshCcw' },
+    ],
+  },
+  {
+    title: 'Analytics & Media',
+    items: [
+      { path: '/dashboard/email', label: 'Email Campaigns', icon: 'Mail' },
+      { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles', badge: '3D' },
+    ],
+  },
+  {
+    title: 'Tools & Directory',
+    items: [
+      { path: '/lookup', label: 'User Directory', icon: 'Search' },
+    ],
+  },
+  {
+    title: 'System & Config',
+    items: [
+      { path: '/settings', label: 'Settings & Alerts', icon: 'Settings' },
+    ],
+  },
 ];
+
+const getDisplayName = (email?: string) => {
+  if (!email) return 'Admin User';
+  const namePart = email.split('@')[0];
+  if (namePart.toLowerCase() === 'maz') return 'Maz (Admin)';
+  return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+};
+
+const getInitials = (email?: string) => {
+  if (!email) return 'AU';
+  const namePart = email.split('@')[0];
+  if (namePart.length >= 2) {
+    return (namePart[0] + namePart[1]).toUpperCase();
+  }
+  return namePart[0].toUpperCase();
+};
 
 // ── Sidebar ───────────────────────────────────────────────────
 
@@ -43,134 +92,310 @@ export const Sidebar: React.FC<{
   onToggle,
   mobileOpen,
   onMobileClose,
-}) => (
-  <>
-    {/* Mobile Backdrop */}
-    {mobileOpen && (
-      <div
-        onClick={onMobileClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 40,
-          backdropFilter: 'blur(2px)',
-        }}
-        className="md:hidden animate-fade-in"
-      />
-    )}
+}) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-    <aside
-      id="sidebar"
-      style={{
-        background: 'var(--panel)',
-        borderRight: '1px solid var(--line)',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s ease',
-        flexShrink: 0,
-        overflow: 'hidden',
-        zIndex: 50,
-      }}
-      className={`
-        fixed inset-y-0 left-0 md:static md:translate-x-0
-        ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
-        ${collapsed ? 'w-16' : 'w-60'}
-      `}
-    >
-      {/* Logo */}
-      <div
-        style={{
-          padding: collapsed ? '18px 0' : '18px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          justifyContent: collapsed ? 'center' : 'space-between',
-          borderBottom: '1px solid var(--line)',
-          minHeight: 57,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'var(--ink)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
-          </div>
-          {!collapsed && (
-            <div>
-              <p style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--text)', lineHeight: 1.2 }}>
-                TalentBridge
-              </p>
-              <p style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Admin Portal
-              </p>
-            </div>
-          )}
-        </div>
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-        {/* Close button on mobile */}
-        <button
+  const handleLogout = async () => {
+    setUserMenuOpen(false);
+    onMobileClose();
+    await logout();
+    navigate('/');
+  };
+
+  return (
+    <>
+      {/* Mobile Backdrop */}
+      {mobileOpen && (
+        <div
           onClick={onMobileClose}
-          className="btn-icon md:hidden"
-          style={{ width: 28, height: 28, border: 'none' }}
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      {/* Nav Section Label */}
-      {!collapsed && (
-        <div style={{ padding: '14px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Dashboards & Tools
-        </div>
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 40,
+            backdropFilter: 'blur(2px)',
+          }}
+          className="md:hidden animate-fade-in"
+        />
       )}
 
-      {/* Nav Links */}
-      <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV_LINKS.map(link => {
-          const Icon = ICON_MAP[link.icon];
-          return (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              onClick={onMobileClose}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              style={{
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                padding: collapsed ? '10px 0' : '9px 12px',
-                borderRadius: 'var(--radius-xs)',
-              }}
-              title={collapsed ? link.label : undefined}
-            >
-              {Icon && <Icon size={16} strokeWidth={1.8} />}
-              {!collapsed && <span>{link.label}</span>}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={onToggle}
-        className="btn-icon hidden md:flex"
+      <aside
+        id="sidebar"
         style={{
-          margin: '12px auto',
-          border: 'none',
-          background: 'var(--panel-2)',
-          color: 'var(--dim)',
+          background: 'var(--panel)',
+          borderRight: '1px solid var(--line)',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.22s cubic-bezier(0.16,1,0.3,1), transform 0.22s ease',
+          flexShrink: 0,
+          overflow: 'hidden',
+          zIndex: 50,
+          height: '100%',
         }}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={`
+          fixed inset-y-0 left-0 md:static md:translate-x-0
+          ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+          ${collapsed ? 'w-16' : 'w-64'}
+        `}
       >
-        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-      </button>
-    </aside>
-  </>
-);
+        {/* Logo */}
+        <div
+          style={{
+            padding: collapsed ? '18px 0' : '18px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            justifyContent: collapsed ? 'center' : 'space-between',
+            borderBottom: '1px solid var(--line)',
+            minHeight: 57,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: 'var(--ink)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <BarChart2 size={16} color="#2DD4BF" strokeWidth={2.5} />
+            </div>
+            {!collapsed && (
+              <div>
+                <p style={{ fontFamily: 'Geist, sans-serif', fontWeight: 700, fontSize: 14, color: 'var(--text)', lineHeight: 1.2 }}>
+                  TalentBridge
+                </p>
+                <p style={{ fontSize: 10, color: 'var(--accent2)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Admin Portal
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Close button on mobile */}
+          <button
+            onClick={onMobileClose}
+            className="btn-icon md:hidden"
+            style={{ width: 28, height: 28, border: 'none' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Scrollable Nav Sections with Subheadings */}
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 8px' }}>
+          {NAV_SECTIONS.map((section, sIdx) => (
+            <div key={section.title} style={{ marginBottom: 16 }}>
+              {!collapsed && (
+                <div
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--faint)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {section.title}
+                </div>
+              )}
+              {collapsed && sIdx > 0 && (
+                <div style={{ height: 1, background: 'var(--line)', margin: '8px 6px' }} />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {section.items.map(link => {
+                  const Icon = ICON_MAP[link.icon];
+                  return (
+                    <NavLink
+                      key={link.path}
+                      to={link.path}
+                      onClick={onMobileClose}
+                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                      style={{
+                        justifyContent: collapsed ? 'center' : 'space-between',
+                        padding: collapsed ? '10px 0' : '8px 12px',
+                        borderRadius: 'var(--radius-xs)',
+                        fontSize: 13,
+                        fontWeight: 500,
+                      }}
+                      title={collapsed ? link.label : undefined}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {Icon && <Icon size={16} strokeWidth={1.8} />}
+                        {!collapsed && <span>{link.label}</span>}
+                      </div>
+                      {!collapsed && link.badge && (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 10,
+                            padding: '1px 6px',
+                            background: 'rgba(45, 212, 191, 0.12)',
+                            color: '#2DD4BF',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {link.badge}
+                        </span>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sidebar Footer: Collapse button & User Profile Card at Bottom Left */}
+        <div style={{ borderTop: '1px solid var(--line)', background: 'var(--panel-2)' }}>
+          {/* Collapse Toggle */}
+          <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: '6px 12px' }}>
+            <button
+              onClick={onToggle}
+              className="btn-icon hidden md:flex"
+              style={{
+                width: 24,
+                height: 24,
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--faint)',
+              }}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            </button>
+          </div>
+
+          {/* User Profile Card at Bottom Left (with Popover Dropdown) */}
+          <div ref={userMenuRef} style={{ position: 'relative', padding: collapsed ? '8px 6px 14px' : '8px 10px 14px' }}>
+            {/* Popover popup */}
+            {userMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: 8,
+                  right: 8,
+                  marginBottom: 8,
+                  background: 'var(--panel)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 12,
+                  boxShadow: 'var(--shadow-lg)',
+                  padding: 6,
+                  zIndex: 60,
+                }}
+                className="animate-slide-up"
+              >
+                <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{getDisplayName(user?.email)}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user?.email}
+                  </p>
+                  <span className="badge badge-neutral" style={{ fontSize: 10, marginTop: 4, textTransform: 'uppercase' }}>
+                    {user?.role || 'admin'}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    onMobileClose();
+                    navigate('/settings');
+                  }}
+                  className="btn btn-ghost"
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8 }}
+                >
+                  <Settings size={14} />
+                  Settings & Alerts
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="btn btn-ghost"
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8, color: '#EF4444' }}
+                >
+                  <LogOut size={14} />
+                  Sign out
+                </button>
+              </div>
+            )}
+
+            {/* Profile Button */}
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen(o => !o)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: collapsed ? 'center' : 'space-between',
+                gap: 8,
+                padding: collapsed ? '6px 0' : '6px 8px',
+                background: userMenuOpen ? 'var(--panel)' : 'transparent',
+                borderRadius: 'var(--radius-xs)',
+                border: '1px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+              className="hover:bg-[var(--panel)] transition-colors"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #0D1F1E, #2DD4BF)',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  {getInitials(user?.email)}
+                </div>
+
+                {!collapsed && (
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getDisplayName(user?.email)}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user?.email}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {!collapsed && (
+                <ChevronsUpDown size={14} style={{ color: 'var(--faint)', flexShrink: 0 }} />
+              )}
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
 
 // ── Header ────────────────────────────────────────────────────
 
@@ -181,9 +406,33 @@ export const Header: React.FC<{
   const { user, logout } = useAuth();
   const { unreadCount } = useSettings();
   const navigate = useNavigate();
+  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
+  const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-mode') === 'dark'
   );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(e.target as Node)) {
+        setAvatarDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Global Command + K shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === '/')) {
+        e.preventDefault();
+        navigate('/lookup');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   const toggleMode = () => {
     const next = isDark ? 'light' : 'dark';
@@ -193,14 +442,9 @@ export const Header: React.FC<{
   };
 
   const handleLogout = async () => {
+    setAvatarDropdownOpen(false);
     await logout();
     navigate('/');
-  };
-
-  const getDisplayName = (email?: string) => {
-    if (!email) return 'Admin';
-    const namePart = email.split('@')[0];
-    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
 
   return (
@@ -218,7 +462,7 @@ export const Header: React.FC<{
       }}
       className="px-3 sm:px-6"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Mobile menu trigger */}
         <button
           onClick={onMobileMenuClick}
@@ -229,18 +473,52 @@ export const Header: React.FC<{
           <Menu size={16} />
         </button>
 
+        {/* Header Greeting */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
-            Welcome, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{getDisplayName(user?.email)}</strong>
+            Hello, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{getDisplayName(user?.email)}</strong>
           </span>
-          <span className="hidden md:inline" style={{ color: 'var(--faint)', fontSize: 12 }}>
-            • Admin Portal
-          </span>
+          <span style={{ fontSize: 14 }}>👋</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Notifications Bell */}
+      {/* Center / Right Header Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Sleek Search bar */}
+        <div
+          onClick={() => navigate('/lookup')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 12px',
+            background: 'var(--panel-2)',
+            borderRadius: 99,
+            border: '1px solid var(--line)',
+            cursor: 'pointer',
+            minWidth: 160,
+          }}
+          className="hover:border-[var(--accent)] transition-colors hidden sm:flex"
+          title="Search users, events, and telemetry (⌘K)"
+        >
+          <Search size={14} color="var(--dim)" />
+          <span style={{ fontSize: 12, color: 'var(--dim)', flex: 1 }}>Search anything...</span>
+          <kbd
+            style={{
+              fontSize: 10,
+              fontFamily: 'Geist Mono, monospace',
+              color: 'var(--faint)',
+              background: 'var(--panel)',
+              padding: '2px 5px',
+              borderRadius: 4,
+              border: '1px solid var(--line)',
+            }}
+          >
+            ⌘K
+          </kbd>
+        </div>
+
+        {/* Notifications Bell with Dot Badge */}
         <button
           className="btn-icon"
           onClick={onOpenNotifications}
@@ -284,57 +562,99 @@ export const Header: React.FC<{
           {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
         </button>
 
-        {/* Settings button */}
-        <button
-          className="btn-icon"
-          onClick={() => navigate('/settings')}
-          title="Settings & Anomaly Triggers"
-          id="header-settings-btn"
-        >
-          <Settings size={15} strokeWidth={1.8} />
-        </button>
-
-        {/* User pill */}
-        <div
-          onClick={() => navigate('/settings')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '5px 10px',
-            background: 'var(--panel-2)',
-            borderRadius: 'var(--radius-xs)',
-            border: '1px solid var(--line)',
-            cursor: 'pointer',
-          }}
-          title="Account Settings"
-        >
-          <div
+        {/* Top-Right Avatar Dropdown */}
+        <div ref={avatarDropdownRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setAvatarDropdownOpen(o => !o)}
             style={{
-              width: 24, height: 24, borderRadius: '50%',
-              background: 'var(--ink)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid var(--panel)',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.12)',
+              cursor: 'pointer',
             }}
+            title="Account & Profile Menu"
+            id="user-avatar-btn"
           >
-            <span style={{ color: '#2DD4BF', fontSize: 10, fontWeight: 700 }}>
-              {user?.email?.[0]?.toUpperCase() ?? 'U'}
-            </span>
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--text-2)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="hidden sm:inline">
-            {user?.email}
-          </span>
-          <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 6px' }}>{user?.role}</span>
-        </div>
+            {getInitials(user?.email)}
+          </button>
 
-        {/* Logout */}
-        <button
-          id="logout-btn"
-          className="btn btn-ghost"
-          style={{ padding: '6px 10px', fontSize: 12, gap: 5 }}
-          onClick={handleLogout}
-        >
-          <LogOut size={13} strokeWidth={1.8} />
-          <span className="hidden sm:inline">Sign out</span>
-        </button>
+          {avatarDropdownOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: 8,
+                width: 220,
+                background: 'var(--panel)',
+                border: '1px solid var(--line)',
+                borderRadius: 12,
+                boxShadow: 'var(--shadow-lg)',
+                padding: 6,
+                zIndex: 60,
+              }}
+              className="animate-slide-up"
+            >
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
+                <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{getDisplayName(user?.email)}</p>
+                <p style={{ fontSize: 11, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.email}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                  <ShieldCheck size={12} color="#2DD4BF" />
+                  <span style={{ fontSize: 10, color: '#2DD4BF', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {user?.role || 'Administrator'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setAvatarDropdownOpen(false);
+                  navigate('/settings');
+                }}
+                className="btn btn-ghost"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8 }}
+              >
+                <Settings size={14} />
+                Settings & Anomaly Triggers
+              </button>
+
+              <button
+                onClick={() => {
+                  setAvatarDropdownOpen(false);
+                  navigate('/lookup');
+                }}
+                className="btn btn-ghost"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8 }}
+              >
+                <Search size={14} />
+                User Directory
+              </button>
+
+              <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
+
+              <button
+                onClick={handleLogout}
+                className="btn btn-ghost"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8, color: '#EF4444' }}
+              >
+                <LogOut size={14} />
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
