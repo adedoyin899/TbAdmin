@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { NotificationDrawer } from '../Notifications/NotificationDrawer';
+import { CommandPalette } from '../Common/CommandPalette';
 import type { LucideProps } from 'lucide-react';
 
 // Icon map — keeps the sidebar config clean
@@ -403,7 +404,8 @@ export const Sidebar: React.FC<{
 export const Header: React.FC<{
   onMobileMenuClick: () => void;
   onOpenNotifications: () => void;
-}> = ({ onMobileMenuClick, onOpenNotifications }) => {
+  onOpenSearch: () => void;
+}> = ({ onMobileMenuClick, onOpenNotifications, onOpenSearch }) => {
   const { user, logout } = useAuth();
   const { unreadCount } = useSettings();
   const navigate = useNavigate();
@@ -422,18 +424,6 @@ export const Header: React.FC<{
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Global Command + K shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === '/')) {
-        e.preventDefault();
-        navigate('/lookup');
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate]);
 
   const toggleMode = () => {
     const next = isDark ? 'light' : 'dark';
@@ -504,30 +494,32 @@ export const Header: React.FC<{
 
       {/* Center / Right Header Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Sleek Search bar */}
+        {/* Sleek System-Wide Search Bar (Command + K Trigger) */}
         <div
-          onClick={() => navigate('/lookup')}
+          onClick={onOpenSearch}
+          id="header-omnisearch-trigger"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '6px 12px',
+            padding: '6px 14px',
             background: 'var(--panel-2)',
             borderRadius: 99,
             border: '1px solid var(--line)',
             cursor: 'pointer',
-            minWidth: 160,
+            minWidth: 180,
+            transition: 'all 0.15s ease',
           }}
-          className="hover:border-[var(--accent)] transition-colors hidden sm:flex"
-          title="Search users, events, and telemetry (⌘K)"
+          className="hover:border-[var(--accent)] hover:shadow-sm transition-all flex items-center"
+          title="Search users, dashboards, actions, and telemetry (⌘K)"
         >
-          <Search size={14} color="var(--dim)" />
-          <span style={{ fontSize: 12, color: 'var(--dim)', flex: 1 }}>Search anything...</span>
+          <Search size={14} color="#2DD4BF" />
+          <span style={{ fontSize: 12, color: 'var(--text-2)', flex: 1 }}>Search anything...</span>
           <kbd
             style={{
               fontSize: 10,
               fontFamily: 'Geist Mono, monospace',
-              color: 'var(--faint)',
+              color: 'var(--dim)',
               background: 'var(--panel)',
               padding: '2px 5px',
               borderRadius: 4,
@@ -688,6 +680,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Global Command + K shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const isReadOnly = user?.role === 'Viewer' || user?.role === 'Data Analyst';
 
@@ -703,6 +708,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <Header
           onMobileMenuClick={() => setMobileOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
+          onOpenSearch={() => setCommandPaletteOpen(true)}
         />
 
         {/* Read-Only Mode Banner */}
@@ -744,6 +750,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <NotificationDrawer
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+      />
+
+      {/* Global Command + K System-Wide Omnisearch Modal */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
       />
     </div>
   );

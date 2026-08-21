@@ -16,7 +16,9 @@
     "test:funnel": "tsx src/tests/funnel.test.ts",
     "test:dashboards": "tsx src/tests/dashboards.test.ts",
     "test:users": "tsx src/tests/users.test.ts",
-    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts && tsx src/tests/funnel.test.ts && tsx src/tests/dashboards.test.ts && tsx src/tests/users.test.ts"
+    "test:integrations": "tsx src/tests/integrations.test.ts",
+    "test:stress": "tsx src/tests/stress.test.ts",
+    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts && tsx src/tests/funnel.test.ts && tsx src/tests/dashboards.test.ts && tsx src/tests/users.test.ts && tsx src/tests/integrations.test.ts && tsx src/tests/stress.test.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",

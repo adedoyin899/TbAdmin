@@ -18,8 +18,10 @@ export function getRolePermissions(role?: string, email?: string): Permissions {
   const normalized = (role || '').toLowerCase();
   const isMaz = email?.toLowerCase() === 'maz@talentbridge.cv';
   const isSuperAdmin = isMaz || normalized.includes('super');
-  const isAdmin = isSuperAdmin || normalized === 'admin';
   const isAnalyst = normalized.includes('analyst') || normalized.includes('data');
+  const isViewer = normalized.includes('viewer');
+  // Default to Admin in admin portal if no role is explicitly set
+  const isAdmin = isSuperAdmin || normalized === 'admin' || (!isAnalyst && !isViewer);
 
   if (isSuperAdmin) {
     return {
@@ -43,7 +45,7 @@ export function getRolePermissions(role?: string, email?: string): Permissions {
       canExportData: true,
       canModifySettings: true,
       canManageIntegrations: true,
-      canManageTeam: false,
+      canManageTeam: true,
       canFlushCache: true,
       isReadOnly: false,
       isSuperAdmin: false,
@@ -69,7 +71,7 @@ export function getRolePermissions(role?: string, email?: string): Permissions {
     };
   }
 
-  // Default Viewer: Strict Read-Only
+  // Explicit Viewer: Strict Read-Only
   return {
     canViewDashboards: true,
     canExportData: false,

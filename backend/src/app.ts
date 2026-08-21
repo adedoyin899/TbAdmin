@@ -12,6 +12,7 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { userRouter } from './routes/users.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { notificationRouter } from './routes/notifications.js';
+import { integrationRouter } from './routes/integrations.js';
 
 export const app = express();
 
@@ -65,6 +66,10 @@ app.use('/users', userRouter);
 // Notifications & Settings Routes
 app.use('/api/notifications', notificationRouter);
 app.use('/api/settings', notificationRouter);
+
+// Integrations & Telemetry Routes
+app.use('/api/integrations', integrationRouter);
+app.use('/integrations', integrationRouter);
 
 // Webhook Routes (Server-to-server, HMAC verification)
 app.use('/api/webhooks', webhookRouter);

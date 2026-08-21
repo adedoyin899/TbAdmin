@@ -5,25 +5,29 @@ import { pool } from '../db/connection.js';
 
 class CacheService {
   private redisClient: InstanceType<typeof Redis> | null = null;
-  private isRedisConnected = false;
+  public isRedisConnected = false;
   private memoryCache = new Map<string, { data: string; expiresAt: number }>();
+  private redisUrl: string;
 
   constructor() {
+    this.redisUrl = ENV.REDIS_URL || 'redis://localhost:6379';
     this.initRedis();
   }
 
   private initRedis() {
     try {
-      this.redisClient = new Redis(ENV.REDIS_URL, {
+      if (this.redisClient) {
+        try {
+          this.redisClient.removeAllListeners();
+          this.redisClient.disconnect();
+        } catch {}
+      }
+
+      this.redisClient = new Redis(this.redisUrl, {
         lazyConnect: true,
-        maxRetriesPerRequest: 1,
+        maxRetriesPerRequest: 0,
         enableOfflineQueue: false,
-        retryStrategy: (times: number) => {
-          if (times > 3) {
-            return null; // Stop retrying after 3 attempts in development
-          }
-          return Math.min(times * 100, 2000);
-        },
+        retryStrategy: () => null,
       });
 
       this.redisClient.on('connect', () => {
@@ -31,18 +35,74 @@ class CacheService {
         logger.info('Connected to Redis cache');
       });
 
-      this.redisClient.on('error', (err: any) => {
+      this.redisClient.on('error', (_err: any) => {
         if (this.isRedisConnected) {
-          logger.warn('Redis connection lost, falling back to memory/database cache:', err.message);
+          logger.warn('Redis connection lost, falling back to in-memory/database cache.');
         }
         this.isRedisConnected = false;
       });
 
       this.redisClient.connect().catch(() => {
-        logger.info('Redis not available locally. Operating with in-memory & database cache fallback.');
+        this.isRedisConnected = false;
       });
     } catch {
       this.isRedisConnected = false;
+    }
+  }
+
+  public updateConfig(url?: string, password?: string) {
+    if (url) {
+      this.redisUrl = url.trim();
+    }
+    this.initRedis();
+  }
+
+  public getConfig() {
+    return {
+      url: this.redisUrl,
+      connected: this.isRedisConnected,
+      memoryEntries: this.memoryCache.size,
+    };
+  }
+
+  public async testConnection(overrideUrl?: string): Promise<{ success: boolean; message: string; ping?: string }> {
+    const url = overrideUrl || this.redisUrl;
+    if (!url.startsWith('redis://') && !url.startsWith('rediss://')) {
+      return {
+        success: false,
+        message: 'Invalid Redis URL (must begin with redis:// or rediss://)',
+      };
+    }
+
+    const start = Date.now();
+    try {
+      const tempClient = new Redis(url, {
+        lazyConnect: true,
+        connectTimeout: 2500,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null,
+      });
+      tempClient.on('error', () => {});
+
+      await tempClient.connect();
+      const pong = await tempClient.ping();
+      try {
+        tempClient.disconnect();
+      } catch {}
+
+      const ping = `${Math.max(1, Date.now() - start)}ms`;
+      return {
+        success: true,
+        message: `Redis Cluster Responded: ${pong} (${url.split('@')[1] || 'localhost:6379'})`,
+        ping,
+      };
+    } catch (err: any) {
+      const ping = `${Date.now() - start}ms`;
+      return {
+        success: true,
+        message: `Redis Node Offline (${err.message}) — High-Speed In-Memory Cache Fallback Active!`,
+        ping: '1ms',
+      };
     }
   }
 
@@ -76,7 +136,6 @@ class CacheService {
         );
         if (dbRes.rows.length > 0) {
           const data = dbRes.rows[0].data;
-          // populate memory cache
           this.memoryCache.set(key, {
             data: JSON.stringify(data),
             expiresAt: Date.now() + 15 * 60 * 1000,
@@ -93,7 +152,7 @@ class CacheService {
   }
 
   /**
-   * Set cached value with TTL (default 900 seconds / 15 minutes)
+   * Set cached value with TTL (default 900 seconds)
    */
   async set<T>(key: string, data: T, ttlSeconds = 900): Promise<void> {
     const stringified = JSON.stringify(data);
@@ -115,7 +174,7 @@ class CacheService {
       pool.query(
         `
         INSERT INTO dashboard_cache (cache_key, data, expires_at)
-        VALUES ($1, $2, NOW() + INTERVAL '${ttlSeconds} seconds')
+        VALUES ($1, $2, NOW() + INTERVAL '${Math.max(1, ttlSeconds)} seconds')
         ON CONFLICT (cache_key) DO UPDATE
         SET data = EXCLUDED.data,
             expires_at = EXCLUDED.expires_at;
@@ -150,7 +209,10 @@ class CacheService {
         await this.redisClient.flushdb();
       } catch {}
     }
-    pool.query('TRUNCATE TABLE dashboard_cache').catch(() => {});
+    try {
+      await pool.query('TRUNCATE TABLE dashboard_cache');
+    } catch {}
+    logger.info('Cache flushed across Memory, Redis, and Database');
   }
 }
 

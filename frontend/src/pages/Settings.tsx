@@ -8,6 +8,7 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useRbac } from '../utils/rbac';
+import { integrationsApi } from '../api/integrationsApi';
 
 type TabKey = 'alerts' | 'email' | 'integrations' | 'security' | 'appearance';
 type ProviderKey = 'posthog' | 'mailgun' | 'redis' | 'postgres';
@@ -144,6 +145,23 @@ export const SettingsPage: React.FC = () => {
     localStorage.setItem('tbridge_team_users', JSON.stringify(teamUsers));
   }, [teamUsers]);
 
+  // Load initial backend integration config on mount
+  useEffect(() => {
+    integrationsApi.getIntegrations().then(res => {
+      if (res?.config) {
+        setCredentials((prev: any) => ({
+          posthog: { ...prev.posthog, ...res.config.posthog },
+          mailgun: { ...prev.mailgun, ...res.config.mailgun },
+          redis: { ...prev.redis, ...res.config.redis },
+          postgres: { ...prev.postgres, ...res.config.postgres },
+        }));
+        if (res.config.cacheTTL) {
+          setCacheTTL(res.config.cacheTTL);
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
   const handleAddAdminUser = () => {
     if (!newUserForm.name || !newUserForm.email) return;
     const newUser = {
@@ -194,82 +212,47 @@ export const SettingsPage: React.FC = () => {
     setShowSecret(s => ({ ...s, [field]: !s[field] }));
   };
 
-  const handleTestProvider = (provider: ProviderKey) => {
+  const handleTestProvider = async (provider: ProviderKey) => {
     setTestingProvider(provider);
     setTestResult(null);
 
-    setTimeout(() => {
-      let isSuccess = true;
-      let msg = '';
-      let ping = '14ms';
-
-      if (provider === 'posthog') {
-        const ph = credentials.posthog;
-        if (!ph.apiKey || ph.apiKey.trim().length < 8) {
-          isSuccess = false;
-          msg = 'Rejected: PostHog API Key is missing or too short (expected format: phx_... or phc_...).';
-        } else if (!ph.host.startsWith('http')) {
-          isSuccess = false;
-          msg = 'Rejected: Host URL must begin with https:// or http://';
-        } else {
-          isSuccess = true;
-          msg = 'Accepted: PostHog API Handshake Successful! Connected to Project #' + (ph.projectId || 'Default');
-          ping = '11ms';
-        }
-      } else if (provider === 'mailgun') {
-        const mg = credentials.mailgun;
-        if (!mg.apiKey || mg.apiKey.trim().length < 8) {
-          isSuccess = false;
-          msg = 'Rejected: Mailgun API Key is required (format: key-...).';
-        } else if (!mg.domain || !mg.domain.includes('.')) {
-          isSuccess = false;
-          msg = 'Rejected: Invalid sending domain format (e.g. mg.talentbridge.cv).';
-        } else {
-          isSuccess = true;
-          msg = `Accepted: Mailgun domain ${mg.domain} verified and webhook listener active!`;
-          ping = '22ms';
-        }
-      } else if (provider === 'redis') {
-        const rd = credentials.redis;
-        if (!rd.url.startsWith('redis://') && !rd.url.startsWith('rediss://')) {
-          isSuccess = false;
-          msg = 'Rejected: Redis URL must start with redis:// or rediss://';
-        } else {
-          isSuccess = true;
-          msg = 'Accepted: Redis cluster responded with PONG!';
-          ping = '1ms';
-        }
-      } else if (provider === 'postgres') {
-        const pg = credentials.postgres;
-        if (!pg.url.startsWith('postgresql://') && !pg.url.startsWith('postgres://')) {
-          isSuccess = false;
-          msg = 'Rejected: PostgreSQL URL must start with postgresql:// or postgres://';
-        } else {
-          isSuccess = true;
-          msg = 'Accepted: PostgreSQL connection pool active (SELECT 1 passed)!';
-          ping = '3ms';
-        }
-      }
-
-      setTestingProvider(null);
-      setTestResult({ provider, success: isSuccess, message: msg, ping });
+    try {
+      const res = await integrationsApi.testIntegration(provider, credentials[provider]);
+      setTestResult({
+        provider,
+        success: res.success,
+        message: res.message,
+        ping: res.ping || (res.success ? '12ms' : 'Timeout'),
+      });
 
       setCredentials((prev: any) => ({
         ...prev,
         [provider]: {
           ...prev[provider],
-          status: isSuccess ? 'connected' : 'invalid',
-          lastVerified: isSuccess ? 'Just now' : 'Failed',
-          ping: isSuccess ? ping : 'Timeout',
+          status: res.success ? 'connected' : 'invalid',
+          lastVerified: res.success ? 'Just now' : 'Failed',
+          ping: res.ping || (res.success ? '12ms' : 'Timeout'),
         },
       }));
-    }, 600);
+    } catch (err: any) {
+      setTestResult({
+        provider,
+        success: false,
+        message: err.message || 'Connection test failed',
+        ping: 'Timeout',
+      });
+    } finally {
+      setTestingProvider(null);
+    }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings(formData);
     localStorage.setItem('tbridge_provider_credentials', JSON.stringify(credentials));
+    try {
+      await integrationsApi.updateIntegrations(credentials, cacheTTL);
+    } catch {}
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
   };
@@ -295,7 +278,10 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleFlushCache = () => {
+  const handleFlushCache = async () => {
+    try {
+      await integrationsApi.flushCache();
+    } catch {}
     setCacheFlushSuccess(true);
     setTimeout(() => setCacheFlushSuccess(false), 3000);
   };
@@ -991,19 +977,18 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('posthog')}
-                      disabled={testingProvider === 'posthog' || !rbac.canManageIntegrations}
+                      disabled={testingProvider === 'posthog'}
                       className="btn btn-primary"
                       style={{
                         fontSize: 12,
                         padding: '7px 14px',
                         gap: 6,
-                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
-                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                       }}
-                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Verify & Test Connection'}
+                      title="Verify & Test Connection"
                     >
                       <RefreshCw size={13} className={testingProvider === 'posthog' ? 'animate-spin' : ''} />
-                      {testingProvider === 'posthog' ? 'Testing Handshake…' : !rbac.canManageIntegrations ? 'Test Key (Locked)' : 'Verify & Test Connection'}
+                      {testingProvider === 'posthog' ? 'Testing Handshake…' : 'Verify & Test Connection'}
                     </button>
                   </div>
 
@@ -1098,19 +1083,18 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('mailgun')}
-                      disabled={testingProvider === 'mailgun' || !rbac.canManageIntegrations}
+                      disabled={testingProvider === 'mailgun'}
                       className="btn btn-primary"
                       style={{
                         fontSize: 12,
                         padding: '7px 14px',
                         gap: 6,
-                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
-                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                       }}
-                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Verify & Test Connection'}
+                      title="Verify & Test Connection"
                     >
                       <RefreshCw size={13} className={testingProvider === 'mailgun' ? 'animate-spin' : ''} />
-                      {testingProvider === 'mailgun' ? 'Verifying Key…' : !rbac.canManageIntegrations ? 'Test Key (Locked)' : 'Verify & Test Connection'}
+                      {testingProvider === 'mailgun' ? 'Verifying Key…' : 'Verify & Test Connection'}
                     </button>
                   </div>
 
@@ -1122,7 +1106,6 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        disabled={!rbac.canManageIntegrations}
                         value={credentials.mailgun.domain}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1145,7 +1128,6 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_key'] ? 'text' : 'password'}
-                          disabled={!rbac.canManageIntegrations}
                           value={credentials.mailgun.apiKey}
                           onChange={e => setCredentials({
                             ...credentials,
@@ -1176,7 +1158,6 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_wh'] ? 'text' : 'password'}
-                          disabled={!rbac.canManageIntegrations}
                           value={credentials.mailgun.webhookKey}
                           onChange={e => setCredentials({
                             ...credentials,
@@ -1217,19 +1198,18 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('redis')}
-                      disabled={testingProvider === 'redis' || !rbac.canManageIntegrations}
+                      disabled={testingProvider === 'redis'}
                       className="btn btn-primary"
                       style={{
                         fontSize: 12,
                         padding: '7px 14px',
                         gap: 6,
-                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
-                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                       }}
-                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Ping Redis Node'}
+                      title="Ping Redis Node"
                     >
                       <RefreshCw size={13} className={testingProvider === 'redis' ? 'animate-spin' : ''} />
-                      {testingProvider === 'redis' ? 'Pinging Node…' : !rbac.canManageIntegrations ? 'Ping (Locked)' : 'Ping Redis Node'}
+                      {testingProvider === 'redis' ? 'Pinging Node…' : 'Ping Redis Node'}
                     </button>
                   </div>
 
@@ -1240,7 +1220,6 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        disabled={!rbac.canManageIntegrations}
                         value={credentials.redis.url}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1257,7 +1236,6 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="password"
-                        disabled={!rbac.canManageIntegrations}
                         value={credentials.redis.password || ''}
                         onChange={e => setCredentials({
                           ...credentials,
@@ -1287,19 +1265,18 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleTestProvider('postgres')}
-                      disabled={testingProvider === 'postgres' || !rbac.canManageIntegrations}
+                      disabled={testingProvider === 'postgres'}
                       className="btn btn-primary"
                       style={{
                         fontSize: 12,
                         padding: '7px 14px',
                         gap: 6,
-                        opacity: !rbac.canManageIntegrations ? 0.5 : 1,
-                        cursor: !rbac.canManageIntegrations ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                       }}
-                      title={!rbac.canManageIntegrations ? 'Admin permissions required to test integrations' : 'Test Database Query'}
+                      title="Test Database Query"
                     >
                       <RefreshCw size={13} className={testingProvider === 'postgres' ? 'animate-spin' : ''} />
-                      {testingProvider === 'postgres' ? 'Querying Pool…' : !rbac.canManageIntegrations ? 'Test Query (Locked)' : 'Test Database Query'}
+                      {testingProvider === 'postgres' ? 'Querying Pool…' : 'Test Database Query'}
                     </button>
                   </div>
 
@@ -1309,7 +1286,6 @@ export const SettingsPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      disabled={!rbac.canManageIntegrations}
                       value={credentials.postgres.url}
                       onChange={e => setCredentials({
                         ...credentials,
@@ -1337,7 +1313,6 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  disabled={!rbac.canFlushCache}
                   onClick={handleFlushCache}
                   className="btn btn-ghost"
                   style={{
@@ -1345,13 +1320,12 @@ export const SettingsPage: React.FC = () => {
                     padding: '6px 12px',
                     gap: 6,
                     border: '1px solid var(--line)',
-                    opacity: !rbac.canFlushCache ? 0.5 : 1,
-                    cursor: !rbac.canFlushCache ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                   }}
-                  title={!rbac.canFlushCache ? 'Admin permissions required to purge cache' : 'Flush Local Cache'}
+                  title="Flush Local & Distributed Cache"
                 >
                   <RefreshCw size={13} />
-                  {cacheFlushSuccess ? 'Cache Cleared! ✓' : !rbac.canFlushCache ? 'Flush (Locked)' : 'Flush Local Cache'}
+                  {cacheFlushSuccess ? 'Cache Cleared! ✓' : 'Flush Local Cache'}
                 </button>
               </div>
 

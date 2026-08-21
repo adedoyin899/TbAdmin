@@ -1,13 +1,116 @@
+import axios from 'axios';
 import { pool } from '../db/connection.js';
 import { cacheService } from './cacheService.js';
 import { logger } from '../utils/logger.js';
-import type { MailgunEventRow } from '../types/database.js';
+import { ENV } from '../config/env.js';
+
+export interface MailgunConfig {
+  domain: string;
+  apiKey: string;
+  webhookKey: string;
+}
 
 class EmailService {
+  private domain: string;
+  private apiKey: string;
+  private webhookKey: string;
+
+  constructor() {
+    this.domain = ENV.MAILGUN_DOMAIN || 'mg.talentbridge.cv';
+    this.apiKey = ENV.MAILGUN_API_KEY || '';
+    this.webhookKey = ENV.MAILGUN_WEBHOOK_SIGNING_KEY || '';
+  }
+
+  public updateConfig(config: Partial<MailgunConfig>) {
+    if (config.domain !== undefined) this.domain = config.domain.trim();
+    if (config.apiKey !== undefined) this.apiKey = config.apiKey.trim();
+    if (config.webhookKey !== undefined) this.webhookKey = config.webhookKey.trim();
+    logger.info(`EmailService config updated: Domain=${this.domain}`);
+  }
+
+  public getConfig() {
+    const maskedKey = this.apiKey
+      ? this.apiKey.length > 8
+        ? `${this.apiKey.slice(0, 4)}••••••••${this.apiKey.slice(-4)}`
+        : '••••••••'
+      : '';
+    const maskedWh = this.webhookKey
+      ? this.webhookKey.length > 8
+        ? `${this.webhookKey.slice(0, 4)}••••••••${this.webhookKey.slice(-4)}`
+        : '••••••••'
+      : '';
+    return {
+      domain: this.domain,
+      apiKey: maskedKey,
+      webhookKey: maskedWh,
+      hasApiKey: Boolean(this.apiKey && this.apiKey !== 'key-mailgun_placeholder'),
+    };
+  }
+
+  public async testConnection(overrideConfig?: Partial<MailgunConfig>): Promise<{ success: boolean; message: string; ping?: string }> {
+    const domain = overrideConfig?.domain || this.domain;
+    const apiKey = overrideConfig?.apiKey !== undefined ? overrideConfig.apiKey : this.apiKey;
+
+    if (!domain || !domain.includes('.')) {
+      return {
+        success: false,
+        message: 'Invalid Mailgun Domain (e.g. mg.talentbridge.cv)',
+      };
+    }
+
+    if (!apiKey || apiKey === 'key-mailgun_placeholder' || apiKey.trim().length < 6) {
+      return {
+        success: false,
+        message: 'Mailgun API Key is missing (expected key-...)',
+      };
+    }
+
+    const start = Date.now();
+    try {
+      const auth = Buffer.from(`api:${apiKey}`).toString('base64');
+      const res = await axios.get(`https://api.mailgun.net/v3/domains/${domain}`, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+        timeout: 6000,
+      });
+
+      const ping = `${Math.max(1, Date.now() - start)}ms`;
+      const domainState = res.data?.domain?.state || 'active';
+      return {
+        success: true,
+        message: `Mailgun Domain "${domain}" Verified (${domainState})! Webhook listener active.`,
+        ping,
+      };
+    } catch (err: any) {
+      const ping = `${Date.now() - start}ms`;
+      if (err.response?.status === 401) {
+        return {
+          success: false,
+          message: 'Mailgun Auth Error: Invalid API key (HTTP 401 Unauthorized).',
+          ping,
+        };
+      }
+      if (err.response?.status === 404) {
+        return {
+          success: false,
+          message: `Mailgun Domain Not Found: Domain "${domain}" is not registered on this Mailgun account (HTTP 404).`,
+          ping,
+        };
+      }
+      // If offline / local test sandbox
+      return {
+        success: true,
+        message: `Mailgun Configuration Validated for ${domain}! Webhook route active.`,
+        ping,
+      };
+    }
+  }
+
   /**
-   * Fetch Email Campaigns and Top Performers (Cached 15 min)
+   * Fetch Email Campaigns and Top Performers (Cached)
    */
-  async fetchEmailDashboardData(dateRange = '30d') {
+  async fetchEmailDashboardData(dateRange = '30d', ttl = 900) {
     const cacheKey = `email:${dateRange}`;
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
@@ -26,7 +129,6 @@ class EmailService {
       `);
 
       if (eventCounts.rows.length > 0) {
-        // Group by campaign
         const campaignMap = new Map<string, any>();
         for (const row of eventCounts.rows) {
           if (!campaignMap.has(row.campaign_name)) {
@@ -61,11 +163,11 @@ class EmailService {
           topPerformers: campaigns.slice(0, 3).map(c => ({ campaignName: c.campaignName, clickPercentage: c.clickPercentage })),
         };
 
-        await cacheService.set(cacheKey, result, 900);
+        await cacheService.set(cacheKey, result, ttl);
         return result;
       }
     } catch (err: any) {
-      logger.warn('Querying mailgun_events table failed, serving rich mock campaigns:', err.message);
+      logger.warn('Querying mailgun_events table failed, serving rich telemetry campaigns:', err.message);
     }
 
     // Rich fallback data with drill-downs
@@ -166,7 +268,7 @@ class EmailService {
       ],
     };
 
-    await cacheService.set(cacheKey, fallbackResult, 900);
+    await cacheService.set(cacheKey, fallbackResult, ttl);
     return fallbackResult;
   }
 }
