@@ -4,9 +4,10 @@ import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
-  ChevronsUpDown, ShieldCheck,
+  ChevronsUpDown,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
+import tbicon from '../../assets/tbicon.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { NotificationDrawer } from '../Notifications/NotificationDrawer';
@@ -166,14 +167,15 @@ export const Sidebar: React.FC<{
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* TB Logo — full wordmark when expanded, cropped icon portion when collapsed */}
             {collapsed ? (
+              /* Collapsed: show square icon only */
               <img
-                src={tblogo}
+                src={tbicon}
                 alt="TalentBridge"
-                style={{ height: 26, width: 'auto', flexShrink: 0 }}
+                style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 7 }}
               />
             ) : (
+              /* Expanded: full wordmark + Admin badge */
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <img
                   src={tblogo}
@@ -583,7 +585,7 @@ export const Header: React.FC<{
           {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
         </button>
 
-        {/* Top-Right Avatar Dropdown */}
+        {/* Top-Right Avatar Dropdown — Slack-style */}
         <div ref={avatarDropdownRef} style={{ position: 'relative' }}>
           <button
             type="button"
@@ -592,7 +594,7 @@ export const Header: React.FC<{
               width: 34,
               height: 34,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              background: 'linear-gradient(135deg, #02ABAC, #0D9488)',
               color: '#FFFFFF',
               fontWeight: 800,
               fontSize: 13,
@@ -600,10 +602,11 @@ export const Header: React.FC<{
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid var(--panel)',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.12)',
+              boxShadow: '0 2px 8px rgba(2,171,172,0.35)',
               cursor: 'pointer',
+              letterSpacing: '0.02em',
             }}
-            title="Account & Profile Menu"
+            title="Account menu"
             id="user-avatar-btn"
           >
             {getInitials(user?.email)}
@@ -613,67 +616,106 @@ export const Header: React.FC<{
             <div
               style={{
                 position: 'absolute',
-                top: '100%',
+                top: 'calc(100% + 10px)',
                 right: 0,
-                marginTop: 8,
-                width: 220,
+                width: 248,
                 background: 'var(--panel)',
                 border: '1px solid var(--line)',
-                borderRadius: 12,
+                borderRadius: 14,
                 boxShadow: 'var(--shadow-lg)',
-                padding: 6,
+                overflow: 'hidden',
                 zIndex: 60,
               }}
               className="animate-slide-up"
             >
-              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
-                <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{getDisplayName(user?.email)}</p>
-                <p style={{ fontSize: 11, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.email}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
-                  <ShieldCheck size={12} color="#2DD4BF" />
-                  <span style={{ fontSize: 10, color: '#2DD4BF', fontWeight: 700, textTransform: 'uppercase' }}>
+              {/* User identity block */}
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #02ABAC, #0D9488)',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(user?.email)}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getDisplayName(user?.email)}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                {/* Role pill */}
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2DD4BF', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: '#2DD4BF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {user?.role || 'Administrator'}
                   </span>
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setAvatarDropdownOpen(false);
-                  navigate('/settings');
-                }}
-                className="btn btn-ghost"
-                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8 }}
-              >
-                <Settings size={14} />
-                Settings & Anomaly Triggers
-              </button>
+              {/* Actions */}
+              <div style={{ padding: '6px 0' }}>
+                <button
+                  onClick={() => { setAvatarDropdownOpen(false); navigate('/settings'); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 16px', background: 'transparent', border: 'none',
+                    color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="hover:bg-[var(--panel-2)] transition-colors"
+                >
+                  <Settings size={15} style={{ color: 'var(--dim)', flexShrink: 0 }} />
+                  Preferences &amp; Settings
+                </button>
 
-              <button
-                onClick={() => {
-                  setAvatarDropdownOpen(false);
-                  navigate('/lookup');
-                }}
-                className="btn btn-ghost"
-                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8 }}
-              >
-                <Search size={14} />
-                User Directory
-              </button>
+                <button
+                  onClick={toggleMode}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 16px', background: 'transparent', border: 'none',
+                    color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="hover:bg-[var(--panel-2)] transition-colors"
+                >
+                  {isDark
+                    ? <Sun size={15} style={{ color: 'var(--dim)', flexShrink: 0 }} />
+                    : <Moon size={15} style={{ color: 'var(--dim)', flexShrink: 0 }} />}
+                  {isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                </button>
+              </div>
 
-              <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
-
-              <button
-                id="header-logout-btn"
-                onClick={handleLogout}
-                className="btn btn-ghost"
-                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 12px', fontSize: 13, gap: 8, color: '#EF4444' }}
-              >
-                <LogOut size={14} />
-                Sign out
-              </button>
+              {/* Sign out */}
+              <div style={{ borderTop: '1px solid var(--line)', padding: '6px 0' }}>
+                <button
+                  id="header-logout-btn"
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 16px', background: 'transparent', border: 'none',
+                    color: '#EF4444', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="hover:bg-[var(--panel-2)] transition-colors"
+                >
+                  <LogOut size={15} style={{ color: '#EF4444', flexShrink: 0 }} />
+                  Sign out of TalentBridge
+                </button>
+              </div>
             </div>
           )}
         </div>
