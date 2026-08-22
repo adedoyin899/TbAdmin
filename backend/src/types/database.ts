@@ -29,6 +29,22 @@ export interface MailgunEventRow {
   timestamp: Date;
   created_at: Date;
   metadata: Record<string, any>;
+  clicked_by_user_id?: string | null;
+  click_link_index?: number | null;
+  click_link_label?: string | null;
+  click_device?: string | null;
+  click_client?: string | null;
+  click_geolocation_country?: string | null;
+  click_geolocation_city?: string | null;
+  opened_by_user_id?: string | null;
+  opened_device?: string | null;
+  opened_client?: string | null;
+  opened_geolocation_country?: string | null;
+  opened_at?: Date | null;
+  first_clicked_at?: Date | null;
+  post_click_action?: string | null;
+  post_click_action_at?: Date | null;
+  post_click_action_user_id?: string | null;
 }
 
 export interface DashboardCacheRow {
@@ -48,3 +64,6 @@ export interface AuditLogRow {
   ip_address: string | null;
   user_agent: string | null;
 }
+
+export * from './socialMedia.js';
+

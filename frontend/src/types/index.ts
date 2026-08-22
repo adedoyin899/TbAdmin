@@ -262,3 +262,6 @@ export interface AuthUser {
   role: UserRole;
   isOwner?: boolean;
 }
+
+export * from './socialMedia';
+

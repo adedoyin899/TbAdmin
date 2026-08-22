@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
+
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
-  ChevronsUpDown,
+  ChevronsUpDown, Share2, Target,
+  ChevronDown, ChevronUp,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
 import tbicon from '../../assets/tbicon.svg';
@@ -23,7 +25,15 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   Search,
   Sparkles,
   Settings,
+  Share2,
+  Target,
 };
+
+interface NavSubItem {
+  path: string;
+  label: string;
+  badge?: string;
+}
 
 interface NavItem {
   path: string;
@@ -31,6 +41,7 @@ interface NavItem {
   icon: string;
   badge?: string;
   badgeType?: 'sunset' | 'teal';
+  subItems?: NavSubItem[];
 }
 
 interface NavSection {
@@ -50,10 +61,33 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Engagement & Media',
     items: [
-      { path: '/dashboard/email', label: 'Email Campaigns', icon: 'Mail' },
+      {
+        path: '/dashboard/social-media',
+        label: 'Social Media',
+        icon: 'Share2',
+        badge: 'Live',
+        badgeType: 'sunset',
+        subItems: [
+          { path: '/dashboard/social-media', label: 'Overview' },
+          { path: '/social-media/linkedin', label: 'LinkedIn Organic' },
+          { path: '/social-media/reddit', label: 'Reddit Community' },
+        ],
+      },
+      { path: '/dashboard/campaigns', label: 'Campaign ROI', icon: 'Target', badge: 'Multi', badgeType: 'teal' },
+      {
+        path: '/dashboard/email',
+        label: 'Email Campaigns',
+        icon: 'Mail',
+        subItems: [
+          { path: '/dashboard/email', label: 'Sequences' },
+          { path: '/email/detailed', label: 'Timing & Heatmap' },
+        ],
+      },
       { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles', badge: '3D', badgeType: 'sunset' },
     ],
   },
+
+
   {
     title: 'Directory & Admin',
     items: [
@@ -62,6 +96,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
 ];
+
 
 const getDisplayName = (email?: string) => {
   if (!email) return 'Admin User';
@@ -94,7 +129,9 @@ export const Sidebar: React.FC<{
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -230,42 +267,103 @@ export const Sidebar: React.FC<{
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {section.items.map(link => {
                   const Icon = ICON_MAP[link.icon];
+                  const hasSub = !collapsed && !!link.subItems?.length;
+                  const isParentActive =
+                    location.pathname === link.path ||
+                    (hasSub && link.subItems?.some(s => location.pathname.startsWith(s.path)));
+
                   return (
-                    <NavLink
-                      key={link.path}
-                      to={link.path}
-                      onClick={onMobileClose}
-                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                      style={{
-                        justifyContent: collapsed ? 'center' : 'space-between',
-                        padding: collapsed ? '9px 0' : '8px 12px',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: 13,
-                        fontWeight: 500,
-                      }}
-                      title={collapsed ? link.label : undefined}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {Icon && <Icon size={16} strokeWidth={1.8} style={{ opacity: 0.9 }} />}
-                        {!collapsed && <span>{link.label}</span>}
-                      </div>
-                      {!collapsed && link.badge && (
-                        <span
-                          className={link.badgeType === 'sunset' ? 'badge badge-sunset' : 'badge badge-teal'}
+                    <div key={link.path} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <NavLink
+                        to={link.path}
+                        onClick={onMobileClose}
+                        className={({ isActive }) => `nav-link ${isActive || isParentActive ? 'active' : ''}`}
+                        style={{
+                          justifyContent: collapsed ? 'center' : 'space-between',
+                          padding: collapsed ? '9px 0' : '8px 12px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 13,
+                          fontWeight: 500,
+                        }}
+                        title={collapsed ? link.label : undefined}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {Icon && <Icon size={16} strokeWidth={1.8} style={{ opacity: 0.9 }} />}
+                          {!collapsed && <span>{link.label}</span>}
+                        </div>
+                        {!collapsed && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {link.badge && (
+                              <span
+                                className={link.badgeType === 'sunset' ? 'badge badge-sunset' : 'badge badge-teal'}
+                                style={{
+                                  fontSize: 10,
+                                  padding: '1px 6px',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                {link.badge}
+                              </span>
+                            )}
+                            {hasSub && (
+                              <span style={{ color: 'var(--dim)' }}>
+                                {isParentActive ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </NavLink>
+
+                      {/* Expandable Sub-items */}
+                      {hasSub && isParentActive && (
+                        <div
                           style={{
-                            fontSize: 10,
-                            padding: '1px 6px',
-                            fontWeight: 700,
-                            letterSpacing: '0.04em',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                            marginLeft: 26,
+                            paddingLeft: 8,
+                            borderLeft: '1px solid var(--line)',
+                            marginTop: 2,
+                            marginBottom: 4,
                           }}
                         >
-                          {link.badge}
-                        </span>
+                          {link.subItems?.map(sub => (
+                            <NavLink
+                              key={sub.path}
+                              to={sub.path}
+                              onClick={onMobileClose}
+                              className={({ isActive }) =>
+                                `nav-sub-link ${isActive || location.pathname === sub.path ? 'active' : ''}`
+                              }
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '5px 10px',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: 12,
+                                color: location.pathname === sub.path ? 'var(--accent)' : 'var(--text-2)',
+                                fontWeight: location.pathname === sub.path ? 600 : 400,
+                                textDecoration: 'none',
+                              }}
+                            >
+                              <span>{sub.label}</span>
+                              {sub.badge && (
+                                <span style={{ fontSize: 9.5, color: 'var(--dim)' }}>
+                                  {sub.badge}
+                                </span>
+                              )}
+                            </NavLink>
+                          ))}
+                        </div>
                       )}
-                    </NavLink>
+                    </div>
                   );
                 })}
               </div>
+
             </div>
           ))}
         </div>

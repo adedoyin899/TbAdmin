@@ -13,8 +13,12 @@ import { userRouter } from './routes/users.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { notificationRouter } from './routes/notifications.js';
 import { integrationRouter } from './routes/integrations.js';
+import { socialMediaRouter } from './routes/socialMedia.js';
+import { campaignRouter } from './routes/campaigns.js';
 
 export const app = express();
+
+
 
 // Global middleware
 app.use(helmet());
@@ -75,5 +79,13 @@ app.use('/integrations', integrationRouter);
 app.use('/api/webhooks', webhookRouter);
 app.use('/webhooks', webhookRouter);
 
+// Social Media & Marketing Routes
+app.use('/api/social-media', socialMediaRouter);
+app.use('/social-media', socialMediaRouter);
+app.use('/api/campaigns', campaignRouter);
+app.use('/campaigns', campaignRouter);
+
 // Global Error Handler
 app.use(errorHandler);
+
+

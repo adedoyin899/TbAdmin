@@ -13,10 +13,12 @@ import type { EmailDashboardResponse, EmailCampaign } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { CampaignDetailView } from '../Email/CampaignDetailView';
+import { EmailDetailedView } from '../Email/EmailDetailedView';
 import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 
 export const EmailDashboard: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'overview' | 'enhanced'>('overview');
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
 
@@ -44,11 +46,9 @@ export const EmailDashboard: React.FC = () => {
     });
   };
 
-  const chartData = (data?.campaigns || []).map(c => ({
-    name: (c.campaignName || '').length > 16 ? (c.campaignName || '').slice(0, 16) + '…' : (c.campaignName || ''),
-    'Open %': c.openPercentage ?? 0,
-    'Click %': c.clickPercentage ?? 0,
-  }));
+  if (viewMode === 'enhanced') {
+    return <EmailDetailedView onBack={() => setViewMode('overview')} />;
+  }
 
   // If a campaign is selected, render its granular drill-down view
   if (selectedCampaign) {
@@ -61,6 +61,13 @@ export const EmailDashboard: React.FC = () => {
   }
 
   const totalBounces = (data?.campaigns || []).reduce((a, c) => a + (c.bounceCount || 0), 0);
+
+  const chartData = (data?.campaigns || []).map(c => ({
+    name: (c.campaignName || '').length > 16 ? (c.campaignName || '').slice(0, 16) + '…' : (c.campaignName || ''),
+    'Open %': c.openPercentage ?? 0,
+    'Click %': c.clickPercentage ?? 0,
+  }));
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-in">
@@ -75,6 +82,18 @@ export const EmailDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
+          <button
+            onClick={() => setViewMode('enhanced')}
+            className="btn btn-primary"
+            style={{
+              fontSize: 13,
+              gap: 6,
+              background: 'linear-gradient(135deg, var(--sunset) 0%, #FF8A00 100%)',
+            }}
+          >
+            <Sparkles size={14} />
+            Timing, Heatmap &amp; Journey
+          </button>
           <DateRangeSelector
             value={dateRange}
             onChange={setDateRange}
@@ -95,6 +114,7 @@ export const EmailDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
 
       {/* Bounce alert if bounces detected */}
       {data && totalBounces > 15 && (

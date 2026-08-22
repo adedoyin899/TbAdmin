@@ -18,7 +18,16 @@
     "test:users": "tsx src/tests/users.test.ts",
     "test:integrations": "tsx src/tests/integrations.test.ts",
     "test:stress": "tsx src/tests/stress.test.ts",
-    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts && tsx src/tests/funnel.test.ts && tsx src/tests/dashboards.test.ts && tsx src/tests/users.test.ts && tsx src/tests/integrations.test.ts && tsx src/tests/stress.test.ts"
+    "test:social-schema": "tsx src/tests/socialMediaSchema.test.ts",
+    "test:buffer": "tsx src/tests/bufferService.test.ts",
+    "test:linkedin": "tsx src/tests/linkedInService.test.ts",
+    "test:reddit": "tsx src/tests/redditService.test.ts",
+    "test:email-enhancement": "tsx src/tests/emailEnhancement.test.ts",
+    "test:jobs": "tsx src/tests/syncJobs.test.ts",
+    "test:social-routes": "tsx src/tests/socialMediaRoutes.test.ts",
+    "test:campaign-routes": "tsx src/tests/campaignRoutes.test.ts",
+    "test:social": "tsx src/tests/socialMediaSchema.test.ts && tsx src/tests/bufferService.test.ts && tsx src/tests/linkedInService.test.ts && tsx src/tests/redditService.test.ts && tsx src/tests/emailEnhancement.test.ts && tsx src/tests/syncJobs.test.ts && tsx src/tests/socialMediaRoutes.test.ts && tsx src/tests/campaignRoutes.test.ts",
+    "test": "tsx src/tests/auth.test.ts && tsx src/tests/cache.test.ts && tsx src/tests/funnel.test.ts && tsx src/tests/dashboards.test.ts && tsx src/tests/users.test.ts && tsx src/tests/integrations.test.ts && tsx src/tests/socialMediaSchema.test.ts && tsx src/tests/bufferService.test.ts && tsx src/tests/linkedInService.test.ts && tsx src/tests/redditService.test.ts && tsx src/tests/emailEnhancement.test.ts && tsx src/tests/syncJobs.test.ts && tsx src/tests/socialMediaRoutes.test.ts && tsx src/tests/campaignRoutes.test.ts && tsx src/tests/stress.test.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",

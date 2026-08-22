@@ -13,27 +13,34 @@ async function runMigrations(direction: 'up' | 'down' = 'up') {
     await client.query('BEGIN');
 
     if (direction === 'up') {
-      const sql1Path = path.join(__dirname, 'migrations', '001_create_analytics_schema.sql');
-      const sql2Path = path.join(__dirname, 'migrations', '002_create_indexes.sql');
+      const migrationsDir = path.join(__dirname, 'migrations');
+      const files = fs.readdirSync(migrationsDir)
+        .filter((file) => file.endsWith('.sql'))
+        .sort();
 
-      const sql1 = fs.readFileSync(sql1Path, 'utf-8');
-      const sql2 = fs.readFileSync(sql2Path, 'utf-8');
+      for (const file of files) {
+        const filePath = path.join(migrationsDir, file);
+        const sql = fs.readFileSync(filePath, 'utf-8');
+        console.log(`Executing migration ${file}...`);
+        await client.query(sql);
+      }
 
-      console.log('Executing 001_create_analytics_schema.sql...');
-      await client.query(sql1);
-
-      console.log('Executing 002_create_indexes.sql...');
-      await client.query(sql2);
-
-      console.log('✅ Migrations applied successfully!');
+      console.log('✅ All migrations applied successfully!');
     } else {
-      console.log('Rolling back tables and indexes...');
+      console.log('Rolling back tables and indexes in dependency order...');
       await client.query(`
+        DROP TABLE IF EXISTS sync_logs CASCADE;
+        DROP TABLE IF EXISTS campaign_performance CASCADE;
+        DROP TABLE IF EXISTS social_media_engagement CASCADE;
+        DROP TABLE IF EXISTS social_media_posts CASCADE;
+        DROP TABLE IF EXISTS email_engagement_detailed CASCADE;
+        DROP TABLE IF EXISTS campaigns CASCADE;
         DROP TABLE IF EXISTS audit_log CASCADE;
         DROP TABLE IF EXISTS dashboard_cache CASCADE;
         DROP TABLE IF EXISTS mailgun_events CASCADE;
         DROP TABLE IF EXISTS admin_users CASCADE;
       `);
+
       console.log('✅ Rollback completed successfully!');
     }
 
@@ -50,3 +57,4 @@ async function runMigrations(direction: 'up' | 'down' = 'up') {
 
 const direction = (process.argv[2] === 'down' ? 'down' : 'up') as 'up' | 'down';
 runMigrations(direction);
+

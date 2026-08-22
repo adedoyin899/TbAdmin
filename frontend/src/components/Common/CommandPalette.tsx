@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, TrendingDown, Layers, RotateCcw, Mail, Eye,
   User, RefreshCw, Moon, Zap, ArrowRight,
-  Shield, Check
+  Shield, Check, Share2, Target
 } from 'lucide-react';
+
+
 import { userApi } from '../../api/userApi';
 import { integrationsApi } from '../../api/integrationsApi';
 import { useSettings } from '../../context/SettingsContext';
@@ -159,6 +161,32 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       },
     },
     {
+      id: 'dash-social',
+      category: 'Dashboards',
+      title: 'Social Media & Viral Channels',
+      subtitle: 'Cross-platform engagement, LinkedIn UGC, Reddit score & Buffer queue',
+      icon: Share2,
+      color: '#FA520F',
+      badge: 'Live Telemetry',
+      action: () => {
+        navigate('/dashboard/social-media');
+        onClose();
+      },
+    },
+    {
+      id: 'dash-campaigns',
+      category: 'Dashboards',
+      title: 'Marketing Campaigns & ROI',
+      subtitle: 'Cross-platform attribution, multi-channel reach, signups & cost per acquisition',
+      icon: Target,
+      color: '#0D9488',
+      badge: 'Multi-Touch',
+      action: () => {
+        navigate('/dashboard/campaigns');
+        onClose();
+      },
+    },
+    {
       id: 'dash-email',
       category: 'Dashboards',
       title: 'Email Campaign Intelligence',
@@ -171,6 +199,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         onClose();
       },
     },
+
+
     {
       id: 'dash-rooms',
       category: 'Dashboards',
