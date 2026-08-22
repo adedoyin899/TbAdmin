@@ -36,14 +36,20 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
     );
   }
 
-  const filteredCampaigns = campaignsList.filter((camp) => {
+  const list = Array.isArray(campaignsList) ? campaignsList : [];
+  const filteredCampaigns = list.filter((camp) => {
+    if (!camp) return false;
+    const name = camp.name || '';
+    const audience = camp.target_audience || '';
+    const goal = camp.goal || '';
     const matchesSearch =
       !searchQuery.trim() ||
-      camp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      camp.target_audience?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      camp.goal.toLowerCase().includes(searchQuery.toLowerCase());
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      audience.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      goal.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
 
   const getChannelBadge = (channel: string) => {
     switch (channel.toLowerCase()) {

@@ -24,10 +24,17 @@ export function useCampaignPerformance(campaignId?: string, statusFilter: string
     staleTime: 1000 * 60 * 5,
   });
 
+  const rawList = listQuery.data;
+  const campaignsList: CampaignItem[] = Array.isArray(rawList)
+    ? rawList
+    : (rawList as any)?.campaigns && Array.isArray((rawList as any).campaigns)
+    ? (rawList as any).campaigns
+    : [];
+
   return {
     isLoading: listQuery.isLoading || (!!campaignId && performanceQuery.isLoading),
     isError: listQuery.isError || performanceQuery.isError,
-    campaignsList: listQuery.data || [],
+    campaignsList,
     currentCampaign: performanceQuery.data?.campaign,
     performance: performanceQuery.data?.performance,
     byChannel: performanceQuery.data?.performance?.by_channel,
@@ -36,4 +43,5 @@ export function useCampaignPerformance(campaignId?: string, statusFilter: string
     refetchList: listQuery.refetch,
     refetchPerformance: performanceQuery.refetch,
   };
+
 }
