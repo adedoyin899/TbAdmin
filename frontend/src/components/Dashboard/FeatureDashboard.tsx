@@ -856,8 +856,8 @@ export const FeatureDashboard: React.FC = () => {
           </div>
 
           {/* Search bar & View mode toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', minWidth: 220 }}>
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
+            <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)' }} />
               <input
                 type="text"
@@ -868,6 +868,7 @@ export const FeatureDashboard: React.FC = () => {
                 style={{
                   padding: '7px 12px 7px 32px',
                   fontSize: 13,
+                  width: '100%',
                 }}
               />
               {searchQuery && (
@@ -886,24 +887,38 @@ export const FeatureDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setViewMode('table')}
                 className={`segmented-item ${viewMode === 'table' ? 'active' : ''}`}
+                style={{ padding: '4px 10px', fontSize: 12 }}
               >
-                Table View
+                Table
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`segmented-item ${viewMode === 'grid' ? 'active' : ''}`}
+                style={{ padding: '4px 10px', fontSize: 12 }}
               >
-                Visual Grid
+                Grid
               </button>
             </div>
           </div>
         </div>
 
-        {/* Category Pill Filters */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
-          <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 600, marginRight: 4 }}>
-            Filter Category:
+        {/* Category Pill Filters (Scrollable on mobile) */}
+        <div
+          className="no-scrollbar touch-scroll"
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            alignItems: 'center',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 14,
+            paddingBottom: 2,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 600, marginRight: 4, flexShrink: 0 }}>
+            Category:
           </span>
           {(activeTab === 'blocks' ? blockCategories : templateCategories).map(cat => {
             const count = activeTab === 'blocks'
@@ -929,6 +944,7 @@ export const FeatureDashboard: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
+                  flexShrink: 0,
                 }}
               >
                 <span>{cat === 'all' ? (activeTab === 'blocks' ? 'All Blocks' : 'All Templates') : cat}</span>

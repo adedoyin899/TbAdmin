@@ -476,7 +476,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
       </div>
 
       {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
-      <div className="pill-group" style={{ alignSelf: 'flex-start' }}>
+      <div className="pill-group no-scrollbar touch-scroll" style={{ alignSelf: 'flex-start', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
         <button
           onClick={() => setActiveTab('rooms')}
           className={`pill-tab ${activeTab === 'rooms' ? 'active' : ''}`}
@@ -660,7 +660,7 @@ export const UserLookupPage: React.FC = () => {
         </div>
 
         {/* Prominent Search Bar with Search Button in Header */}
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, width: '100%', maxWidth: 440 }}>
+        <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full md:max-w-md">
           <div style={{ position: 'relative', flex: 1 }}>
             <Search
               size={15}
@@ -673,7 +673,7 @@ export const UserLookupPage: React.FC = () => {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               className="input"
-              style={{ paddingLeft: 36, fontSize: 13, height: 38 }}
+              style={{ paddingLeft: 36, fontSize: 13, height: 38, width: '100%' }}
             />
           </div>
           <button type="submit" className="btn btn-primary" style={{ padding: '0 16px', gap: 6, height: 38, fontSize: 13 }} id="user-search-btn">
@@ -697,11 +697,11 @@ export const UserLookupPage: React.FC = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
             <Filter size={14} color="var(--dim)" />
             <select
               className="input"
-              style={{ width: 160, height: 36, fontSize: 13 }}
+              style={{ width: 150, height: 36, fontSize: 13 }}
               value={sourceFilter}
               onChange={e => setSourceFilter(e.target.value)}
             >

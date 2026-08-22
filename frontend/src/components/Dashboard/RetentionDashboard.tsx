@@ -123,7 +123,7 @@ export const RetentionDashboard: React.FC = () => {
             Analyze recurring creator engagement cycles across 7-day and 30-day cohorts.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
           <DateRangeSelector
             value={dateRange}
             onChange={setDateRange}
@@ -134,7 +134,7 @@ export const RetentionDashboard: React.FC = () => {
             <select
               id="retention-source"
               className="input"
-              style={{ width: 160 }}
+              style={{ width: 140 }}
               value={signupSource}
               onChange={e => setSignupSource(e.target.value)}
             >
@@ -218,13 +218,13 @@ export const RetentionDashboard: React.FC = () => {
                   </p>
                   <ChevronRight size={15} color="var(--dim)" />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 8 }}>
-                  <span className="mono-metric" style={{ fontSize: 50, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <span className="mono-metric" style={{ fontSize: 'clamp(34px, 7vw, 48px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
                     {formatPercentage(stat.value)}
                   </span>
                   <span
                     className="badge badge-success"
-                    style={{ marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    style={{ marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                   >
                     <TrendingUp size={13} /> +{stat.change}% this week
                   </span>

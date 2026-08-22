@@ -118,7 +118,7 @@ export const CampaignDetailView: React.FC<{
       </div>
 
       {/* ── Sub-Navigation Tabs (Mistral Style) ────────────────── */}
-      <div className="pill-group" style={{ alignSelf: 'flex-start' }}>
+      <div className="pill-group no-scrollbar touch-scroll" style={{ alignSelf: 'flex-start', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
         <button
           onClick={() => setActiveTab('performance')}
           className={`pill-tab ${activeTab === 'performance' ? 'active' : ''}`}

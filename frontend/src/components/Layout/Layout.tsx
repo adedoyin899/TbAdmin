@@ -463,7 +463,7 @@ export const Header: React.FC<{
       {/* Subtle Mistral Accent Bar at top edge of header */}
       <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 2 }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {/* Mobile menu trigger */}
         <button
           onClick={onMobileMenuClick}
@@ -474,27 +474,35 @@ export const Header: React.FC<{
           <Menu size={16} />
         </button>
 
-        {/* Header Greeting & RBAC Role Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {/* Mobile Logo Mark */}
+        <div className="flex items-center gap-2 md:hidden">
+          <img src={tbicon} alt="TalentBridge" style={{ width: 24, height: 24, borderRadius: 6 }} />
+          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 13.5, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+            TB<span style={{ color: 'var(--accent)' }}>.</span>
+          </span>
+        </div>
+
+        {/* Desktop Header Greeting & RBAC Role Badge */}
+        <div className="hidden md:flex items-center gap-2 flex-wrap">
           <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
             Hello, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{user?.name || getDisplayName(user?.email)}</strong>
           </span>
 
           {/* Role Tier Badge */}
           {user?.role === 'Super Admin' || user?.email?.toLowerCase() === 'maz@talentbridge.cv' ? (
-            <span className="badge badge-success" style={{ fontSize: 10, padding: '2px 8px' }}>
+            <span className="badge badge-teal" style={{ fontSize: 10.5, padding: '2px 8px' }}>
               👑 Super Admin
             </span>
           ) : user?.role === 'Admin' ? (
-            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 8px' }}>
+            <span className="badge badge-neutral" style={{ fontSize: 10.5, padding: '2px 8px' }}>
               🛠️ Admin
             </span>
           ) : user?.role === 'Data Analyst' ? (
-            <span className="badge" style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.22)' }}>
+            <span className="badge" style={{ fontSize: 10.5, padding: '2px 8px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.22)' }}>
               📊 Data Analyst
             </span>
           ) : (
-            <span className="badge" style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.22)' }}>
+            <span className="badge" style={{ fontSize: 10.5, padding: '2px 8px', background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.22)' }}>
               👁️ Read-Only
             </span>
           )}
@@ -502,13 +510,22 @@ export const Header: React.FC<{
       </div>
 
       {/* Center / Right Header Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Sleek System-Wide Search Bar (Command + K Trigger) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        {/* Mobile Search Icon Button */}
+        <button
+          onClick={onOpenSearch}
+          className="btn-icon md:hidden"
+          title="Search (⌘K)"
+          id="mobile-search-btn"
+        >
+          <Search size={15} color="var(--accent)" />
+        </button>
+
+        {/* Desktop Sleek System-Wide Search Bar (Command + K Trigger) */}
         <div
           onClick={onOpenSearch}
           id="header-omnisearch-trigger"
           style={{
-            display: 'flex',
             alignItems: 'center',
             gap: 8,
             padding: '6px 14px',
@@ -519,7 +536,7 @@ export const Header: React.FC<{
             minWidth: 190,
             transition: 'all 0.18s ease',
           }}
-          className="hover:border-[var(--accent)] hover:shadow-sm transition-all flex items-center"
+          className="hidden md:flex hover:border-[var(--accent)] hover:shadow-sm transition-all"
           title="Search users, dashboards, actions, and telemetry (⌘K)"
         >
           <Search size={13.5} color="var(--accent)" />

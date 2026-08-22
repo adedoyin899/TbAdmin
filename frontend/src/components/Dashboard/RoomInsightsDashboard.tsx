@@ -75,7 +75,7 @@ export const RoomInsightsDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
           <DateRangeSelector
             value={dateRange}
             onChange={setDateRange}

@@ -325,10 +325,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: '80px 16px 20px',
       }}
       onClick={onClose}
-      className="animate-fade-in"
+      className="animate-fade-in p-3 pt-6 sm:p-4 sm:pt-20"
     >
       <div
         style={{
@@ -341,7 +340,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: 'calc(100vh - 140px)',
+          maxHeight: 'calc(100vh - 48px)',
           position: 'relative',
         }}
         onClick={e => e.stopPropagation()}

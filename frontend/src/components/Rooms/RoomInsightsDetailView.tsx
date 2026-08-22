@@ -288,9 +288,9 @@ export const RoomInsightsDetailView: React.FC<{
             <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>Recruiter and visitor session logs</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
             {/* Search */}
-            <div style={{ position: 'relative', width: 220 }}>
+            <div className="relative w-full sm:w-56">
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)' }} />
               <input
                 type="text"
@@ -298,12 +298,12 @@ export const RoomInsightsDetailView: React.FC<{
                 value={viewerSearch}
                 onChange={e => setViewerSearch(e.target.value)}
                 className="input"
-                style={{ paddingLeft: 32, fontSize: 13, height: 34 }}
+                style={{ paddingLeft: 32, fontSize: 13, height: 34, width: '100%' }}
               />
             </div>
 
             {/* Filter pills */}
-            <div className="pill-group">
+            <div className="pill-group no-scrollbar touch-scroll" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
               {[
                 { key: 'all', label: 'All', count: room.viewers.length },
                 { key: 'returning', label: 'Returning' },
@@ -314,7 +314,7 @@ export const RoomInsightsDetailView: React.FC<{
                   key={tab.key}
                   onClick={() => setViewerFilter(tab.key as typeof viewerFilter)}
                   className={`pill-tab ${viewerFilter === tab.key ? 'active' : ''}`}
-                  style={{ padding: '4px 10px', fontSize: 12 }}
+                  style={{ padding: '4px 10px', fontSize: 12, flexShrink: 0 }}
                 >
                   <span>{tab.label}</span>
                   {tab.count !== undefined && (
@@ -513,7 +513,7 @@ export const RoomInsightsDetailView: React.FC<{
           </div>
 
           {/* Metric tabs */}
-          <div className="segmented-control" style={{ flexWrap: 'wrap' }}>
+          <div className="segmented-control no-scrollbar touch-scroll" style={{ overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
             {[
               { key: 'unique', label: 'By unique views' },
               { key: 'clicks', label: 'By clicks' },
@@ -525,7 +525,7 @@ export const RoomInsightsDetailView: React.FC<{
                 key={tab.key}
                 onClick={() => setLocationMetric(tab.key as typeof locationMetric)}
                 className={`segmented-item ${locationMetric === tab.key ? 'active' : ''}`}
-                style={{ fontSize: 11.5, padding: '4px 10px' }}
+                style={{ fontSize: 11.5, padding: '4px 10px', flexShrink: 0 }}
               >
                 {tab.label}
               </button>

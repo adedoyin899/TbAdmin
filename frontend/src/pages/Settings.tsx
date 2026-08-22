@@ -318,7 +318,7 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       {/* ── Embedded Navigation Tab Bar (Mistral Style Pill Group) ────────────── */}
-      <div className="pill-group" style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
+      <div className="pill-group no-scrollbar touch-scroll" style={{ alignSelf: 'flex-start', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -328,6 +328,7 @@ export const SettingsPage: React.FC = () => {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`pill-tab ${isActive ? 'active' : ''}`}
+              style={{ flexShrink: 0 }}
             >
               <Icon size={15} color={isActive ? 'var(--accent)' : 'var(--dim)'} />
               <span>{tab.label}</span>

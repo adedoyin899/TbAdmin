@@ -165,7 +165,7 @@ export const FunnelDashboard: React.FC = () => {
             Real-time creator onboarding telemetry from initial signup to published 3D rooms.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
           <DateRangeSelector
             value={dateRange}
             onChange={setDateRange}
@@ -176,7 +176,7 @@ export const FunnelDashboard: React.FC = () => {
             <select
               id="funnel-signup-source"
               className="input"
-              style={{ width: 160 }}
+              style={{ width: 140 }}
               value={signupSource}
               onChange={e => setSignupSource(e.target.value)}
             >

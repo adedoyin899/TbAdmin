@@ -137,13 +137,14 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             top: 'calc(100% + 6px)',
             right: 0,
             zIndex: 100,
-            minWidth: 330,
-            maxWidth: '90vw',
+            width: 'max-content',
+            minWidth: 280,
+            maxWidth: 'calc(100vw - 24px)',
             background: 'var(--panel)',
             border: '1px solid var(--line)',
             borderRadius: 'var(--radius)',
             boxShadow: 'var(--shadow-lg)',
-            padding: 18,
+            padding: 16,
           }}
         >
           <div style={{ marginBottom: 14, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
