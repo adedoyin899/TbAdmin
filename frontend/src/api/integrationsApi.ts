@@ -17,6 +17,36 @@ export interface ProviderCredentials {
     lastVerified?: string;
     ping?: string;
   };
+  linkedin: {
+    clientId: string;
+    clientSecret: string;
+    companyUrn: string;
+    redirectUri: string;
+    syncFrequency: number;
+    status?: string;
+    lastVerified?: string;
+    ping?: string;
+  };
+  reddit: {
+    clientId: string;
+    clientSecret: string;
+    refreshToken: string;
+    userAgent: string;
+    subreddits: string;
+    syncFrequency: number;
+    status?: string;
+    lastVerified?: string;
+    ping?: string;
+  };
+  buffer: {
+    accessToken: string;
+    profileId: string;
+    autoPublish: boolean;
+    syncFrequency: number;
+    status?: string;
+    lastVerified?: string;
+    ping?: string;
+  };
   redis: {
     url: string;
     password?: string;
@@ -70,6 +100,36 @@ export const integrationsApi = {
           status: 'connected',
           lastVerified: 'Just now',
           ping: '24ms',
+        },
+        linkedin: {
+          clientId: '78li9230489127',
+          clientSecret: 'li_sec_9812401823901',
+          companyUrn: 'urn:li:organization:9812401',
+          redirectUri: 'https://admin.talentbridge.cv/api/auth/linkedin/callback',
+          syncFrequency: 60,
+          status: 'connected',
+          lastVerified: 'Just now',
+          ping: '38ms',
+        },
+        reddit: {
+          clientId: 'rd_app_8912401',
+          clientSecret: 'rd_sec_0192840192',
+          refreshToken: 'rd_ref_8912093481230',
+          userAgent: 'TalentBridge-AdminBot/1.0 (by /u/talentbridge_official)',
+          subreddits: 'r/Recruiting, r/TalentBridge, r/hiring, r/webdev',
+          syncFrequency: 30,
+          status: 'connected',
+          lastVerified: 'Just now',
+          ping: '45ms',
+        },
+        buffer: {
+          accessToken: 'buf_tok_891240192840192',
+          profileId: '64e1098234190823',
+          autoPublish: true,
+          syncFrequency: 15,
+          status: 'connected',
+          lastVerified: 'Just now',
+          ping: '28ms',
         },
         redis: {
           url: 'redis://localhost:6379',
@@ -139,6 +199,27 @@ export const integrationsApi = {
         ping: '24ms',
       };
     }
+    if (provider === 'linkedin') {
+      return {
+        success: true,
+        message: `LinkedIn OAuth 2.0 Token & Company URN "${credentials?.companyUrn || 'urn:li:organization:9812401'}" verified active!`,
+        ping: '38ms',
+      };
+    }
+    if (provider === 'reddit') {
+      return {
+        success: true,
+        message: `Reddit Script OAuth connection authorized! User-Agent header "${credentials?.userAgent || 'TalentBridge-AdminBot/1.0'}" verified active.`,
+        ping: '45ms',
+      };
+    }
+    if (provider === 'buffer') {
+      return {
+        success: true,
+        message: `Buffer Publishing API token verified! Connected to Profile Queue #${credentials?.profileId || '64e1098234190823'}.`,
+        ping: '28ms',
+      };
+    }
     if (provider === 'redis') {
       return { success: true, message: 'Redis cache cluster responded with PONG!', ping: '1ms' };
     }
@@ -147,6 +228,7 @@ export const integrationsApi = {
     }
     return { success: false, message: 'Unknown provider' };
   },
+
 
   flushCache: async (): Promise<{ success: boolean; message: string }> => {
     try {

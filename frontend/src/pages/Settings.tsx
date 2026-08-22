@@ -3,15 +3,16 @@ import {
   SlidersHorizontal, Mail, TrendingDown, AlertTriangle, CheckCircle2, RotateCcw,
   Send, Check, Flame, Server, Shield, Palette, Database, RefreshCw,
   Lock, Key, Activity, Eye, EyeOff, XCircle, CheckCircle,
-  Zap, UserPlus, Trash2,
+  Zap, UserPlus, Trash2, Share2, MessageSquare, Radio,
 } from 'lucide-react';
+
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useRbac } from '../utils/rbac';
 import { integrationsApi } from '../api/integrationsApi';
 
 type TabKey = 'alerts' | 'email' | 'integrations' | 'security' | 'appearance';
-type ProviderKey = 'posthog' | 'mailgun' | 'redis' | 'postgres';
+type ProviderKey = 'posthog' | 'mailgun' | 'linkedin' | 'reddit' | 'buffer' | 'redis' | 'postgres';
 
 interface TabItem {
   id: TabKey;
@@ -20,6 +21,7 @@ interface TabItem {
   badge?: string;
   desc: string;
 }
+
 
 const TABS: TabItem[] = [
   { id: 'alerts', label: 'Anomaly Triggers', icon: Flame, badge: 'Active', desc: 'Threshold baking rules & event triggers' },
@@ -105,6 +107,36 @@ export const SettingsPage: React.FC = () => {
         lastVerified: 'Just now',
         ping: '24ms',
       },
+      linkedin: {
+        clientId: '78li9230489127',
+        clientSecret: 'li_sec_9812401823901',
+        companyUrn: 'urn:li:organization:9812401',
+        redirectUri: 'https://admin.talentbridge.cv/api/auth/linkedin/callback',
+        syncFrequency: 60,
+        status: 'connected',
+        lastVerified: 'Just now',
+        ping: '38ms',
+      },
+      reddit: {
+        clientId: 'rd_app_8912401',
+        clientSecret: 'rd_sec_0192840192',
+        refreshToken: 'rd_ref_8912093481230',
+        userAgent: 'TalentBridge-AdminBot/1.0 (by /u/talentbridge_official)',
+        subreddits: 'r/Recruiting, r/TalentBridge, r/hiring, r/webdev',
+        syncFrequency: 30,
+        status: 'connected',
+        lastVerified: 'Just now',
+        ping: '45ms',
+      },
+      buffer: {
+        accessToken: 'buf_tok_891240192840192',
+        profileId: '64e1098234190823',
+        autoPublish: true,
+        syncFrequency: 15,
+        status: 'connected',
+        lastVerified: 'Just now',
+        ping: '28ms',
+      },
       redis: {
         url: 'redis://localhost:6379',
         password: '',
@@ -152,6 +184,9 @@ export const SettingsPage: React.FC = () => {
         setCredentials((prev: any) => ({
           posthog: { ...prev.posthog, ...res.config.posthog },
           mailgun: { ...prev.mailgun, ...res.config.mailgun },
+          linkedin: { ...prev.linkedin, ...res.config.linkedin },
+          reddit: { ...prev.reddit, ...res.config.reddit },
+          buffer: { ...prev.buffer, ...res.config.buffer },
           redis: { ...prev.redis, ...res.config.redis },
           postgres: { ...prev.postgres, ...res.config.postgres },
         }));
@@ -161,6 +196,7 @@ export const SettingsPage: React.FC = () => {
       }
     }).catch(() => {});
   }, []);
+
 
   const handleAddAdminUser = () => {
     if (!newUserForm.name || !newUserForm.email) return;
@@ -860,10 +896,13 @@ export const SettingsPage: React.FC = () => {
             {/* Interactive Provider Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { id: 'posthog' as const, name: 'PostHog Analytics', desc: 'Product funnel & event ingestion', ping: credentials.posthog.ping, icon: Activity, color: '#2DD4BF', status: credentials.posthog.status },
-                { id: 'mailgun' as const, name: 'Mailgun Webhooks', desc: 'Email delivers, opens & bounces', ping: credentials.mailgun.ping, icon: Mail, color: '#3B82F6', status: credentials.mailgun.status },
-                { id: 'redis' as const, name: 'Redis Cache Layer', desc: 'Fast cache response & TTL store', ping: credentials.redis.ping, icon: Database, color: '#F59E0B', status: credentials.redis.status },
-                { id: 'postgres' as const, name: 'PostgreSQL Database', desc: 'Admin users & persistent logs', ping: credentials.postgres.ping, icon: Server, color: '#10B981', status: credentials.postgres.status },
+                { id: 'posthog' as const, name: 'PostHog Analytics', desc: 'Product funnel & event ingestion', ping: credentials.posthog?.ping || '12ms', icon: Activity, color: '#2DD4BF', status: credentials.posthog?.status || 'connected' },
+                { id: 'mailgun' as const, name: 'Mailgun Webhooks', desc: 'Email delivers, opens & bounces', ping: credentials.mailgun?.ping || '24ms', icon: Mail, color: '#3B82F6', status: credentials.mailgun?.status || 'connected' },
+                { id: 'linkedin' as const, name: 'LinkedIn Marketing', desc: 'Organic UGC, company updates & CTR', ping: credentials.linkedin?.ping || '38ms', icon: Share2, color: '#0A66C2', status: credentials.linkedin?.status || 'connected' },
+                { id: 'reddit' as const, name: 'Reddit Communities', desc: 'Developer discussions & karma score', ping: credentials.reddit?.ping || '45ms', icon: MessageSquare, color: '#FF4500', status: credentials.reddit?.status || 'connected' },
+                { id: 'buffer' as const, name: 'Buffer Social Queue', desc: 'Multi-channel publishing schedule', ping: credentials.buffer?.ping || '28ms', icon: Radio, color: '#10B981', status: credentials.buffer?.status || 'connected' },
+                { id: 'redis' as const, name: 'Redis Cache Layer', desc: 'Fast cache response & TTL store', ping: credentials.redis?.ping || '1ms', icon: Database, color: '#F59E0B', status: credentials.redis?.status || 'connected' },
+                { id: 'postgres' as const, name: 'PostgreSQL Database', desc: 'Admin users & persistent logs', ping: credentials.postgres?.ping || '4ms', icon: Server, color: '#8B5CF6', status: credentials.postgres?.status || 'connected' },
               ].map(item => {
                 const Icon = item.icon;
                 const isSelected = selectedProvider === item.id;
@@ -974,7 +1013,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="url"
-                        value={credentials.posthog.host}
+                        value={credentials.posthog?.host || ''}
                         onChange={e => setCredentials({
                           ...credentials,
                           posthog: { ...credentials.posthog, host: e.target.value },
@@ -995,7 +1034,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={credentials.posthog.projectId}
+                        value={credentials.posthog?.projectId || ''}
                         onChange={e => setCredentials({
                           ...credentials,
                           posthog: { ...credentials.posthog, projectId: e.target.value },
@@ -1017,7 +1056,7 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['posthog_key'] ? 'text' : 'password'}
-                          value={credentials.posthog.apiKey}
+                          value={credentials.posthog?.apiKey || ''}
                           onChange={e => setCredentials({
                             ...credentials,
                             posthog: { ...credentials.posthog, apiKey: e.target.value },
@@ -1080,7 +1119,7 @@ export const SettingsPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={credentials.mailgun.domain}
+                        value={credentials.mailgun?.domain || ''}
                         onChange={e => setCredentials({
                           ...credentials,
                           mailgun: { ...credentials.mailgun, domain: e.target.value },
@@ -1102,7 +1141,7 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_key'] ? 'text' : 'password'}
-                          value={credentials.mailgun.apiKey}
+                          value={credentials.mailgun?.apiKey || ''}
                           onChange={e => setCredentials({
                             ...credentials,
                             mailgun: { ...credentials.mailgun, apiKey: e.target.value },
@@ -1132,7 +1171,7 @@ export const SettingsPage: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <input
                           type={showSecret['mailgun_wh'] ? 'text' : 'password'}
-                          value={credentials.mailgun.webhookKey}
+                          value={credentials.mailgun?.webhookKey || ''}
                           onChange={e => setCredentials({
                             ...credentials,
                             mailgun: { ...credentials.mailgun, webhookKey: e.target.value },
@@ -1156,6 +1195,426 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* LINKEDIN Configuration Form */}
+              {selectedProvider === 'linkedin' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-fade-in">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                        LinkedIn Marketing &amp; UGC API Credentials
+                      </h4>
+                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                        Configure LinkedIn Developer App OAuth credentials and Company Organization URN
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTestProvider('linkedin')}
+                      disabled={testingProvider === 'linkedin'}
+                      className="btn btn-primary"
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        cursor: 'pointer',
+                        background: '#0A66C2',
+                      }}
+                      title="Verify LinkedIn Handshake"
+                    >
+                      <RefreshCw size={13} className={testingProvider === 'linkedin' ? 'animate-spin' : ''} />
+                      {testingProvider === 'linkedin' ? 'Verifying OAuth…' : 'Verify & Test LinkedIn API'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Client ID */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        LinkedIn App Client ID
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.linkedin?.clientId || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          linkedin: { ...credentials.linkedin, clientId: e.target.value },
+                        })}
+                        placeholder="78li..."
+                        className="input"
+                        style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace' }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        From LinkedIn Developer Portal
+                      </span>
+                    </div>
+
+                    {/* Client Secret */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        LinkedIn App Client Secret
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showSecret['linkedin_sec'] ? 'text' : 'password'}
+                          value={credentials.linkedin?.clientSecret || ''}
+                          onChange={e => setCredentials({
+                            ...credentials,
+                            linkedin: { ...credentials.linkedin, clientSecret: e.target.value },
+                          })}
+                          placeholder="li_sec_..."
+                          className="input"
+                          style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace', paddingRight: 34 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleSecret('linkedin_sec')}
+                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer' }}
+                        >
+                          {showSecret['linkedin_sec'] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Masked OAuth app secret
+                      </span>
+                    </div>
+
+                    {/* Company URN */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Company Organization URN
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.linkedin?.companyUrn || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          linkedin: { ...credentials.linkedin, companyUrn: e.target.value },
+                        })}
+                        placeholder="urn:li:organization:9812401"
+                        className="input"
+                        style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace' }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Format: urn:li:organization:&#123;id&#125;
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 4 }}>
+                    {/* Redirect URI */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        OAuth 2.0 Redirect URI
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.linkedin?.redirectUri || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          linkedin: { ...credentials.linkedin, redirectUri: e.target.value },
+                        })}
+                        placeholder="https://admin.talentbridge.cv/api/auth/linkedin/callback"
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      />
+                    </div>
+
+                    {/* Sync Frequency */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Background Telemetry Sync Frequency
+                      </label>
+                      <select
+                        value={credentials.linkedin?.syncFrequency || 60}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          linkedin: { ...credentials.linkedin, syncFrequency: Number(e.target.value) },
+                        })}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      >
+                        <option value={15}>Every 15 Minutes (High Activity Sprints)</option>
+                        <option value={30}>Every 30 Minutes</option>
+                        <option value={60}>Every 1 Hour (Standard Recommended)</option>
+                        <option value={120}>Every 2 Hours</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* REDDIT Configuration Form */}
+              {selectedProvider === 'reddit' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-fade-in">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                        Reddit Script Application &amp; Community API
+                      </h4>
+                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                        Configure Reddit OAuth app credentials to track developer discussions and karma telemetry
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTestProvider('reddit')}
+                      disabled={testingProvider === 'reddit'}
+                      className="btn btn-primary"
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        cursor: 'pointer',
+                        background: '#FF4500',
+                      }}
+                      title="Verify Reddit Handshake"
+                    >
+                      <RefreshCw size={13} className={testingProvider === 'reddit' ? 'animate-spin' : ''} />
+                      {testingProvider === 'reddit' ? 'Testing Handshake…' : 'Verify & Test Reddit API'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Client ID */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Reddit Script App Client ID
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.reddit?.clientId || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          reddit: { ...credentials.reddit, clientId: e.target.value },
+                        })}
+                        placeholder="rd_app_..."
+                        className="input"
+                        style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace' }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Generated under reddit.com/prefs/apps
+                      </span>
+                    </div>
+
+                    {/* Client Secret */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Reddit App Client Secret
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showSecret['reddit_sec'] ? 'text' : 'password'}
+                          value={credentials.reddit?.clientSecret || ''}
+                          onChange={e => setCredentials({
+                            ...credentials,
+                            reddit: { ...credentials.reddit, clientSecret: e.target.value },
+                          })}
+                          placeholder="rd_sec_..."
+                          className="input"
+                          style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace', paddingRight: 34 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleSecret('reddit_sec')}
+                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer' }}
+                        >
+                          {showSecret['reddit_sec'] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Private script secret
+                      </span>
+                    </div>
+
+                    {/* Refresh Token */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        OAuth 2.0 Refresh Token
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showSecret['reddit_ref'] ? 'text' : 'password'}
+                          value={credentials.reddit?.refreshToken || ''}
+                          onChange={e => setCredentials({
+                            ...credentials,
+                            reddit: { ...credentials.reddit, refreshToken: e.target.value },
+                          })}
+                          placeholder="rd_ref_..."
+                          className="input"
+                          style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace', paddingRight: 34 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleSecret('reddit_ref')}
+                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer' }}
+                        >
+                          {showSecret['reddit_ref'] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Long-lived bearer token
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 4 }}>
+                    {/* User Agent */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Custom Bot User-Agent Header
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.reddit?.userAgent || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          reddit: { ...credentials.reddit, userAgent: e.target.value },
+                        })}
+                        placeholder="TalentBridge-AdminBot/1.0"
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Complies with Reddit API rate limiting policy
+                      </span>
+                    </div>
+
+                    {/* Tracked Subreddits */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Tracked Subreddits (Comma Separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.reddit?.subreddits || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          reddit: { ...credentials.reddit, subreddits: e.target.value },
+                        })}
+                        placeholder="r/Recruiting, r/TalentBridge, r/hiring"
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Monitored in real-time by the ingestion worker
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* BUFFER Configuration Form */}
+              {selectedProvider === 'buffer' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-fade-in">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                        Buffer Publishing Queue &amp; Scheduling API
+                      </h4>
+                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                        Connect to Buffer to monitor automated multi-channel queues and scheduled posts
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTestProvider('buffer')}
+                      disabled={testingProvider === 'buffer'}
+                      className="btn btn-primary"
+                      style={{
+                        fontSize: 12,
+                        padding: '7px 14px',
+                        gap: 6,
+                        cursor: 'pointer',
+                        background: '#10B981',
+                      }}
+                      title="Verify Buffer API"
+                    >
+                      <RefreshCw size={13} className={testingProvider === 'buffer' ? 'animate-spin' : ''} />
+                      {testingProvider === 'buffer' ? 'Testing Buffer…' : 'Verify & Test Buffer API'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Access Token */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Buffer API Access Token
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showSecret['buffer_tok'] ? 'text' : 'password'}
+                          value={credentials.buffer?.accessToken || ''}
+                          onChange={e => setCredentials({
+                            ...credentials,
+                            buffer: { ...credentials.buffer, accessToken: e.target.value },
+                          })}
+                          placeholder="buf_tok_..."
+                          className="input"
+                          style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace', paddingRight: 34 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleSecret('buffer_tok')}
+                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer' }}
+                        >
+                          {showSecret['buffer_tok'] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        From Buffer developer account settings
+                      </span>
+                    </div>
+
+                    {/* Profile ID */}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                        Buffer Channel Profile ID
+                      </label>
+                      <input
+                        type="text"
+                        value={credentials.buffer?.profileId || ''}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          buffer: { ...credentials.buffer, profileId: e.target.value },
+                        })}
+                        placeholder="64e1098..."
+                        className="input"
+                        style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace' }}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4, display: 'block' }}>
+                        Identifies the active social distribution profile
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={credentials.buffer?.autoPublish ?? true}
+                        onChange={e => setCredentials({
+                          ...credentials,
+                          buffer: { ...credentials.buffer, autoPublish: e.target.checked },
+                        })}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      <span>Enable Automated Queue Schedule Ingestion</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
 
               {/* REDIS Configuration Form */}
               {selectedProvider === 'redis' && (
