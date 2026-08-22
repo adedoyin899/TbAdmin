@@ -761,16 +761,16 @@ export const UserLookupPage: React.FC = () => {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table>
+            <table style={{ minWidth: 780 }}>
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Country</th>
-                  <th>Signup Source</th>
-                  <th>Plan Tier</th>
-                  <th>Activity</th>
-                  <th>Joined Date</th>
-                  <th>Action</th>
+                  <th style={{ minWidth: 200 }}>User</th>
+                  <th style={{ minWidth: 120 }}>Country</th>
+                  <th style={{ minWidth: 120 }}>Signup Source</th>
+                  <th style={{ minWidth: 100 }}>Plan Tier</th>
+                  <th style={{ minWidth: 120 }}>Activity</th>
+                  <th style={{ minWidth: 110 }}>Joined Date</th>
+                  <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
                 </tr>
               </thead>
               <tbody>

@@ -1561,18 +1561,19 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Admin Name</th>
-                      <th>Email</th>
-                      <th>Role Tier</th>
-                      <th>Session Policy</th>
-                      <th>Last Active</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ minWidth: 780 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ minWidth: 180 }}>Admin Name</th>
+                        <th style={{ minWidth: 200 }}>Email</th>
+                        <th style={{ minWidth: 120 }}>Role Tier</th>
+                        <th style={{ minWidth: 130 }}>Session Policy</th>
+                        <th style={{ minWidth: 110 }}>Last Active</th>
+                        <th style={{ minWidth: 100 }}>Status</th>
+                        <th style={{ textAlign: 'right', minWidth: 110 }}>Actions</th>
+                      </tr>
+                    </thead>
                   <tbody>
                     {teamUsers.map(u => (
                       <tr key={u.email}>
@@ -1699,6 +1700,7 @@ export const SettingsPage: React.FC = () => {
                 </table>
               </div>
             </div>
+          </div>
 
             {/* Audit Logs & Security Summary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

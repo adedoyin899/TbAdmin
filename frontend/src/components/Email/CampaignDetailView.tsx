@@ -311,16 +311,16 @@ export const CampaignDetailView: React.FC<{
           {/* Table */}
           <div className="table-wrap">
             <div style={{ overflowX: 'auto' }}>
-              <table>
+              <table style={{ minWidth: 780 }}>
                 <thead>
                   <tr>
-                    <th>Recipient</th>
-                    <th>Status</th>
-                    <th>Sent At</th>
-                    <th>Opened At</th>
-                    <th>Clicked At</th>
-                    <th>Email Client / Device</th>
-                    <th style={{ textAlign: 'right' }}>Action</th>
+                    <th style={{ minWidth: 180 }}>Recipient</th>
+                    <th style={{ minWidth: 100 }}>Status</th>
+                    <th style={{ minWidth: 110 }}>Sent At</th>
+                    <th style={{ minWidth: 110 }}>Opened At</th>
+                    <th style={{ minWidth: 110 }}>Clicked At</th>
+                    <th style={{ minWidth: 140 }}>Email Client / Device</th>
+                    <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>

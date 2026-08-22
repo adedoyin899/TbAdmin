@@ -295,15 +295,15 @@ export const RoomInsightsDashboard: React.FC = () => {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table>
+              <table style={{ minWidth: 700 }}>
                 <thead>
                   <tr>
-                    <th>Room Name</th>
-                    <th>Creator</th>
-                    <th>Total Views</th>
-                    <th>Unique Views</th>
-                    <th>Engagement</th>
-                    <th>Action</th>
+                    <th style={{ minWidth: 180 }}>Room Name</th>
+                    <th style={{ minWidth: 180 }}>Creator</th>
+                    <th style={{ minWidth: 100 }}>Total Views</th>
+                    <th style={{ minWidth: 110 }}>Unique Views</th>
+                    <th style={{ minWidth: 120 }}>Engagement</th>
+                    <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>

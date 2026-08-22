@@ -335,16 +335,16 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table>
+          <table style={{ minWidth: 780 }}>
             <thead>
               <tr>
-                <th>Viewer</th>
-                <th>Role/Company</th>
-                <th>Location</th>
-                <th>Time spent</th>
-                <th>Views</th>
-                <th>Status</th>
-                <th>Last visit</th>
+                <th style={{ minWidth: 180 }}>Viewer</th>
+                <th style={{ minWidth: 160 }}>Role / Company</th>
+                <th style={{ minWidth: 120 }}>Location</th>
+                <th style={{ minWidth: 100 }}>Time Spent</th>
+                <th style={{ minWidth: 80 }}>Views</th>
+                <th style={{ minWidth: 110 }}>Status</th>
+                <th style={{ minWidth: 110 }}>Last Visit</th>
               </tr>
             </thead>
             <tbody>

@@ -584,11 +584,13 @@ select.input {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  width: 100%;
 }
 
-table {
+.table-wrap table {
   width: 100%;
   border-collapse: collapse;
+  text-align: left;
 }
 
 thead tr {
@@ -598,18 +600,19 @@ thead tr {
 
 thead th {
   color: var(--text-2);
-  font-weight: 600;
-  font-family: 'Geist', 'Inter', sans-serif;
-  font-size: 11.5px;
+  font-weight: 700;
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-align: left;
-  padding: 12px 18px;
+  padding: 14px 20px;
+  white-space: nowrap;
 }
 
 tbody tr {
   border-bottom: 1px solid var(--line);
-  transition: background 0.12s var(--ease);
+  transition: background 0.15s var(--ease);
 }
 tbody tr:last-child {
   border-bottom: none;
@@ -617,10 +620,13 @@ tbody tr:last-child {
 tbody tr:hover {
   background: var(--panel-2);
 }
+
 tbody td {
-  padding: 13px 18px;
+  padding: 16px 20px;
   color: var(--text);
   font-size: 13.5px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 /* =========================================================

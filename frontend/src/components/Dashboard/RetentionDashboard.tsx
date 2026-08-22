@@ -312,17 +312,17 @@ export const RetentionDashboard: React.FC = () => {
               </span>
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table>
+              <table style={{ minWidth: 700 }}>
                 <thead>
                   <tr>
-                    <th>Cohort Period</th>
-                    <th>New Users</th>
-                    <th>Day 1</th>
-                    <th>Day 7</th>
-                    <th>Day 14</th>
-                    <th>Day 30</th>
-                    <th>Health</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <th style={{ minWidth: 150 }}>Cohort Period</th>
+                    <th style={{ minWidth: 100 }}>New Users</th>
+                    <th style={{ minWidth: 80 }}>Day 1</th>
+                    <th style={{ minWidth: 80 }}>Day 7</th>
+                    <th style={{ minWidth: 80 }}>Day 14</th>
+                    <th style={{ minWidth: 80 }}>Day 30</th>
+                    <th style={{ minWidth: 120 }}>Health</th>
+                    <th style={{ textAlign: 'right', minWidth: 120 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>

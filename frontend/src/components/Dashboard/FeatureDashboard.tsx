@@ -1123,7 +1123,7 @@ export const FeatureDashboard: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             {activeTab === 'blocks' ? (
               /* Blocks Table */
-              <table>
+              <table style={{ minWidth: 780 }}>
                 <thead>
                   <tr>
                     <th>#</th>
@@ -1237,17 +1237,17 @@ export const FeatureDashboard: React.FC = () => {
               </table>
             ) : (
               /* Templates Table */
-              <table>
+              <table style={{ minWidth: 840 }}>
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Template Name</th>
-                    <th>Target Discipline</th>
-                    <th>Included Blocks</th>
-                    <th>Adoption Rate</th>
-                    <th>Inquiry Lift</th>
-                    <th>Growth (MoM)</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <th style={{ width: 40 }}>#</th>
+                    <th style={{ minWidth: 200 }}>Template Name</th>
+                    <th style={{ minWidth: 140 }}>Target Discipline</th>
+                    <th style={{ minWidth: 180 }}>Included Blocks</th>
+                    <th style={{ minWidth: 140 }}>Adoption Rate</th>
+                    <th style={{ minWidth: 120 }}>Inquiry Lift</th>
+                    <th style={{ minWidth: 120 }}>Growth (MoM)</th>
+                    <th style={{ textAlign: 'right', minWidth: 110 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>

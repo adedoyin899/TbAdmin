@@ -199,17 +199,17 @@ export const EmailDashboard: React.FC = () => {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table>
+              <table style={{ minWidth: 720 }}>
                 <thead>
                   <tr>
-                    <th>Campaign</th>
-                    <th>Sent Date</th>
-                    <th>Sent</th>
-                    <th>Opens</th>
-                    <th>Clicks</th>
-                    <th>Click %</th>
-                    <th>Bounces</th>
-                    <th>Action</th>
+                    <th style={{ minWidth: 180 }}>Campaign</th>
+                    <th style={{ minWidth: 110 }}>Sent Date</th>
+                    <th style={{ minWidth: 80 }}>Sent</th>
+                    <th style={{ minWidth: 120 }}>Opens</th>
+                    <th style={{ minWidth: 80 }}>Clicks</th>
+                    <th style={{ minWidth: 90 }}>Click %</th>
+                    <th style={{ minWidth: 80 }}>Bounces</th>
+                    <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>

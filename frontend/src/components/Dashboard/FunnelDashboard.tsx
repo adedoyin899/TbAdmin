@@ -309,14 +309,14 @@ export const FunnelDashboard: React.FC = () => {
             </span>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table>
+            <table style={{ minWidth: 640 }}>
               <thead>
                 <tr>
-                  <th>Stage</th>
-                  <th>Users</th>
-                  <th>% of Total</th>
-                  <th>Drop-off to Next</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: 160 }}>Stage</th>
+                  <th style={{ minWidth: 100 }}>Users</th>
+                  <th style={{ minWidth: 180 }}>% of Total</th>
+                  <th style={{ minWidth: 140 }}>Drop-off to Next</th>
+                  <th style={{ textAlign: 'right', minWidth: 130 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -328,32 +328,38 @@ export const FunnelDashboard: React.FC = () => {
                     title={`Click to inspect ${stage.stage}`}
                   >
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 9, height: 9, borderRadius: '50%', background: STAGE_COLORS[i % STAGE_COLORS.length], flexShrink: 0 }} />
-                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{stage.stage}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', fontSize: 13.5 }}>{stage.stage}</span>
                       </div>
                     </td>
-                    <td className="mono-metric" style={{ fontWeight: 700 }}>{formatNumber(stage.count)}</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 84, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                      <span className="mono-metric" style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
+                        {formatNumber(stage.count)}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 100, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
                           <div style={{ width: `${stage.percentage || 0}%`, height: '100%', background: STAGE_COLORS[i % STAGE_COLORS.length], borderRadius: 99 }} />
                         </div>
-                        <span className="mono-metric" style={{ fontWeight: 600, color: STAGE_COLORS[i % STAGE_COLORS.length], fontSize: 12.5 }}>
+                        <span className="mono-metric" style={{ fontWeight: 600, color: STAGE_COLORS[i % STAGE_COLORS.length], fontSize: 12.5, whiteSpace: 'nowrap' }}>
                           {formatPercentage(stage.percentage)}
                         </span>
                       </div>
                     </td>
                     <td>
                       {data.dropoff && i < data.dropoff.length && data.dropoff[i] ? (
-                        <span className="badge badge-error">↓ {formatPercentage(data.dropoff[i]?.percentage)}</span>
+                        <span className="badge badge-error" style={{ whiteSpace: 'nowrap', padding: '3px 9px' }}>
+                          ↓ {formatPercentage(data.dropoff[i]?.percentage)}
+                        </span>
                       ) : (
                         <span style={{ color: 'var(--dim)' }}>—</span>
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11.5, gap: 4, display: 'inline-flex' }}>
-                        Explore Stage <ChevronRight size={12} />
+                      <span className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 12, gap: 5, display: 'inline-flex', whiteSpace: 'nowrap' }}>
+                        Explore Stage <ChevronRight size={13} />
                       </span>
                     </td>
                   </tr>
