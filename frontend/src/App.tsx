@@ -18,7 +18,9 @@ import { EmailDetailedView } from './components/Email/EmailDetailedView';
 import { CampaignList } from './components/Campaigns/CampaignList';
 import { CampaignPerformance } from './components/Campaigns/CampaignPerformance';
 import { SocialMediaTabs } from './components/SocialMedia/SocialMediaTabs';
+import { HelpGuide } from './components/Help/HelpGuide';
 import { UserLookupPage } from './pages/UserLookup';
+
 import { SettingsPage } from './pages/Settings';
 import { ErrorBoundary } from './components/Common/ErrorBoundary';
 
@@ -219,8 +221,27 @@ function App() {
                 }
               />
 
+              {/* Help & Knowledge Guide */}
+              <Route
+                path="/help/guide"
+                element={
+                  <ProtectedRoute>
+                    <Layout><HelpGuide /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/help"
+                element={<Navigate to="/help/guide" replace />}
+              />
+              <Route
+                path="/help"
+                element={<Navigate to="/help/guide" replace />}
+              />
+
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
           </SettingsProvider>
         </AuthProvider>

@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
   ChevronsUpDown, Share2, Target,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, BookOpen, HelpCircle, Bot,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
 import tbicon from '../../assets/tbicon.svg';
@@ -27,7 +27,11 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   Settings,
   Share2,
   Target,
+  BookOpen,
+  HelpCircle,
+  Bot,
 };
+
 
 interface NavSubItem {
   path: string;
@@ -95,7 +99,20 @@ const NAV_SECTIONS: NavSection[] = [
       { path: '/settings', label: 'Settings & Alerts', icon: 'Settings' },
     ],
   },
+  {
+    title: 'Help & Learning',
+    items: [
+      {
+        path: '/help/guide',
+        label: 'Platform Guide',
+        icon: 'BookOpen',
+        badge: 'AI Bot',
+        badgeType: 'teal',
+      },
+    ],
+  },
 ];
+
 
 
 const getDisplayName = (email?: string) => {

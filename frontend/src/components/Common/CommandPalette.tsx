@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, TrendingDown, Layers, RotateCcw, Mail, Eye,
   User, RefreshCw, Moon, Zap, ArrowRight,
-  Shield, Check, Share2, Target
+  Shield, Check, Share2, Target, BookOpen, Bot
 } from 'lucide-react';
+
 
 
 import { userApi } from '../../api/userApi';
@@ -227,7 +228,34 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         onClose();
       },
     },
+    {
+      id: 'help-guide',
+      category: 'Dashboards',
+      title: 'Platform User Guide & Metric Dictionary',
+      subtitle: 'Understand all marketing terms, formulas, email heatmaps, and playbooks',
+      icon: BookOpen,
+      color: '#0D9488',
+      badge: 'Knowledge',
+      action: () => {
+        navigate('/help/guide');
+        onClose();
+      },
+    },
+    {
+      id: 'help-bot',
+      category: 'Dashboards',
+      title: 'Marketing AI Assistant Bot',
+      subtitle: 'Ask questions regarding marketing terms, calculations, and KPI insights',
+      icon: Bot,
+      color: '#FA520F',
+      badge: 'AI Powered',
+      action: () => {
+        navigate('/help/guide');
+        onClose();
+      },
+    },
     // Settings & Integrations
+
     {
       id: 'settings-integrations',
       category: 'Settings',
