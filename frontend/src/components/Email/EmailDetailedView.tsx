@@ -23,27 +23,27 @@ import {
 } from 'recharts';
 import { useEmailDetailedAnalytics } from '../../hooks/useEmailDetailedAnalytics';
 import { EmailMetricsCards } from './EmailMetricsCards';
+import { EmailSequenceDetailModal, type EmailSequenceDetailItem } from './EmailSequenceDetailModal';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { SyncStatus } from '../Common/SyncStatus';
 import { TimezoneSelector } from '../Common/TimezoneSelector';
 import { formatNumber } from '../../utils/formatters';
 import { exportToCsv } from '../../utils/exportCsv';
 
-
-
 interface EmailDetailedViewProps {
   campaignId?: string;
   onBack?: () => void;
 }
-
 
 export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
   campaignId = 'welcome-email-001',
   onBack,
 }) => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
+  const [selectedSequence, setSelectedSequence] = useState<EmailSequenceDetailItem | null>(null);
 
   const { data, isLoading, refetch } = useEmailDetailedAnalytics(campaignId, dateRange.preset);
+
 
   const handleExportCsv = () => {
     if (!data?.campaignsTable?.length) return;
@@ -621,8 +621,32 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
             </thead>
             <tbody>
               {campaignsTable.map((row) => (
-                <tr key={row.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>{row.name}</td>
+                <tr
+                  key={row.id}
+                  onClick={() =>
+                    setSelectedSequence({
+                      id: row.id,
+                      name: row.name,
+                      sent: row.sent,
+                      openPercentage: row.openPercentage,
+                      clickPercentage: row.clickPercentage,
+                      signupConversionPercentage: row.signupConversion,
+                      avgTimeToSignupHours: parseFloat(row.timeToSignup) || 4.0,
+                      deviceSplit: {
+                        desktop: parseInt(row.deviceSummary.match(/Desktop (\d+)%/)?.[1] || '68', 10),
+                        mobile: parseInt(row.deviceSummary.match(/Mobile (\d+)%/)?.[1] || '28', 10),
+                        tablet: 4,
+                      },
+                    })
+                  }
+                  className="table-row-hover"
+                  style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+                >
+                  <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{row.name}</span>
+                    </div>
+                  </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(row.sent)}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--info)' }}>
                     {row.openPercentage}%
@@ -641,6 +665,15 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Sequence Drilldown Modal */}
+      {selectedSequence && (
+        <EmailSequenceDetailModal
+          sequence={selectedSequence}
+          onClose={() => setSelectedSequence(null)}
+        />
+      )}
     </div>
   );
 };
+

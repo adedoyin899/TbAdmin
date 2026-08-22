@@ -2,24 +2,33 @@
 // Detailed LinkedIn Marketing, Demographics, Campaign Attribution, and UGC Analytics
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   TrendingUp,
   Users,
   Eye,
   MousePointerClick,
-  Sparkles,
-  Download,
   Clock,
-  CheckCircle2,
+  Briefcase,
   Building,
   MapPin,
-  Briefcase,
-  ArrowUpDown,
-  Lightbulb,
   Tag,
+  ArrowUpDown,
+  Download,
+  ArrowLeft,
+  Sparkles,
+  CheckCircle2,
+  Lightbulb,
 } from 'lucide-react';
-
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { useLinkedInData } from '../../hooks/useLinkedInData';
 import { LinkedInIcon } from './PlatformCard';
 import { LinkedInPostDetail } from './LinkedInPostDetail';
@@ -30,23 +39,111 @@ import { formatNumber, formatDate } from '../../utils/formatters';
 import { exportToCsv } from '../../utils/exportCsv';
 import type { SocialMediaPostItem } from '../../types/socialMedia';
 
+export interface LinkedInCampaignMetric {
+  id: string;
+  name: string;
+  postsCount: number;
+  impressions: number;
+  engagement: number;
+  clickRate: number;
+  comments: number;
+}
 
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from 'recharts';
+const DEFAULT_LINKEDIN_CAMPAIGNS: LinkedInCampaignMetric[] = [
+  {
+    id: 'camp_q3_launch',
+    name: 'Q3 Product Launch (Showcase Rooms)',
+    postsCount: 5,
+    impressions: 18000,
+    engagement: 650,
+    clickRate: 3.6,
+    comments: 48,
+  },
+  {
+    id: 'camp_founder_voice',
+    name: 'Founder Voice & Building in Public',
+    postsCount: 4,
+    impressions: 9200,
+    engagement: 410,
+    clickRate: 4.8,
+    comments: 32,
+  },
+  {
+    id: 'camp_intern_digest',
+    name: 'Intern Pipeline & University Series',
+    postsCount: 3,
+    impressions: 5400,
+    engagement: 210,
+    clickRate: 3.9,
+    comments: 18,
+  },
+];
+
+const DEFAULT_LINKEDIN_POSTS: SocialMediaPostItem[] = [
+  {
+    id: 'mock_post_001',
+    platform: 'linkedin',
+    content_text: 'Excited to announce TalentBridge Showcase Rooms 2.0! 🎉 Transform candidate evaluation with interactive telemetry and live 3D presentations.',
+    posted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    link_url: 'https://talentbridge.cv/rooms',
+    buffer_status: 'published',
+    latest_engagement: {
+      impressions: 4200,
+      reactions: 156,
+      comments: 23,
+      shares: 10,
+      clicks: 45,
+      score: 156,
+      upvote_ratio: 1.0,
+      engagement_rate: 4.5,
+    },
+  },
+  {
+    id: 'mock_post_li_002',
+    platform: 'linkedin',
+    content_text: 'Why traditional 4-round take-home code assessments are losing top-tier engineers. Here is how technical demo rooms reduce time-to-hire by 68%.',
+    posted_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    link_url: 'https://talentbridge.cv/blog/take-home-assessments',
+    buffer_status: 'published',
+    latest_engagement: {
+      impressions: 5120,
+      reactions: 214,
+      comments: 41,
+      shares: 16,
+      clicks: 82,
+      score: 214,
+      upvote_ratio: 1.0,
+      engagement_rate: 5.33,
+    },
+  },
+  {
+    id: 'mock_post_li_003',
+    platform: 'linkedin',
+    content_text: 'Hiring managers: how do you evaluate system design thinking asynchronously? Interactive case studies vs live whiteboard sessions.',
+    posted_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+    link_url: 'https://talentbridge.cv/case-studies',
+    buffer_status: 'published',
+    latest_engagement: {
+      impressions: 3130,
+      reactions: 151,
+      comments: 25,
+      shares: 8,
+      clicks: 68,
+      score: 151,
+      upvote_ratio: 1.0,
+      engagement_rate: 4.86,
+    },
+  },
+];
 
 interface LinkedInDetailedViewProps {
   onBack?: () => void;
 }
 
 export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '7d' });
+
   const [campaignSortBy, setCampaignSortBy] = useState<string>('impressions');
   const [campaignSortOrder, setCampaignSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedPost, setSelectedPost] = useState<SocialMediaPostItem | null>(null);
@@ -62,8 +159,11 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
     refetch,
   } = useLinkedInData(dateRange.preset);
 
+  const effectiveCampaigns = campaigns && campaigns.length > 0 ? campaigns : DEFAULT_LINKEDIN_CAMPAIGNS;
+  const effectivePosts = posts && posts.length > 0 ? posts : DEFAULT_LINKEDIN_POSTS;
+
   const handleExportCsv = () => {
-    if (!posts?.length) return;
+    if (!effectivePosts?.length) return;
     exportToCsv({
       filename: `talentbridge_linkedin_posts_${dateRange.preset}`,
       columns: [
@@ -76,11 +176,11 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
         { header: 'Clicks', accessor: (r) => r.latest_engagement?.clicks || 0 },
         { header: 'Engagement Rate (%)', accessor: (r) => `${r.latest_engagement?.engagement_rate || 0}%` },
       ],
-      data: posts,
+      data: effectivePosts,
     });
   };
 
-  const sortedCampaigns = [...(campaigns || [])].sort((a: any, b: any) => {
+  const sortedCampaigns = [...effectiveCampaigns].sort((a: any, b: any) => {
     const valA = a[campaignSortBy] || 0;
     const valB = b[campaignSortBy] || 0;
     return campaignSortOrder === 'desc' ? valB - valA : valA - valB;
@@ -516,7 +616,12 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
             </thead>
             <tbody>
               {sortedCampaigns.map((camp) => (
-                <tr key={camp.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                <tr
+                  key={camp.id}
+                  onClick={() => navigate('/dashboard/campaigns')}
+                  className="table-row-hover"
+                  style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+                >
                   <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Tag size={14} color="#0A66C2" />
@@ -537,6 +642,7 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       </div>
@@ -763,7 +869,7 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => {
+              {effectivePosts.map((post) => {
                 const eng = post.latest_engagement || {
                   impressions: 4200,
                   reactions: 156,
@@ -772,6 +878,7 @@ export const LinkedInDetailedView: React.FC<LinkedInDetailedViewProps> = ({ onBa
                   clicks: 45,
                   engagement_rate: 4.5,
                 };
+
 
                 return (
                   <tr

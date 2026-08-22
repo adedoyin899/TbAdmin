@@ -6,7 +6,9 @@ import type {
   SocialMediaSummaryResponse,
   SocialMediaPostsResponse,
   PostDetailModalData,
+  SocialMediaPostItem,
 } from '../types/socialMedia';
+
 
 export const socialMediaApi = {
   getSummary: async (dateRange: string = '7d'): Promise<SocialMediaSummaryResponse> => {
@@ -65,97 +67,172 @@ export const socialMediaApi = {
     limit?: number;
   }): Promise<SocialMediaPostsResponse> => {
     try {
-      const res = await apiClient.get<SocialMediaPostsResponse>('/social-media/posts', {
+      const res: any = await apiClient.get('/social-media/posts', {
         params,
       });
-      return res as unknown as SocialMediaPostsResponse;
-    } catch {
-      return {
-        posts: [
-          {
-            id: 'mock_post_001',
-            platform: 'linkedin',
-            content_text: 'Excited to announce TalentBridge Showcase Rooms 2.0! 🎉 Transform candidate evaluation with interactive telemetry.',
-            posted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-            link_url: 'https://talentbridge.cv/rooms',
-            buffer_status: 'published',
-            latest_engagement: {
-              impressions: 4200,
-              reactions: 156,
-              comments: 23,
-              shares: 10,
-              clicks: 45,
-              score: 156,
-              upvote_ratio: 1.0,
-              engagement_rate: 4.5,
-            },
-          },
-          {
-            id: 'mock_post_002',
-            platform: 'buffer',
-            content_text: 'Recruiters: what is your single biggest bottleneck during hiring sprints? Reply below 👇',
-            posted_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
-            link_url: 'https://talentbridge.cv/blog/bottlenecks',
-            buffer_status: 'published',
-            latest_engagement: {
-              impressions: 2100,
-              reactions: 89,
-              comments: 14,
-              shares: 6,
-              clicks: 22,
-              score: 89,
-              upvote_ratio: 0.95,
-              engagement_rate: 5.19,
-            },
-          },
-          {
-            id: 'mock_post_003',
-            platform: 'reddit',
-            content_text: 'We replaced our 4-round take-home coding assignment with interactive presentation rooms. Candidate acceptance rate jumped from 41% to 88%.',
-            posted_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-            link_url: 'https://reddit.com/r/Recruiting/comments/1ex_viral_001',
-            reddit_subreddit: 'r/Recruiting',
-            buffer_status: 'published',
-            latest_engagement: {
-              impressions: 7600,
-              reactions: 234,
-              comments: 89,
-              shares: 18,
-              clicks: 45,
-              score: 234,
-              upvote_ratio: 0.94,
-              engagement_rate: 4.22,
-            },
-          },
-          {
-            id: 'mock_post_004',
-            platform: 'buffer',
-            content_text: 'How high-growth startups source top 1% junior engineers without drowning in 5,000 resume PDFs.',
-            posted_at: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
-            buffer_status: 'scheduled',
-            buffer_scheduled_time: 'Today at 2:00 PM',
-            latest_engagement: {
-              impressions: 0,
-              reactions: 0,
-              comments: 0,
-              shares: 0,
-              clicks: 0,
-              score: 0,
-              upvote_ratio: 0,
-              engagement_rate: 0,
-            },
-          },
-        ],
-        pagination: {
-          page: 1,
-          limit: 10,
-          totalCount: 4,
-          totalPages: 1,
-          hasMore: false,
+      if (res && Array.isArray(res.posts) && res.posts.length > 0) {
+        return res as SocialMediaPostsResponse;
+      }
+      if (Array.isArray(res) && res.length > 0) {
+        return {
+          posts: res,
+          pagination: { page: 1, limit: 50, totalCount: res.length, totalPages: 1, hasMore: false },
+        };
+      }
+    } catch {}
+
+    const allMockPosts: SocialMediaPostItem[] = [
+      {
+        id: 'mock_post_001',
+        platform: 'linkedin',
+        content_text: 'Excited to announce TalentBridge Showcase Rooms 2.0! 🎉 Transform candidate evaluation with interactive telemetry.',
+        posted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        link_url: 'https://talentbridge.cv/rooms',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 4200,
+          reactions: 156,
+          comments: 23,
+          shares: 10,
+          clicks: 45,
+          score: 156,
+          upvote_ratio: 1.0,
+          engagement_rate: 4.5,
         },
-      };
+      },
+      {
+        id: 'mock_post_li_002',
+        platform: 'linkedin',
+        content_text: 'Why traditional 4-round take-home code assessments are losing top-tier engineers. Here is how technical demo rooms reduce time-to-hire by 68%.',
+        posted_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        link_url: 'https://talentbridge.cv/blog/take-home-assessments',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 5120,
+          reactions: 214,
+          comments: 41,
+          shares: 16,
+          clicks: 82,
+          score: 214,
+          upvote_ratio: 1.0,
+          engagement_rate: 5.33,
+        },
+      },
+      {
+        id: 'mock_post_li_003',
+        platform: 'linkedin',
+        content_text: 'Hiring managers: how do you evaluate system design thinking asynchronously? Interactive case studies vs live whiteboard sessions.',
+        posted_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+        link_url: 'https://talentbridge.cv/case-studies',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 3130,
+          reactions: 151,
+          comments: 25,
+          shares: 8,
+          clicks: 68,
+          score: 151,
+          upvote_ratio: 1.0,
+          engagement_rate: 4.86,
+        },
+      },
+      {
+        id: 'mock_post_002',
+        platform: 'buffer',
+        content_text: 'Recruiters: what is your single biggest bottleneck during hiring sprints? Reply below 👇',
+        posted_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+        link_url: 'https://talentbridge.cv/blog/bottlenecks',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 2100,
+          reactions: 89,
+          comments: 14,
+          shares: 6,
+          clicks: 22,
+          score: 89,
+          upvote_ratio: 0.95,
+          engagement_rate: 5.19,
+        },
+      },
+      {
+        id: 'mock_post_003',
+        platform: 'reddit',
+        content_text: 'We replaced our 4-round take-home coding assignment with interactive presentation rooms. Candidate acceptance rate jumped from 41% to 88%.',
+        posted_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        link_url: 'https://reddit.com/r/Recruiting/comments/1ex_viral_001',
+        reddit_subreddit: 'r/Recruiting',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 7600,
+          reactions: 320,
+          comments: 84,
+          shares: 18,
+          clicks: 45,
+          score: 320,
+          upvote_ratio: 0.94,
+          engagement_rate: 4.22,
+        },
+      },
+      {
+        id: 'mock_post_rd_002',
+        platform: 'reddit',
+        content_text: 'How we evaluate senior frontend candidates: live React Three Fiber demo room telemetry vs leetcode algorithmic trivia.',
+        posted_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+        link_url: 'https://reddit.com/r/TalentBridge/comments/1ex_post_002',
+        reddit_subreddit: 'r/TalentBridge',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 4800,
+          reactions: 210,
+          comments: 38,
+          shares: 12,
+          clicks: 65,
+          score: 210,
+          upvote_ratio: 0.96,
+          engagement_rate: 4.38,
+        },
+      },
+      {
+        id: 'mock_post_rd_003',
+        platform: 'reddit',
+        content_text: 'Tips for university tech grads building their first interactive portfolio room to stand out to Silicon Valley engineering leads.',
+        posted_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
+        link_url: 'https://reddit.com/r/hiring/comments/1ex_post_003',
+        reddit_subreddit: 'r/hiring',
+        buffer_status: 'published',
+        latest_engagement: {
+          impressions: 3200,
+          reactions: 140,
+          comments: 20,
+          shares: 5,
+          clicks: 30,
+          score: 140,
+          upvote_ratio: 0.88,
+          engagement_rate: 4.38,
+        },
+      },
+    ];
+
+    let filtered = allMockPosts;
+    if (params?.platform && params.platform !== 'all') {
+      filtered = filtered.filter((p) => p.platform === params.platform);
     }
+    if (params?.search) {
+      filtered = filtered.filter((p) => p.content_text.toLowerCase().includes(params.search!.toLowerCase()));
+    }
+
+    return {
+      posts: filtered,
+      pagination: {
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+        totalCount: filtered.length,
+        totalPages: 1,
+        hasMore: false,
+      },
+    };
   },
+
 
   getPostDetails: async (postId: string): Promise<PostDetailModalData> => {
     try {

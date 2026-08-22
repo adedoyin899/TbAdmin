@@ -12,8 +12,69 @@ import { CampaignPerformance } from './CampaignPerformance';
 import { LinkedInIcon } from '../SocialMedia/PlatformCard';
 import { EmptyState } from '../Common/EmptyState';
 import { SyncStatus } from '../Common/SyncStatus';
+import { CreateCampaignModal } from './CreateCampaignModal';
 import { formatNumber } from '../../utils/formatters';
+import type { CampaignItem } from '../../types/socialMedia';
 
+const DEFAULT_SAMPLE_CAMPAIGNS: CampaignItem[] = [
+  {
+    id: 'camp_q3_launch',
+    name: 'Q3 Product Launch (Showcase Rooms)',
+    goal: 'signups',
+    channels: ['email', 'linkedin', 'reddit'],
+    start_date: '2026-08-01',
+    end_date: '2026-08-31',
+    budget: 1500,
+    spend: 1500,
+    status: 'active',
+    target_audience: 'Hiring Managers & Frontend Engineers',
+    created_by: 'peter@talentbridge.cv',
+    performance_summary: {
+      reach: 28000,
+      clicks: 340,
+      signups: 45,
+      engagement_rate: 4.3,
+    },
+  },
+  {
+    id: 'camp_founder_voice',
+    name: 'Founder Voice & Building in Public',
+    goal: 'awareness',
+    channels: ['linkedin', 'reddit'],
+    start_date: '2026-08-10',
+    end_date: '2026-09-10',
+    budget: 500,
+    spend: 120,
+    status: 'active',
+    target_audience: 'Tech Leads & Early-Stage Founders',
+    created_by: 'maz@talentbridge.cv',
+    performance_summary: {
+      reach: 14200,
+      clicks: 185,
+      signups: 16,
+      engagement_rate: 5.1,
+    },
+  },
+  {
+    id: 'camp_intern_digest',
+    name: 'Summer Hiring Digest Series',
+    goal: 'engagement',
+    channels: ['email', 'linkedin'],
+    start_date: '2026-07-01',
+    end_date: '2026-07-31',
+    budget: 250,
+    spend: 250,
+    status: 'completed',
+    target_audience: 'University Talent & Bootcamp Grads',
+    created_by: 'peter@talentbridge.cv',
+    performance_summary: {
+      reach: 9800,
+      clicks: 110,
+      signups: 8,
+      engagement_rate: 3.8,
+    },
+  },
+];
 
 interface CampaignListProps {
   onSelectCampaign?: (campaignId: string) => void;
@@ -23,9 +84,10 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createdCampaigns, setCreatedCampaigns] = useState<CampaignItem[]>([]);
 
   const { campaignsList, isLoading } = useCampaignPerformance(undefined, statusFilter);
-
 
   if (selectedCampaignId) {
     return (
@@ -36,7 +98,12 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
     );
   }
 
-  const list = Array.isArray(campaignsList) ? campaignsList : [];
+  // Combine query campaigns, locally created campaigns, and default sample campaigns if DB is empty
+  const rawList = Array.isArray(campaignsList) && campaignsList.length > 0 ? campaignsList : DEFAULT_SAMPLE_CAMPAIGNS;
+  const mergedList = [...createdCampaigns, ...rawList.filter((r) => !createdCampaigns.some((c) => c.id === r.id))];
+
+  const list = statusFilter === 'all' ? mergedList : mergedList.filter((c) => c.status === statusFilter);
+
   const filteredCampaigns = list.filter((camp) => {
     if (!camp) return false;
     const name = camp.name || '';
@@ -49,6 +116,7 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
       goal.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
 
 
   const getChannelBadge = (channel: string) => {
@@ -196,13 +264,14 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
               gap: 6,
               background: 'linear-gradient(135deg, var(--accent) 0%, #14B8A6 100%)',
             }}
-            onClick={() => handleCampaignClick('camp_q3_launch')}
+            onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus size={15} />
             New Campaign
           </button>
         </div>
       </div>
+
 
 
       {/* Filter & Search Bar */}
@@ -431,7 +500,18 @@ export const CampaignList: React.FC<CampaignListProps> = ({ onSelectCampaign }) 
         })}
       </div>
       )}
+
+      {/* Create Campaign Modal */}
+      <CreateCampaignModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCampaignCreated={(newCamp) => {
+          setCreatedCampaigns((prev) => [newCamp, ...prev]);
+          setSelectedCampaignId(newCamp.id);
+        }}
+      />
     </div>
   );
 };
+
 
