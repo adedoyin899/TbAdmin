@@ -41,8 +41,10 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
 }) => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const [selectedSequence, setSelectedSequence] = useState<EmailSequenceDetailItem | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'timing' | 'heatmap' | 'journey'>('timing');
 
   const { data, isLoading, refetch } = useEmailDetailedAnalytics(campaignId, dateRange.preset);
+
 
 
   const handleExportCsv = () => {
@@ -213,126 +215,193 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
         userJourney={userJourney}
       />
 
-      {/* 3. NEW: Click Timing Analysis (Bar Chart) */}
+      {/* 2.5 Sub-Navigation Tab Switcher */}
       <div
-        className="card"
         style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          borderBottom: '1px solid var(--line)',
+          paddingBottom: 4,
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-          <div>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
-              Click Timing Analysis (Time of Day)
-            </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-              Hourly link interaction density grouped into 3-hour recipient activity windows
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 14px',
-              background: 'var(--sunset-glow)',
-              border: '1px solid rgba(250, 82, 15, 0.25)',
-              borderRadius: 20,
-              fontSize: 12.5,
-              fontWeight: 700,
-              color: 'var(--sunset)',
-            }}
-          >
-            <Clock size={14} />
-            <span>Peak Window: 9:00 AM &ndash; 12:00 PM (28% of Clicks)</span>
-          </div>
-        </div>
-
-        {/* Bar Chart */}
-        <div style={{ width: '100%', height: 260, marginBottom: 16 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={clickTiming} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.6} />
-              <XAxis dataKey="timeOfDay" stroke="var(--dim)" fontSize={12} tickLine={false} />
-              <YAxis stroke="var(--dim)" fontSize={12} tickLine={false} tickFormatter={(v) => `${v}%`} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    const d = payload[0].payload;
-                    return (
-                      <div
-                        style={{
-                          background: 'var(--panel)',
-                          border: '1px solid var(--line-2)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '10px 14px',
-                          boxShadow: 'var(--shadow-lg)',
-                          fontSize: 12,
-                        }}
-                      >
-                        <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
-                        <div style={{ color: 'var(--accent)', fontWeight: 600 }}>Click Share: {d.clickRate}%</div>
-                        <div style={{ color: 'var(--text-2)' }}>Average Clicks: {d.avgClicks}</div>
-                        <div style={{ color: 'var(--text-2)' }}>Verified Opens: {d.opens}</div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Bar dataKey="clickRate" radius={[6, 6, 0, 0]}>
-                {clickTiming.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.timeOfDay === '9am-12pm' ? 'var(--sunset)' : 'var(--accent)'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* AI Peak Recommendation Banner */}
-        <div
+        <button
+          onClick={() => setActiveSubTab('timing')}
+          className="btn"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '12px 16px',
-            background: 'var(--panel-2)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-sm)',
             fontSize: 13,
-            color: 'var(--text)',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeSubTab === 'timing' ? 'var(--panel)' : 'transparent',
+            color: activeSubTab === 'timing' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeSubTab === 'timing' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeSubTab === 'timing' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeSubTab === 'timing' ? 700 : 500,
+            gap: 6,
           }}
         >
-          <Sparkles size={16} color="var(--warning)" />
-          <span>
-            <strong>AI Optimization Recommendation:</strong> {peakRecommendation}
-          </span>
-        </div>
+          <Clock size={15} />
+          Timing &amp; Device Splits
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('heatmap')}
+          className="btn"
+          style={{
+            fontSize: 13,
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeSubTab === 'heatmap' ? 'var(--panel)' : 'transparent',
+            color: activeSubTab === 'heatmap' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeSubTab === 'heatmap' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeSubTab === 'heatmap' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeSubTab === 'heatmap' ? 700 : 500,
+            gap: 6,
+          }}
+        >
+          <MousePointerClick size={15} />
+          Link Heatmap &amp; CTAs
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('journey')}
+          className="btn"
+          style={{
+            fontSize: 13,
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeSubTab === 'journey' ? 'var(--panel)' : 'transparent',
+            color: activeSubTab === 'journey' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeSubTab === 'journey' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeSubTab === 'journey' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeSubTab === 'journey' ? 700 : 500,
+            gap: 6,
+          }}
+        >
+          <UserCheck size={15} />
+          Journeys &amp; Sequences
+        </button>
       </div>
 
-      {/* 4 & 5. Email Client Breakdown & Click Location Heatmap (2-Column Grid) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-        {/* Email Client Breakdown */}
-        <div
-          className="card"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
+      {/* Tab 1: Timing & Devices */}
+      {activeSubTab === 'timing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Click Timing Analysis (Bar Chart) */}
+          <div
+            className="card"
+            style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+              padding: 24,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
+                  Click Timing Analysis (Time of Day)
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                  Hourly link interaction density grouped into 3-hour recipient activity windows
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 14px',
+                  background: 'var(--sunset-glow)',
+                  border: '1px solid rgba(250, 82, 15, 0.25)',
+                  borderRadius: 20,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: 'var(--sunset)',
+                }}
+              >
+                <Clock size={14} />
+                <span>Peak Window: 9:00 AM &ndash; 12:00 PM (28% of Clicks)</span>
+              </div>
+            </div>
+
+            {/* Bar Chart */}
+            <div style={{ width: '100%', height: 260, marginBottom: 16 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={clickTiming} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.6} />
+                  <XAxis dataKey="timeOfDay" stroke="var(--dim)" fontSize={12} tickLine={false} />
+                  <YAxis stroke="var(--dim)" fontSize={12} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        return (
+                          <div
+                            style={{
+                              background: 'var(--panel)',
+                              border: '1px solid var(--line-2)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '10px 14px',
+                              boxShadow: 'var(--shadow-lg)',
+                              fontSize: 12,
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
+                            <div style={{ color: 'var(--accent)', fontWeight: 600 }}>Click Share: {d.clickRate}%</div>
+                            <div style={{ color: 'var(--text-2)' }}>Average Clicks: {d.avgClicks}</div>
+                            <div style={{ color: 'var(--text-2)' }}>Verified Opens: {d.opens}</div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="clickRate" radius={[6, 6, 0, 0]}>
+                    {clickTiming.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.timeOfDay === '9am-12pm' ? 'var(--sunset)' : 'var(--accent)'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* AI Peak Recommendation Banner */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 16px',
+                background: 'var(--panel-2)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 13,
+                color: 'var(--text)',
+              }}
+            >
+              <Sparkles size={16} color="var(--warning)" />
+              <span>
+                <strong>AI Optimization Recommendation:</strong> {peakRecommendation}
+              </span>
+            </div>
+          </div>
+
+          {/* Email Client Breakdown */}
+          <div
+            className="card"
+            style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+              padding: 24,
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Layers size={18} color="var(--info)" />
               <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
@@ -343,16 +412,16 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
               Client engine detection extracted from user-agent and image proxy telemetry
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
               {clientBreakdown.map((item) => (
-                <div key={item.client}>
+                <div key={item.client} style={{ background: 'var(--panel-2)', padding: 14, borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                     <span style={{ color: 'var(--text)', fontWeight: 600 }}>{item.client}</span>
                     <span style={{ color: 'var(--text-2)' }}>
-                      <strong>{item.percentage}%</strong> ({item.opens} opens • {item.clicks} clicks)
+                      <strong>{item.percentage}%</strong> ({item.opens} opens)
                     </span>
                   </div>
-                  <div style={{ height: 8, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: 8, background: 'var(--panel)', borderRadius: 4, overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
@@ -372,26 +441,28 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
                 </div>
               ))}
             </div>
-          </div>
 
-          <div
-            style={{
-              marginTop: 20,
-              paddingTop: 14,
-              borderTop: '1px solid var(--line)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              color: 'var(--text-2)',
-            }}
-          >
-            <CheckCircle2 size={14} color="var(--success)" />
-            <span>Dark mode supported in 100% of tested email clients</span>
+            <div
+              style={{
+                marginTop: 20,
+                paddingTop: 14,
+                borderTop: '1px solid var(--line)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: 'var(--text-2)',
+              }}
+            >
+              <CheckCircle2 size={14} color="var(--success)" />
+              <span>Dark mode supported in 100% of tested email clients</span>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* 6. NEW: Click Location Heatmap (Visual Layout Mock) */}
+      {/* Tab 2: Visual Link Heatmap */}
+      {activeSubTab === 'heatmap' && (
         <div
           className="card"
           style={{
@@ -515,156 +586,161 @@ export const EmailDetailedView: React.FC<EmailDetailedViewProps> = ({
               );
             })}
           </div>
-
         </div>
-      </div>
+      )}
 
-      {/* 7. NEW: User Journey (Click -> Signup) Attribution Box */}
-      <div
-        className="card"
-        style={{
-          background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
-          border: '1px solid rgba(13, 148, 136, 0.25)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <UserCheck size={20} color="var(--accent)" />
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-            Downstream User Journey &amp; Conversion Attribution
-          </h3>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 20 }}>
-          <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Total Link Clicks</span>
-            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
-              {userJourney.totalClicks}
+      {/* Tab 3: User Journey & Sequences */}
+      {activeSubTab === 'journey' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* User Journey Attribution Box */}
+          <div
+            className="card"
+            style={{
+              background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+              border: '1px solid rgba(13, 148, 136, 0.25)',
+              borderRadius: 'var(--radius)',
+              padding: 24,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <UserCheck size={20} color="var(--accent)" />
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                Downstream User Journey &amp; Conversion Attribution
+              </h3>
             </div>
-            <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>Unique recipient clicks</span>
-          </div>
 
-          <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Verified Candidate Signups</span>
-            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--success)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
-              {userJourney.signups}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 20 }}>
+              <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Total Link Clicks</span>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
+                  {userJourney.totalClicks}
+                </div>
+                <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>Unique recipient clicks</span>
+              </div>
+
+              <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Verified Candidate Signups</span>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--success)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
+                  {userJourney.signups}
+                </div>
+                <span style={{ fontSize: 11.5, color: 'var(--success)', fontWeight: 600 }}>
+                  {userJourney.signupConversionRate}% Conversion Rate
+                </span>
+              </div>
+
+              <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Avg Time from Click to Signup</span>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--info)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
+                  {userJourney.avgTimeToSignupHours}h
+                </div>
+                <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>Rapid onboarding cycle</span>
+              </div>
             </div>
-            <span style={{ fontSize: 11.5, color: 'var(--success)', fontWeight: 600 }}>
-              {userJourney.signupConversionRate}% Conversion Rate
-            </span>
-          </div>
 
-          <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 16 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Avg Time from Click to Signup</span>
-            <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--info)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
-              {userJourney.avgTimeToSignupHours}h
-            </div>
-            <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>Rapid onboarding cycle</span>
-          </div>
-        </div>
-
-        {/* Campaign Breakdown Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>Signups by Campaign Source:</span>
-          {Object.entries(userJourney.signupsByChannel).map(([source, count]) => (
-            <span
-              key={source}
-              className="badge"
-              style={{
-                background: 'var(--panel)',
-                border: '1px solid var(--line)',
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--text)',
-                padding: '4px 10px',
-                borderRadius: 16,
-              }}
-            >
-              {source}: <strong style={{ color: 'var(--accent)', marginLeft: 4 }}>{count} signups</strong>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Enhanced Campaign Performance Grid */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
-        }}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
-            Enhanced Campaign Performance &amp; Onboarding Grid
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-            Compare deliverability, CTR, and downstream signup velocity across email sequences
-          </p>
-        </div>
-
-        <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Campaign Sequence</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Sent</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Open %</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Click %</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Signup Conv.</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Time to Signup</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Device Split</th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaignsTable.map((row) => (
-                <tr
-                  key={row.id}
-                  onClick={() =>
-                    setSelectedSequence({
-                      id: row.id,
-                      name: row.name,
-                      sent: row.sent,
-                      openPercentage: row.openPercentage,
-                      clickPercentage: row.clickPercentage,
-                      signupConversionPercentage: row.signupConversion,
-                      avgTimeToSignupHours: parseFloat(row.timeToSignup) || 4.0,
-                      deviceSplit: {
-                        desktop: parseInt(row.deviceSummary.match(/Desktop (\d+)%/)?.[1] || '68', 10),
-                        mobile: parseInt(row.deviceSummary.match(/Mobile (\d+)%/)?.[1] || '28', 10),
-                        tablet: 4,
-                      },
-                    })
-                  }
-                  className="table-row-hover"
-                  style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+            {/* Campaign Breakdown Badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>Signups by Campaign Source:</span>
+              {Object.entries(userJourney.signupsByChannel).map(([source, count]) => (
+                <span
+                  key={source}
+                  className="badge"
+                  style={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--line)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text)',
+                    padding: '4px 10px',
+                    borderRadius: 16,
+                  }}
                 >
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>{row.name}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(row.sent)}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--info)' }}>
-                    {row.openPercentage}%
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--sunset)' }}>
-                    {row.clickPercentage}%
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--success)' }}>{row.signupConversion}%</span>
-                  </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12.5 }}>{row.timeToSignup}</td>
-                  <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12 }}>{row.deviceSummary}</td>
-                </tr>
+                  {source}: <strong style={{ color: 'var(--accent)', marginLeft: 4 }}>{count} signups</strong>
+                </span>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          {/* Enhanced Campaign Performance Grid */}
+          <div
+            className="card"
+            style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+              padding: 24,
+            }}
+          >
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
+                Enhanced Campaign Performance &amp; Onboarding Grid
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                Compare deliverability, CTR, and downstream signup velocity across email sequences (click any row to inspect details)
+              </p>
+            </div>
+
+            <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Campaign Sequence</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Sent</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Open %</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Click %</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Signup Conv.</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Time to Signup</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Device Split</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaignsTable.map((row) => (
+                    <tr
+                      key={row.id}
+                      onClick={() =>
+                        setSelectedSequence({
+                          id: row.id,
+                          name: row.name,
+                          sent: row.sent,
+                          openPercentage: row.openPercentage,
+                          clickPercentage: row.clickPercentage,
+                          signupConversionPercentage: row.signupConversion,
+                          avgTimeToSignupHours: parseFloat(row.timeToSignup) || 4.0,
+                          deviceSplit: {
+                            desktop: parseInt(row.deviceSummary.match(/Desktop (\d+)%/)?.[1] || '68', 10),
+                            mobile: parseInt(row.deviceSummary.match(/Mobile (\d+)%/)?.[1] || '28', 10),
+                            tablet: 4,
+                          },
+                        })
+                      }
+                      className="table-row-hover"
+                      style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+                    >
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>{row.name}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(row.sent)}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--info)' }}>
+                        {row.openPercentage}%
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--sunset)' }}>
+                        {row.clickPercentage}%
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>{row.signupConversion}%</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12.5 }}>{row.timeToSignup}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12 }}>{row.deviceSummary}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
 
       {/* Sequence Drilldown Modal */}
       {selectedSequence && (

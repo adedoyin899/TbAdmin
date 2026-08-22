@@ -400,77 +400,66 @@ export const BOT_QUICK_PROMPTS: BotQuickPrompt[] = [
   },
 ];
 
-// Helper AI answer generator for quick conversational matching
 export function answerHelpBotQuery(question: string): {
   answer: string;
   relatedTerms: string[];
   suggestedAction?: { label: string; link: string };
 } {
-  const q = question.toLowerCase();
+  const q = question.toLowerCase().trim();
 
-  if (q.includes('engagement rate') || q.includes('engagement') || q.includes('rate')) {
+  // 1. Engagement Rate
+  if (q.includes('engagement') || q.includes('er') || (q.includes('rate') && q.includes('social'))) {
     return {
-      answer: `**Engagement Rate (%)** measures the proportion of people who actively interacted with your content after viewing it.\n\n` +
-        `• **Formula**: \`((Reactions + Comments + Shares + Clicks) / Impressions) × 100\`\n` +
-        `• **LinkedIn Benchmark**: **2.0% – 4.5%** is healthy; **>5.0%** is top-tier B2B performance.\n` +
-        `• **Reddit Benchmark**: **>4.0%** with high comment velocity indicates viral developer resonance.\n\n` +
-        `💡 *Pro Tip*: To boost engagement, share real candidate telemetry stories, highlight interactive 3D showcase demo links, and end posts with an open discussion question.`,
-      relatedTerms: ['Engagement Rate (%)', 'Impressions', 'Reach', 'Reddit Upvote Ratio'],
-      suggestedAction: { label: 'View Social Media Overview', link: '/dashboard/social-media' },
+      answer: `**Engagement Rate** measures how effectively your content captures attention and drives action from people who see it.\n\n` +
+        `• **How it's calculated**: \`((Reactions + Comments + Shares + Clicks) / Impressions) × 100\`\n` +
+        `• **What good looks like**: On LinkedIn B2B, **2.0% – 4.5%** is healthy, and **>5.0%** is top-tier. On Reddit, **>4.0%** with high comment volume signals strong organic community resonance.\n\n` +
+        `💡 **Recommended Action**: If your rate dips below 2.5%, share real candidate case studies, include interactive 3D showcase demo links, and end posts with an open question.`,
+      relatedTerms: ['Engagement Rate (%)', 'Impressions', 'Reach (Unique Views)', 'Reddit Upvote Ratio'],
+      suggestedAction: { label: 'Explore Social Media Overview', link: '/dashboard/social-media' },
     };
   }
 
-  if (q.includes('cps') || q.includes('cost per signup') || q.includes('cac') || q.includes('cost')) {
+  // 2. Cost Per Signup / CAC
+  if (q.includes('cps') || q.includes('cost per signup') || q.includes('cac') || q.includes('acquisition cost')) {
     return {
-      answer: `**Cost Per Signup (CPS)** (often called Customer/Candidate Acquisition Cost) is the total marketing dollars spent divided by the number of registered users or candidates acquired.\n\n` +
-        `• **Formula**: \`Total Spend ($) / Total Completed Signups\`\n` +
-        `• **TalentBridge Benchmark**: Target CPS for technical candidates is **<$35.00**.\n\n` +
-        `If your CPS is high, check your channel breakdown to see if LinkedIn or Reddit is yielding higher conversion efficiency, and shift budget accordingly.`,
+      answer: `**Cost Per Signup (CPS)** is your core marketing efficiency metric: the exact amount spent to acquire one registered candidate or hiring company.\n\n` +
+        `• **How it's calculated**: \`Total Campaign Spend ($) / Total Attributed Signups\`\n` +
+        `• **What good looks like**: Our target benchmark for technical talent acquisition is **<$35.00** per verified signup.\n\n` +
+        `💡 **Recommended Action**: Review your multi-channel breakdown on the Campaign ROI dashboard. If LinkedIn or Reddit shows lower CPS than email outreach, reallocate budget to the higher-yield channel.`,
       relatedTerms: ['Cost Per Signup (CPS)', 'Cost Per Click (CPC)', 'ROI Multiplier'],
-      suggestedAction: { label: 'Check Campaign ROI Dashboard', link: '/dashboard/campaigns' },
+      suggestedAction: { label: 'Open Campaign ROI Dashboard', link: '/dashboard/campaigns' },
     };
   }
 
-  if (q.includes('email') && (q.includes('timing') || q.includes('hour') || q.includes('when') || q.includes('time'))) {
+  // 3. Cost Per Click (CPC)
+  if (q.includes('cpc') || q.includes('cost per click') || q.includes('click cost')) {
     return {
-      answer: `The **Email Click Timing Analysis (6am – 12am)** displays an hourly bar chart of when recipients actually click links inside your Mailgun email sequences.\n\n` +
-        `• **How to use it**: Identify the tallest bar (e.g. 10:00 AM).\n` +
-        `• **Actionable Rule**: Schedule your automated sequences to dispatch **30 minutes before your peak** (e.g. 9:30 AM) so your email lands at the top of their inbox right as they open their email client.\n` +
-        `• **Timezone Selector**: Use the TZ dropdown in the top toolbar to align time calculations with your target market (EST, PST, UTC, GMT, JST).`,
-      relatedTerms: ['Peak Click Timing', 'Enhanced Email Analytics', 'Click Heatmap'],
-      suggestedAction: { label: 'Open Enhanced Email Analytics', link: '/email/detailed' },
+      answer: `**Cost Per Click (CPC)** measures how much you pay on average for each candidate or recruiter who clicks through to your landing page or showcase room.\n\n` +
+        `• **How it's calculated**: \`Total Campaign Spend ($) / Total Link Clicks\`\n` +
+        `• **What good looks like**: In B2B tech recruiting, **$3.00 – $6.50** is typical for qualified technical traffic.\n\n` +
+        `💡 **Recommended Action**: Pair high-performing copy hooks with targeted job-title filters to raise your Click-Through Rate (CTR), which naturally brings down your CPC.`,
+      relatedTerms: ['Cost Per Click (CPC)', 'Cost Per Signup (CPS)', 'Engagement Rate (%)'],
+      suggestedAction: { label: 'Review Campaign Performance', link: '/dashboard/campaigns' },
     };
   }
 
-  if (q.includes('heatmap') || q.includes('link') || q.includes('click density')) {
+  // 4. Email Timing & Sending Strategy
+  if (q.includes('timing') || q.includes('when') || q.includes('hour') || (q.includes('email') && q.includes('send'))) {
     return {
-      answer: `The **Email Click Location Heatmap** illustrates how user clicks are distributed across links in your email template.\n\n` +
+      answer: `The **Email Click Timing Curve** reveals the exact hours your recipients open and interact with links in your outreach emails.\n\n` +
+        `• **Key Insight**: Link clicks concentrate heavily between **10:00 AM – 11:30 AM** and **2:00 PM – 3:30 PM** local recipient time.\n` +
+        `• **The Golden Rule**: Schedule automated sequences to dispatch **30 minutes prior to peak activity** (e.g. 9:30 AM) so your message sits at the top of their inbox when they triage.\n\n` +
+        `💡 **Recommended Action**: Switch the Timezone dropdown in the toolbar to match your primary target region (e.g., EST or PST) before reviewing send timing.`,
+      relatedTerms: ['Peak Click Timing', 'Email Link Heatmap', 'Device Breakdown'],
+      suggestedAction: { label: 'Inspect Email Timing & Devices', link: '/email/detailed' },
+    };
+  }
+
+  // 5. Email Link Heatmap & Density
+  if (q.includes('heatmap') || q.includes('link') || q.includes('density') || q.includes('cta')) {
+    return {
+      answer: `The **Email Click Location Heatmap** visualizes which links, buttons, and demo previews capture user attention inside your email layouts.\n\n` +
         `• **Target Distribution**: Your **Primary CTA Button** above the fold should capture **>60%** of all clicks.\n` +
-        `• **Optimization**: If clicks are scattered across header links or social icons, reduce competing links and make your main candidate showcase CTA visually dominant.`,
-      relatedTerms: ['Link Density & Heatmap', 'Peak Click Timing'],
-      suggestedAction: { label: 'View Email Heatmap', link: '/email/detailed' },
-    };
-  }
-
-  if (q.includes('reddit') || q.includes('upvote') || q.includes('karma')) {
-    return {
-      answer: `**Reddit Community Analytics** tracks developer sentiment across tech subreddits (\`r/TalentBridge\`, \`r/Recruiting\`, \`r/hiring\`).\n\n` +
-        `• **Upvote Ratio**: Percentage of positive votes vs downvotes. Target **>85%**.\n` +
-        `• **Karma Score**: Net reputation points earned from high-value community discussions.\n` +
-        `• **Viral Posts**: Threads with >500 karma and >50 comments that drive organic developer awareness.`,
-      relatedTerms: ['Reddit Upvote Ratio', 'Engagement Rate (%)'],
-      suggestedAction: { label: 'View Reddit Intelligence', link: '/social-media/reddit' },
-    };
-  }
-
-  if (q.includes('sync') || q.includes('refresh') || q.includes('schedule') || q.includes('interval')) {
-    return {
-      answer: `Data is automatically pulled from third-party platforms on scheduled background intervals:\n\n` +
-        `• **Buffer Sync**: Every **1 hour** (post queue & status)\n` +
-        `• **Reddit Sync**: Every **2 hours** (karma, comments, upvote ratio)\n` +
-        `• **LinkedIn Sync**: Every **4 hours** (impressions, demographics, CTR)\n` +
-        `• **Email Webhooks**: Every **15 minutes** (Mailgun telemetry)\n` +
-        `• **Campaign Aggregation**: Every **6 hours** (multi-channel ROI & spend)\n\n` +
         `⚡ *Manual Sync*: You can click the **Sync pulse button** in the top toolbar on any marketing view to trigger an immediate live refresh at any time.`,
       relatedTerms: ['Background Sync Status', 'Sync Logs'],
       suggestedAction: { label: 'Go to Social Media Overview', link: '/dashboard/social-media' },

@@ -8,10 +8,10 @@ import {
   Sparkles,
   RefreshCw,
   ArrowRight,
-  Zap,
   Copy,
   Check,
 } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import {
   BOT_QUICK_PROMPTS,
@@ -391,10 +391,10 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Quick Question Chips */}
+      {/* Suggested Quick Question Chips by Category */}
       <div
         style={{
-          padding: '8px 16px',
+          padding: '10px 16px',
           background: 'var(--panel)',
           borderTop: '1px solid var(--line)',
           overflowX: 'auto',
@@ -403,24 +403,27 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
           gap: 6,
           alignItems: 'center',
         }}
+        className="no-scrollbar"
       >
-        <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-          <Zap size={12} color="var(--sunset)" />
-          Quick Ask:
+        <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <Sparkles size={12} color="var(--accent)" />
+          Explore Topics:
         </span>
         {BOT_QUICK_PROMPTS.map((qp) => (
           <button
             key={qp.id}
             onClick={() => handleQuickPrompt(qp)}
-            className="btn"
+            className="btn btn-ghost"
             style={{
               background: 'var(--panel-2)',
               border: '1px solid var(--line)',
               color: 'var(--text-2)',
-              fontSize: 11,
-              padding: '3px 9px',
-              borderRadius: 14,
+              fontSize: 11.5,
+              padding: '4px 11px',
+              borderRadius: 20,
               flexShrink: 0,
+              fontWeight: 500,
+              transition: 'all 0.15s ease',
             }}
           >
             {qp.label}
@@ -440,25 +443,28 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
           borderTop: '1px solid var(--line)',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
         }}
       >
-        <input
-          type="text"
-          value={inputVal}
-          onChange={(e) => setInputVal(e.target.value)}
-          placeholder="Ask anything (e.g. 'What is a good LinkedIn engagement rate?', 'Explain CPS')..."
-          style={{
-            flex: 1,
-            padding: '8px 14px',
-            background: 'var(--panel-2)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--text)',
-            fontSize: 13,
-            outline: 'none',
-          }}
-        />
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input
+            type="text"
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            placeholder="Ask anything (e.g. 'What is a good LinkedIn engagement rate?', 'Explain CPS')..."
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              background: 'var(--panel-2)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text)',
+              fontSize: 13,
+              outline: 'none',
+              transition: 'border-color 0.15s ease',
+            }}
+          />
+        </div>
 
         <button
           type="submit"
@@ -466,9 +472,12 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
           className="btn btn-primary"
           style={{
             fontSize: 13,
-            padding: '8px 16px',
+            fontWeight: 600,
+            padding: '10px 18px',
             gap: 6,
             background: 'linear-gradient(135deg, var(--accent) 0%, #14B8A6 100%)',
+            borderRadius: 'var(--radius-sm)',
+            cursor: !inputVal.trim() || isTyping ? 'not-allowed' : 'pointer',
           }}
         >
           <span>Ask</span>
@@ -478,3 +487,4 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
     </div>
   );
 };
+

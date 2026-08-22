@@ -47,6 +47,7 @@ export const CampaignPerformance: React.FC<CampaignPerformanceProps> = ({
   onBack,
 }) => {
   const [selectedPost, setSelectedPost] = useState<SocialMediaPostItem | null>(null);
+  const [activeCampTab, setActiveCampTab] = useState<'attribution' | 'timeline' | 'posts'>('attribution');
 
   const {
     currentCampaign,
@@ -57,6 +58,7 @@ export const CampaignPerformance: React.FC<CampaignPerformanceProps> = ({
     isLoading,
     refetchPerformance,
   } = useCampaignPerformance(campaignId);
+
 
   const handleExportCsv = () => {
     if (!posts?.length) return;
@@ -400,398 +402,465 @@ export const CampaignPerformance: React.FC<CampaignPerformanceProps> = ({
         </div>
       </div>
 
-      {/* 3. By-Channel Breakdown Cards (3 Columns) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-        {/* Email Channel Card */}
-        <div
-          className="card card-hover"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: 20,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'rgba(59, 130, 246, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--info)',
-                }}
-              >
-                <Mail size={16} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                Email Sequences
-              </h3>
-            </div>
-            <span style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 700 }}>
-              {emailMetrics.conversion_rate}% Conv.
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Delivered Reach</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(emailMetrics.reach)}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Open Rate</span>
-              <div style={{ fontWeight: 700, color: 'var(--info)' }}>{emailMetrics.engagement_rate}%</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{emailMetrics.clicks}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
-              <div style={{ fontWeight: 700, color: 'var(--success)' }}>{emailMetrics.signups}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* LinkedIn Channel Card */}
-        <div
-          className="card card-hover"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: 20,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'rgba(10, 102, 194, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#0A66C2',
-                }}
-              >
-                <LinkedInIcon size={16} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                LinkedIn Organic
-              </h3>
-            </div>
-            <span style={{ fontSize: 11.5, color: '#0A66C2', fontWeight: 700 }}>
-              {linkedinMetrics.conversion_rate}% Conv.
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Impressions</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(linkedinMetrics.reach)}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Engagement Rate</span>
-              <div style={{ fontWeight: 700, color: '#0A66C2' }}>{linkedinMetrics.engagement_rate}%</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{linkedinMetrics.clicks}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
-              <div style={{ fontWeight: 700, color: 'var(--success)' }}>{linkedinMetrics.signups}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Reddit Channel Card */}
-        <div
-          className="card card-hover"
-          style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: 20,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'rgba(255, 69, 0, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FF4500',
-                }}
-              >
-                <MessageSquare size={16} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                Reddit Community
-              </h3>
-            </div>
-            <span style={{ fontSize: 11.5, color: '#FF4500', fontWeight: 700 }}>
-              {redditMetrics.conversion_rate}% Conv.
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Community Views</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(redditMetrics.reach)}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Engagement Rate</span>
-              <div style={{ fontWeight: 700, color: '#FF4500' }}>{redditMetrics.engagement_rate}%</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
-              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{redditMetrics.clicks}</div>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
-              <div style={{ fontWeight: 700, color: 'var(--success)' }}>{redditMetrics.signups}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Performance Timeline (Composed Chart: Area + Cumulative Line) */}
+      {/* 2.5 Campaign Sub-Navigation Switcher */}
       <div
-        className="card"
         style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          borderBottom: '1px solid var(--line)',
+          paddingBottom: 4,
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
         }}
       >
-        <div style={{ marginBottom: 20 }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
-            Daily Reach Progression &amp; Cumulative Signups
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-            Track cross-channel reach acceleration overlaid against candidate onboarding conversion
-          </p>
-        </div>
+        <button
+          onClick={() => setActiveCampTab('attribution')}
+          className="btn"
+          style={{
+            fontSize: 13,
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeCampTab === 'attribution' ? 'var(--panel)' : 'transparent',
+            color: activeCampTab === 'attribution' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeCampTab === 'attribution' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeCampTab === 'attribution' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeCampTab === 'attribution' ? 700 : 500,
+            gap: 6,
+          }}
+        >
+          <Target size={15} />
+          Channel Attribution &amp; Conversion
+        </button>
 
-        <div style={{ width: '100%', height: 280 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={timeline} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="campReachGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.6} />
-              <XAxis dataKey="day" stroke="var(--dim)" fontSize={12} tickLine={false} />
-              <YAxis yAxisId="left" stroke="var(--dim)" fontSize={12} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <YAxis yAxisId="right" orientation="right" stroke="var(--dim)" fontSize={12} tickLine={false} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    const d = payload[0].payload;
-                    return (
-                      <div
-                        style={{
-                          background: 'var(--panel)',
-                          border: '1px solid var(--line-2)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '10px 14px',
-                          boxShadow: 'var(--shadow-lg)',
-                          fontSize: 12,
-                        }}
-                      >
-                        <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
-                        <div style={{ color: 'var(--accent)', fontWeight: 600 }}>Daily Reach: {formatNumber(d.reach)}</div>
-                        <div style={{ color: 'var(--sunset)', fontWeight: 600 }}>Engagement: {formatNumber(d.engagement)}</div>
-                        <div style={{ color: 'var(--success)', fontWeight: 700 }}>Cumulative Signups: {d.cumulative_signups}</div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend />
-              <Area yAxisId="left" type="monotone" dataKey="reach" name="Total Reach" stroke="var(--accent)" fillOpacity={1} fill="url(#campReachGrad)" />
-              <Line yAxisId="right" type="monotone" dataKey="cumulative_signups" name="Cumulative Signups" stroke="var(--sunset)" strokeWidth={3} dot={{ r: 4, fill: 'var(--sunset)' }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        <button
+          onClick={() => setActiveCampTab('timeline')}
+          className="btn"
+          style={{
+            fontSize: 13,
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeCampTab === 'timeline' ? 'var(--panel)' : 'transparent',
+            color: activeCampTab === 'timeline' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeCampTab === 'timeline' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeCampTab === 'timeline' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeCampTab === 'timeline' ? 700 : 500,
+            gap: 6,
+          }}
+        >
+          <Calendar size={15} />
+          Reach Progression Timeline
+        </button>
+
+        <button
+          onClick={() => setActiveCampTab('posts')}
+          className="btn"
+          style={{
+            fontSize: 13,
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            background: activeCampTab === 'posts' ? 'var(--panel)' : 'transparent',
+            color: activeCampTab === 'posts' ? 'var(--accent)' : 'var(--text-2)',
+            border: activeCampTab === 'posts' ? '1px solid var(--line)' : '1px solid transparent',
+            borderBottom: activeCampTab === 'posts' ? '2px solid var(--accent)' : 'none',
+            fontWeight: activeCampTab === 'posts' ? 700 : 500,
+            gap: 6,
+          }}
+        >
+          <MessageSquare size={15} />
+          Campaign Posts ({posts.length})
+        </button>
       </div>
 
-      {/* 5. Top Posts Table */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
-        }}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
-            Top Performing Campaign Posts
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-            Ranked updates tagged to this campaign across LinkedIn and Reddit
-          </p>
-        </div>
-
-        <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Platform</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Post Content</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Posted</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Engagement</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Clicks</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Conv. Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map((post) => {
-                const eng = post.latest_engagement || {
-                  impressions: 4200,
-                  reactions: 156,
-                  comments: 23,
-                  shares: 10,
-                  clicks: 45,
-                  engagement_rate: 4.5,
-                };
-
-                return (
-                  <tr
-                    key={post.id}
-                    onClick={() => setSelectedPost(post)}
-                    className="table-row-hover"
-                    style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+      {/* Tab 1: Channel Attribution */}
+      {activeCampTab === 'attribution' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* By-Channel Breakdown Cards (3 Columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {/* Email Channel Card */}
+            <div
+              className="card card-hover"
+              style={{
+                background: 'var(--panel)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius)',
+                padding: 20,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'rgba(59, 130, 246, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--info)',
+                    }}
                   >
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {getPlatformIcon(post.platform)}
-                        <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text)' }}>
-                          {post.platform}
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', maxWidth: 360 }}>
-                      <div style={{ color: 'var(--text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {post.content_text}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12 }}>
-                      {formatDate(post.posted_at)}
-                    </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
-                      {formatNumber(eng.reactions || eng.impressions || 0)}
-                    </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
-                      {eng.clicks}
-                    </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--success)' }}>
-                        {eng.engagement_rate}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 6. Performance Breakdown Table */}
-      <div
-        className="card"
-        style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius)',
-          padding: 24,
-        }}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
-            Channel Conversion Breakdown
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
-            Side-by-side multi-touch attribution metrics across email sequences and organic social
-          </p>
-        </div>
-
-        <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Channel</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Reach / Views</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Engagement</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Clicks</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Signups</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Conversion %</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Mail size={16} color="var(--info)" />
-                    <span>Email Campaigns</span>
+                    <Mail size={16} />
                   </div>
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(emailMetrics.reach)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--info)' }}>{emailMetrics.engagement_rate}%</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{emailMetrics.clicks}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{emailMetrics.signups}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{emailMetrics.conversion_rate}%</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    Email Sequences
+                  </h3>
+                </div>
+                <span style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 700 }}>
+                  {emailMetrics.conversion_rate}% Conv.
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Delivered Reach</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(emailMetrics.reach)}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Open Rate</span>
+                  <div style={{ fontWeight: 700, color: 'var(--info)' }}>{emailMetrics.engagement_rate}%</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{emailMetrics.clicks}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
+                  <div style={{ fontWeight: 700, color: 'var(--success)' }}>{emailMetrics.signups}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* LinkedIn Channel Card */}
+            <div
+              className="card card-hover"
+              style={{
+                background: 'var(--panel)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius)',
+                padding: 20,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'rgba(10, 102, 194, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#0A66C2',
+                    }}
+                  >
                     <LinkedInIcon size={16} />
-                    <span>LinkedIn Organic</span>
                   </div>
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(linkedinMetrics.reach)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: '#0A66C2' }}>{linkedinMetrics.engagement_rate}%</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{linkedinMetrics.clicks}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{linkedinMetrics.signups}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{linkedinMetrics.conversion_rate}%</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MessageSquare size={16} color="#FF4500" />
-                    <span>Reddit Community</span>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    LinkedIn Organic
+                  </h3>
+                </div>
+                <span style={{ fontSize: 11.5, color: '#0A66C2', fontWeight: 700 }}>
+                  {linkedinMetrics.conversion_rate}% Conv.
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Impressions</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(linkedinMetrics.reach)}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Engagement Rate</span>
+                  <div style={{ fontWeight: 700, color: '#0A66C2' }}>{linkedinMetrics.engagement_rate}%</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{linkedinMetrics.clicks}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
+                  <div style={{ fontWeight: 700, color: 'var(--success)' }}>{linkedinMetrics.signups}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reddit Channel Card */}
+            <div
+              className="card card-hover"
+              style={{
+                background: 'var(--panel)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius)',
+                padding: 20,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'rgba(255, 69, 0, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FF4500',
+                    }}
+                  >
+                    <MessageSquare size={16} />
                   </div>
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(redditMetrics.reach)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: '#FF4500' }}>{redditMetrics.engagement_rate}%</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{redditMetrics.clicks}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{redditMetrics.signups}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{redditMetrics.conversion_rate}%</td>
-              </tr>
-            </tbody>
-          </table>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    Reddit Community
+                  </h3>
+                </div>
+                <span style={{ fontSize: 11.5, color: '#FF4500', fontWeight: 700 }}>
+                  {redditMetrics.conversion_rate}% Conv.
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Community Views</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{formatNumber(redditMetrics.reach)}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Engagement Rate</span>
+                  <div style={{ fontWeight: 700, color: '#FF4500' }}>{redditMetrics.engagement_rate}%</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Link Clicks</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text)' }}>{redditMetrics.clicks}</div>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-2)', fontSize: 11 }}>Candidate Signups</span>
+                  <div style={{ fontWeight: 700, color: 'var(--success)' }}>{redditMetrics.signups}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Breakdown Table */}
+          <div
+            className="card"
+            style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+              padding: 24,
+            }}
+          >
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
+                Channel Conversion Breakdown
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                Side-by-side multi-touch attribution metrics across email sequences and organic social
+              </p>
+            </div>
+
+            <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Channel</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Reach / Views</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Engagement</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Clicks</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Signups</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Conversion %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: 'Email Sequences', icon: Mail, color: 'var(--info)', ...emailMetrics },
+                    { name: 'LinkedIn Organic', icon: LinkedInIcon, color: '#0A66C2', ...linkedinMetrics },
+                    { name: 'Reddit Community', icon: MessageSquare, color: '#FF4500', ...redditMetrics },
+                  ].map((row) => (
+                    <tr key={row.name} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <row.icon size={15} color={row.color} />
+                          <span>{row.name}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text)' }}>{formatNumber(row.reach)}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
+                        {formatNumber(row.engagement)}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
+                        {row.clicks}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>
+                        {row.signups}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: row.color }}>
+                        {row.conversion_rate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Tab 2: Timeline Progression */}
+      {activeCampTab === 'timeline' && (
+        <div
+          className="card"
+          style={{
+            background: 'var(--panel)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+            padding: 24,
+          }}
+        >
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
+              Daily Reach Progression &amp; Cumulative Signups
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+              Track cross-channel reach acceleration overlaid against candidate onboarding conversion
+            </p>
+          </div>
+
+          <div style={{ width: '100%', height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={timeline} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="campReachGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.6} />
+                <XAxis dataKey="day" stroke="var(--dim)" fontSize={12} tickLine={false} />
+                <YAxis yAxisId="left" stroke="var(--dim)" fontSize={12} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <YAxis yAxisId="right" orientation="right" stroke="var(--dim)" fontSize={12} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div
+                          style={{
+                            background: 'var(--panel)',
+                            border: '1px solid var(--line-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '10px 14px',
+                            boxShadow: 'var(--shadow-lg)',
+                            fontSize: 12,
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
+                          <div style={{ color: 'var(--accent)', fontWeight: 600 }}>Daily Reach: {formatNumber(d.reach)}</div>
+                          <div style={{ color: 'var(--sunset)', fontWeight: 600 }}>Engagement: {formatNumber(d.engagement)}</div>
+                          <div style={{ color: 'var(--success)', fontWeight: 700 }}>Cumulative Signups: {d.cumulative_signups}</div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Area yAxisId="left" type="monotone" dataKey="reach" name="Total Reach" stroke="var(--accent)" fillOpacity={1} fill="url(#campReachGrad)" />
+                <Line yAxisId="right" type="monotone" dataKey="cumulative_signups" name="Cumulative Signups" stroke="var(--sunset)" strokeWidth={3} dot={{ r: 4, fill: 'var(--sunset)' }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Top Posts */}
+      {activeCampTab === 'posts' && (
+        <div
+          className="card"
+          style={{
+            background: 'var(--panel)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+            padding: 24,
+          }}
+        >
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px 0' }}>
+              Top Performing Campaign Posts
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+              Ranked updates tagged to this campaign across LinkedIn and Reddit (click any row to inspect hourly engagement velocity)
+            </p>
+          </div>
+
+          <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--panel-2)', borderBottom: '1px solid var(--line)' }}>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Platform</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Post Content</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)' }}>Posted</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Engagement</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Clicks</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-2)', textAlign: 'right' }}>Conv. Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posts.map((post) => {
+                  const eng = post.latest_engagement || {
+                    impressions: 4200,
+                    reactions: 156,
+                    comments: 23,
+                    shares: 10,
+                    clicks: 45,
+                    engagement_rate: 4.5,
+                  };
+
+                  return (
+                    <tr
+                      key={post.id}
+                      onClick={() => setSelectedPost(post)}
+                      className="table-row-hover"
+                      style={{ borderBottom: '1px solid var(--line)', cursor: 'pointer' }}
+                    >
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {getPlatformIcon(post.platform)}
+                          <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text)' }}>
+                            {post.platform}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px', maxWidth: 360 }}>
+                        <div style={{ color: 'var(--text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {post.content_text}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-2)', fontSize: 12 }}>
+                        {formatDate(post.posted_at)}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
+                        {formatNumber(eng.reactions || eng.impressions || 0)}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--text)' }}>
+                        {eng.clicks}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--success)' }}>
+                          {eng.engagement_rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Post Detail Inspection Modal */}
       {selectedPost && (
@@ -800,4 +869,5 @@ export const CampaignPerformance: React.FC<CampaignPerformanceProps> = ({
     </div>
   );
 };
+
 
