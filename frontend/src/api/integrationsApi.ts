@@ -159,9 +159,10 @@ export const integrationsApi = {
     try {
       const res: any = await apiClient.put('/integrations', { credentials, cacheTTL });
       return { success: true, message: res?.message || 'Credentials updated successfully' };
-    } catch (err: any) {
+    } catch {
       return { success: true, message: 'Settings saved locally and to telemetry store.' };
     }
+
   },
 
   testIntegration: async (provider: string, credentials: any): Promise<TestResult> => {

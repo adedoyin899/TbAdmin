@@ -31,6 +31,7 @@ interface ChatMessage {
 
 export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQuery }) => {
   const navigate = useNavigate();
+  const messageSeqRef = useRef(0);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome_msg',
@@ -59,8 +60,9 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
     const query = (textToSend || inputVal).trim();
     if (!query) return;
 
+    messageSeqRef.current += 1;
     const userMsg: ChatMessage = {
-      id: `user_${Date.now()}`,
+      id: `user_${messageSeqRef.current}`,
       sender: 'user',
       text: query,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -73,15 +75,18 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
     // Simulate conversational response processing
     setTimeout(() => {
       const response = answerHelpBotQuery(query);
+      messageSeqRef.current += 1;
 
       const botMsg: ChatMessage = {
-        id: `bot_${Date.now()}`,
+        id: `bot_${messageSeqRef.current}`,
         sender: 'bot',
         text: response.answer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         relatedTerms: response.relatedTerms,
         suggestedAction: response.suggestedAction,
       };
+
+
 
       setMessages((prev) => [...prev, botMsg]);
       setIsTyping(false);

@@ -27,10 +27,11 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
   const [channels, setChannels] = useState<string[]>(['linkedin', 'reddit', 'email']);
   const [budget, setBudget] = useState<number>(1000);
   const [targetAudience, setTargetAudience] = useState('Hiring Managers & Senior Tech Leads');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(() =>
     new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0]
   );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;

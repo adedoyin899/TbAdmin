@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useAuth } from './AuthContext';
+
 
 export interface AppNotification {
   id: string;
@@ -147,12 +148,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   });
 
-  // Keep recipientEmail synced with logged-in user if not customized
-  useEffect(() => {
-    if (user?.email && settings.recipientEmail === DEFAULT_SETTINGS.recipientEmail) {
-      setSettings(prev => ({ ...prev, recipientEmail: user.email }));
-    }
-  }, [user]);
+
 
   // Load notifications from localStorage
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {

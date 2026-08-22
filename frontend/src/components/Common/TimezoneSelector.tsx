@@ -12,13 +12,14 @@ export interface TimezoneOption {
   offset: string;
 }
 
-export const TIMEZONE_OPTIONS: TimezoneOption[] = [
+const TIMEZONE_OPTIONS: TimezoneOption[] = [
   { value: 'UTC', label: 'Coordinated Universal Time', abbr: 'UTC', offset: '+00:00' },
   { value: 'America/New_York', label: 'Eastern Time (US)', abbr: 'EST/EDT', offset: '-05:00' },
   { value: 'America/Los_Angeles', label: 'Pacific Time (US)', abbr: 'PST/PDT', offset: '-08:00' },
   { value: 'Europe/London', label: 'London Time (UK)', abbr: 'GMT/BST', offset: '+00:00' },
   { value: 'Asia/Tokyo', label: 'Tokyo Time (JST)', abbr: 'JST', offset: '+09:00' },
 ];
+
 
 interface TimezoneSelectorProps {
   value?: string;

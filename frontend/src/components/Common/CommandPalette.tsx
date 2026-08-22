@@ -42,9 +42,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      setActionFeedback(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -52,8 +49,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   // Debounced search for live users/creators
   useEffect(() => {
     if (!isOpen || !query.trim()) {
-      setUserResults([]);
-      setIsSearchingUsers(false);
       return;
     }
 
@@ -73,6 +68,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
     return () => clearTimeout(timer);
   }, [query, isOpen]);
+
 
   // Quick Action Handlers
   const handleFlushCache = async () => {
@@ -342,13 +338,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     : baseItems;
 
   const allItems: SearchItem[] = [...dynamicUserItems, ...filteredBase];
-
-  // Clamp selection index
-  useEffect(() => {
-    if (selectedIndex >= allItems.length) {
-      setSelectedIndex(Math.max(0, allItems.length - 1));
-    }
-  }, [allItems.length, selectedIndex]);
+  const safeSelectedIndex = Math.min(selectedIndex, Math.max(0, allItems.length - 1));
 
   // Keyboard navigation inside modal
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -360,14 +350,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       setSelectedIndex(prev => (prev - 1 + (allItems.length || 1)) % (allItems.length || 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (allItems[selectedIndex]) {
-        allItems[selectedIndex].action();
+      if (allItems[safeSelectedIndex]) {
+        allItems[safeSelectedIndex].action();
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
     }
   };
+
 
   if (!isOpen) return null;
 
@@ -493,8 +484,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             </div>
           ) : (
             allItems.map((item, idx) => {
-              const isSelected = idx === selectedIndex;
+              const isSelected = idx === safeSelectedIndex;
               const Icon = item.icon;
+
 
               return (
                 <div
