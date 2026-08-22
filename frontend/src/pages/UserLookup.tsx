@@ -7,7 +7,7 @@ import {
 import {
   Search, ArrowLeft, ExternalLink, Clock, Mail, Globe,
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
-  Share2, RefreshCcw, Palette, Repeat, User as UserIcon,
+  Share2, RefreshCcw, Repeat, User as UserIcon,
   Zap, ChevronDown, ChevronUp, Sparkles, Filter,
   ArrowRight, Users, UserCheck, UserPlus, ArrowUpRight, Download,
 } from 'lucide-react';
@@ -22,26 +22,26 @@ import { useRbac } from '../utils/rbac';
 // ── Event Icon & Color Config ─────────────────────────────────
 
 const EVENT_ICON: Record<string, React.ReactNode> = {
-  signup_started:          <Rocket       size={15} color="#2DD4BF" strokeWidth={2} />,
-  email_verified:          <CheckCircle2 size={15} color="#10B981" strokeWidth={2} />,
+  signup_started:          <Rocket       size={15} color="var(--accent)" strokeWidth={2} />,
+  email_verified:          <CheckCircle2 size={15} color="var(--success)" strokeWidth={2} />,
   showcase_room_created:   <Home         size={15} color="#3B82F6" strokeWidth={2} />,
   block_added:             <PlusCircle   size={15} color="#8B5CF6" strokeWidth={2} />,
-  room_theme_changed:      <Palette      size={15} color="#F59E0B" strokeWidth={2} />,
-  showcase_room_published: <Megaphone    size={15} color="#10B981" strokeWidth={2} />,
-  showcase_room_shared:    <Share2       size={15} color="#2DD4BF" strokeWidth={2} />,
-  user_returned_7d:        <RefreshCcw   size={15} color="#F59E0B" strokeWidth={2} />,
+  room_theme_changed:      <RefreshCcw   size={15} color="var(--sunset)" strokeWidth={2} />,
+  showcase_room_published: <Megaphone    size={15} color="var(--success)" strokeWidth={2} />,
+  showcase_room_shared:    <Share2       size={15} color="var(--accent)" strokeWidth={2} />,
+  user_returned_7d:        <RefreshCcw   size={15} color="var(--sunset)" strokeWidth={2} />,
   user_returned_30d:       <Repeat       size={15} color="#EF4444" strokeWidth={2} />,
 };
 
 const EVENT_COLOR: Record<string, string> = {
-  signup_started:          '#2DD4BF',
+  signup_started:          'var(--accent)',
   email_verified:          '#10B981',
   showcase_room_created:   '#3B82F6',
   block_added:             '#8B5CF6',
-  room_theme_changed:      '#F59E0B',
+  room_theme_changed:      '#FA520F',
   showcase_room_published: '#10B981',
-  showcase_room_shared:    '#2DD4BF',
-  user_returned_7d:        '#F59E0B',
+  showcase_room_shared:    'var(--accent)',
+  user_returned_7d:        '#FA520F',
   user_returned_30d:       '#EF4444',
 };
 
@@ -54,9 +54,9 @@ const COUNTRY_FLAG: Record<string, string> = {
 };
 
 const SOURCE_BADGE_CLASS: Record<string, string> = {
-  organic: 'badge-success',
+  organic: 'badge-teal',
   email:   'badge-info',
-  referral:'badge-warning',
+  referral:'badge-sunset',
   paid_ad: 'badge-error',
 };
 
@@ -96,10 +96,10 @@ const GeneralUserOverviewSection: React.FC = () => {
       {/* Date filter bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
             User Base Overview
           </h3>
-          <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Systemic user growth, account verification, and engagement status</p>
+          <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>Systemic user growth, account verification, and engagement status</p>
         </div>
         <DateRangeSelector
           value={dateRange}
@@ -112,73 +112,73 @@ const GeneralUserOverviewSection: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Total Registered Users</span>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Total Registered Users</span>
             <span className="badge badge-success" style={{ gap: 2, fontSize: 11 }}>
               <ArrowUpRight size={11} /> +8.4%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+          <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
             12,450
           </p>
-          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>+960 registered accounts this month</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 4 }}>+960 registered accounts this month</p>
         </div>
 
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Active Users (30d)</span>
-            <span className="badge badge-info" style={{ gap: 2, fontSize: 11 }}>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Active Users (30d)</span>
+            <span className="badge badge-teal" style={{ gap: 2, fontSize: 11 }}>
               <UserCheck size={11} /> 71.6%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+          <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
             8,920
           </p>
-          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Logged in within last 30 days</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 4 }}>Logged in within last 30 days</p>
         </div>
 
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>Verified Accounts</span>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Verified Accounts</span>
             <span className="badge badge-success" style={{ gap: 2, fontSize: 11 }}>
               <CheckCircle2 size={11} /> 86.8%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+          <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
             10,810
           </p>
-          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>Completed email verification</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 4 }}>Completed email verification</p>
         </div>
 
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>New Signups</span>
-            <span className="badge badge-warning" style={{ gap: 2, fontSize: 11 }}>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>New Signups</span>
+            <span className="badge badge-sunset" style={{ gap: 2, fontSize: 11 }}>
               <UserPlus size={11} /> +16%
             </span>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+          <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
             1,247
           </p>
-          <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 4 }}>In selected time horizon</p>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 4 }}>In selected time horizon</p>
         </div>
       </div>
 
       {/* User Growth & Signups Trend */}
-      <div className="chart-container">
+      <div className="card-mistral">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-              User Signups Trend
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              User Registration Trajectory
             </h3>
-            <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Monthly growth comparing Total Signups vs Verified Accounts</p>
+            <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>Monthly growth comparing Total Signups vs Verified Accounts</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#FB923C' }} />
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#FA520F' }} />
               <span style={{ color: 'var(--text-2)' }}>Total Signups</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#2DD4BF' }} />
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: '#0D9488' }} />
               <span style={{ color: 'var(--text-2)' }}>Verified Users</span>
             </div>
           </div>
@@ -188,23 +188,23 @@ const GeneralUserOverviewSection: React.FC = () => {
           <AreaChart data={USER_SIGNUP_TREND} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="userSignupsGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#FB923C" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#FB923C" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#FA520F" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#FA520F" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="userVerifiedGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#0D9488" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#0D9488" stopOpacity={0.0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.3)" vertical={false} />
-            <XAxis dataKey="month" tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
+            <XAxis dataKey="month" tick={{ fill: 'var(--text-2)', fontSize: 11.5 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
+              contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
+              labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
             />
-            <Area type="monotone" dataKey="totalUsers" stroke="#FB923C" strokeWidth={2.5} fillOpacity={1} fill="url(#userSignupsGrad)" name="Total Signups" />
-            <Area type="monotone" dataKey="verifiedUsers" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#userVerifiedGrad)" name="Verified Users" />
+            <Area type="monotone" dataKey="totalUsers" stroke="#FA520F" strokeWidth={2.5} fillOpacity={1} fill="url(#userSignupsGrad)" name="Total Signups" />
+            <Area type="monotone" dataKey="verifiedUsers" stroke="#0D9488" strokeWidth={2.5} fillOpacity={1} fill="url(#userVerifiedGrad)" name="Verified Users" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -212,26 +212,26 @@ const GeneralUserOverviewSection: React.FC = () => {
       {/* User Acquisition Sources & Geographic Demographics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Acquisition Sources */}
-        <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-            User Acquisition Sources
+        <div className="card-mistral" style={{ padding: '20px 22px' }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            Acquisition Channels
           </h3>
-          <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Where registered users join TalentBridge from</p>
+          <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>Where registered creators originate from</p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {USER_SOURCES_BREAKDOWN.map(s => (
               <div key={s.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
-                  <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.name}</span>
-                  <span style={{ color: 'var(--text)', fontWeight: 600, fontFamily: 'Geist Mono, monospace' }}>{s.count} users ({s.percentage}%)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>{s.name}</span>
+                  <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>{s.count} ({s.percentage}%)</span>
                 </div>
-                <div style={{ height: 14, background: 'var(--panel-2)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                <div style={{ height: 12, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <div
                     style={{
                       height: '100%',
                       width: `${s.percentage}%`,
-                      background: 'linear-gradient(90deg, #2DD4BF, #0D9488)',
-                      borderRadius: 3,
+                      background: 'linear-gradient(90deg, #14B8A6, #FA520F)',
+                      borderRadius: 9999,
                     }}
                   />
                 </div>
@@ -241,31 +241,31 @@ const GeneralUserOverviewSection: React.FC = () => {
         </div>
 
         {/* User Geo Distribution */}
-        <div className="card" style={{ padding: '20px 24px' }}>
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-            User Distribution by Country
+        <div className="card-mistral" style={{ padding: '20px 22px' }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+            Geographic Demographics
           </h3>
-          <p style={{ color: 'var(--text-2)', fontSize: 12, marginBottom: 18 }}>Top geographic regions for registered users</p>
+          <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>Top creator countries</p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {USER_GEO_BREAKDOWN.map(g => (
               <div key={g.code}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, marginBottom: 3 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 14 }}>{g.flag}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 15 }}>{g.flag}</span>
                     <span style={{ fontWeight: 600, color: 'var(--text)' }}>{g.country}</span>
                   </div>
-                  <span style={{ fontFamily: 'Geist Mono, monospace', fontSize: 11, color: 'var(--text-2)' }}>
+                  <span className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>
                     {formatNumber(g.users)} ({g.percentage}%)
                   </span>
                 </div>
-                <div style={{ height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: 6, background: 'var(--line)', borderRadius: 9999, overflow: 'hidden' }}>
                   <div
                     style={{
                       height: '100%',
                       width: `${g.percentage * 2}%`,
-                      background: 'var(--ink)',
-                      borderRadius: 99,
+                      background: 'linear-gradient(90deg, #3B82F6, #14B8A6)',
+                      borderRadius: 9999,
                     }}
                   />
                 </div>
@@ -288,7 +288,7 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
     <div>
       <div style={{ padding: '8px 0' }}>
         {visible.map((event, i) => {
-          const color = EVENT_COLOR[event.eventName] ?? '#7C8A96';
+          const color = EVENT_COLOR[event.eventName] ?? 'var(--dim)';
           return (
             <div
               key={event.eventId}
@@ -304,9 +304,9 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <div style={{
-                width: 30, height: 30, borderRadius: '50%',
-                background: `color-mix(in srgb, ${color} 14%, transparent)`,
-                border: `1.5px solid color-mix(in srgb, ${color} 35%, transparent)`,
+                width: 32, height: 32, borderRadius: 8,
+                background: 'var(--panel-2)',
+                border: '1px solid var(--line)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, marginTop: 2,
               }}>
@@ -314,18 +314,18 @@ const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 3, fontSize: 14 }}>
+                <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 3, fontSize: 13.5 }}>
                   {formatEventLabel(event.eventName)}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: Object.keys(event.properties).length > 0 ? 6 : 0 }}>
-                  <Clock size={11} color="var(--faint)" />
-                  <span style={{ fontSize: 12, color: 'var(--faint)' }}>{formatDateTime(event.timestamp)}</span>
+                  <Clock size={11} color="var(--dim)" />
+                  <span className="mono-metric" style={{ fontSize: 11.5, color: 'var(--dim)' }}>{formatDateTime(event.timestamp)}</span>
                 </div>
                 {Object.keys(event.properties).length > 0 && (
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {Object.entries(event.properties).map(([k, v]) => (
-                      <span key={k} className="badge badge-neutral"
-                        style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace' }}>
+                      <span key={k} className="badge badge-neutral mono-metric"
+                        style={{ fontSize: 11 }}>
                         {k}: {String(v)}
                       </span>
                     ))}
@@ -387,7 +387,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
         <button
           onClick={onBack}
           className="btn btn-ghost"
-          style={{ width: 'fit-content', gap: 6, padding: '8px 14px' }}
+          style={{ width: 'fit-content', gap: 6, padding: '7px 14px', fontSize: 13 }}
           id="user-back-btn"
         >
           <ArrowLeft size={15} strokeWidth={2} />
@@ -396,25 +396,24 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
       </div>
 
       {/* User Hero Card */}
-      <div style={{
-        background: 'var(--panel)', border: '1px solid var(--line)',
-        borderRadius: 'var(--radius)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)',
-      }}>
+      <div className="card-mistral" style={{ padding: '24px 28px' }}>
+        <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 2 }} />
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           {/* Avatar + name + email */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
-              width: 52, height: 52, borderRadius: '50%', background: 'var(--ink)',
+              width: 54, height: 54, borderRadius: 14, background: 'var(--panel-2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2.5px solid var(--line)', flexShrink: 0,
+              border: '1.5px solid var(--line)', flexShrink: 0,
             }}>
-              <span style={{ color: '#2DD4BF', fontWeight: 800, fontSize: 18, fontFamily: 'Geist, sans-serif' }}>
+              <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 18, fontFamily: 'Sora, sans-serif' }}>
                 {user.firstName[0]}{user.lastName[0]}
               </span>
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 19, fontWeight: 700, color: 'var(--text)' }}>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
                   {user.firstName} {user.lastName}
                 </h3>
                 <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`} style={{ fontSize: 11 }}>
@@ -423,8 +422,8 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                 <span className="badge badge-neutral" style={{ fontSize: 11 }}>Plan: {user.planTier}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Mail size={13} color="var(--text-2)" />
-                <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{user.email}</span>
+                <Mail size={13} color="var(--dim)" />
+                <span className="mono-metric" style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{user.email}</span>
               </div>
             </div>
           </div>
@@ -434,7 +433,7 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
             href={postHogSessionReplayUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-dark"
+            className="btn btn-sunset"
             id="posthog-replay-link"
             style={{ gap: 7, fontSize: 13 }}
           >
@@ -453,18 +452,18 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
             { label: 'Rooms Created', value: String(extUser.roomsCreated ?? '—'), icon: <Home size={12} color="var(--dim)" /> },
             { label: 'Rooms Published', value: String(extUser.roomsPublished ?? '—'), icon: <Megaphone size={12} color="var(--dim)" /> },
           ].map(field => (
-            <div key={field.label} style={{ padding: '10px 12px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
+            <div key={field.label} style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                 {field.icon}
-                <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   {field.label}
                 </p>
               </div>
               <p style={{
                 color: 'var(--text)',
                 fontWeight: 600,
-                fontFamily: field.mono ? 'Geist Mono, monospace' : undefined,
-                fontSize: field.mono ? 11 : 13,
+                fontFamily: field.mono ? 'JetBrains Mono, monospace' : undefined,
+                fontSize: field.mono ? 11.5 : 13,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -477,39 +476,27 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
       </div>
 
       {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 8, overflowX: 'auto' }}>
+      <div className="pill-group" style={{ alignSelf: 'flex-start' }}>
         <button
           onClick={() => setActiveTab('rooms')}
-          className="btn"
-          style={{
-            background: activeTab === 'rooms' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'rooms' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'rooms' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
+          className={`pill-tab ${activeTab === 'rooms' ? 'active' : ''}`}
         >
-          <Sparkles size={14} color={activeTab === 'rooms' ? '#2DD4BF' : undefined} />
-          Showcase Rooms & Specific Insights
-          <span className="badge badge-success" style={{ fontSize: 10 }}>{roomInsights.length} rooms</span>
+          <Sparkles size={14} />
+          <span>Showcase Rooms &amp; Telemetry</span>
+          <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
+            {roomInsights.length}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('timeline')}
-          className="btn"
-          style={{
-            background: activeTab === 'timeline' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'timeline' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'timeline' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
+          className={`pill-tab ${activeTab === 'timeline' ? 'active' : ''}`}
         >
           <Clock size={14} />
-          Activity & Timeline
-          <span className="badge badge-neutral" style={{ fontSize: 10 }}>{events.length}</span>
+          <span>Activity &amp; Event Stream</span>
+          <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
+            {events.length}
+          </span>
         </button>
       </div>
 
@@ -517,9 +504,9 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
       {activeTab === 'rooms' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {roomInsights.length === 0 ? (
-            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--dim)' }}>
+            <div className="card-mistral" style={{ padding: 48, textAlign: 'center', color: 'var(--dim)' }}>
               <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
-              <h4 style={{ fontFamily: 'Geist', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
+              <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
               <p style={{ fontSize: 13 }}>This user has not created or published any showcase rooms yet.</p>
             </div>
           ) : (
@@ -528,19 +515,13 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
               {(roomInsights || []).length > 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <div className="pill-group">
                     {(roomInsights || []).map((r, idx) => (
                       <button
                         key={r.roomId}
                         onClick={() => setSelectedRoomIdx(idx)}
-                        className="btn"
-                        style={{
-                          background: selectedRoomIdx === idx ? 'var(--ink)' : 'var(--panel-2)',
-                          color: selectedRoomIdx === idx ? '#2DD4BF' : 'var(--text-2)',
-                          border: '1px solid var(--line)',
-                          padding: '6px 12px',
-                          fontSize: 12,
-                        }}
+                        className={`pill-tab ${selectedRoomIdx === idx ? 'active' : ''}`}
+                        style={{ fontSize: 12 }}
                       >
                         {r.roomName} {r.isPublished ? '●' : '○'}
                       </button>
@@ -558,15 +539,12 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
         /* Timeline + Email side by side */
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="lg:grid-cols-[1fr_360px]">
           {/* Event timeline */}
-          <div style={{
-            background: 'var(--panel)', border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
-          }}>
+          <div className="card-mistral" style={{ overflow: 'hidden', padding: 0 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
                 Event Timeline
               </h3>
-              <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+              <span className="badge badge-teal" style={{ fontSize: 11 }}>
                 {(events || []).length} events
               </span>
             </div>
@@ -574,13 +552,10 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           </div>
 
           {/* Email engagement */}
-          <div style={{
-            background: 'var(--panel)', border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
-          }}>
+          <div className="card-mistral" style={{ overflow: 'hidden', padding: 0 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Mail size={15} color="var(--text-2)" />
-              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+              <Mail size={15} color="var(--dim)" />
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
                 Email Engagement
               </h3>
             </div>
@@ -597,30 +572,30 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                   onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
                 >
                   <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{e.campaignName}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Clock size={11} color="var(--faint)" />
-                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Sent</span>
+                        <Clock size={11} color="var(--dim)" />
+                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Sent</span>
                       </div>
-                      <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
+                      <span className="mono-metric" style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Mail size={11} color="var(--faint)" />
-                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Opened</span>
+                        <Mail size={11} color="var(--dim)" />
+                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Opened</span>
                       </div>
                       {e.opened
-                        ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ {formatDate(e.opened)}</span>
+                        ? <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>✓ {formatDate(e.opened)}</span>
                         : <span className="badge badge-neutral" style={{ fontSize: 11 }}>Not opened</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <ExternalLink size={11} color="var(--faint)" />
-                        <span style={{ fontSize: 12, color: 'var(--faint)' }}>Clicked</span>
+                        <ExternalLink size={11} color="var(--dim)" />
+                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Clicked</span>
                       </div>
                       {e.clicked
-                        ? <span className="badge badge-success" style={{ fontSize: 11 }}>✓ Clicked</span>
+                        ? <span className="badge badge-sunset mono-metric" style={{ fontSize: 11 }}>✓ Clicked</span>
                         : <span className="badge badge-neutral" style={{ fontSize: 11 }}>No click</span>}
                     </div>
                   </div>
@@ -672,15 +647,15 @@ export const UserLookupPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
               User Directory
             </h2>
-            <span className="badge badge-success" style={{ gap: 4 }}>
-              <Users size={11} /> Overview
+            <span className="badge badge-teal" style={{ gap: 4 }}>
+              <Users size={11} /> Directory
             </span>
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Search, manage, and inspect granular activity and profiles for all registered users
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
+            Search, manage, and inspect granular activity and profiles for all registered creators
           </p>
         </div>
 
@@ -714,8 +689,8 @@ export const UserLookupPage: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 4 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-              Registered Users List
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              Registered Users Directory
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
               Click on any user row to drill down into their complete granular details, timeline, and rooms
@@ -758,14 +733,8 @@ export const UserLookupPage: React.FC = () => {
               disabled={!filteredUsers.length || !rbac.canExportData}
               className="btn btn-ghost"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
                 fontSize: 13,
-                padding: '7px 12px',
-                border: '1px solid var(--line)',
-                borderRadius: 'var(--radius-xs)',
-                cursor: filteredUsers.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+                gap: 6,
                 opacity: !rbac.canExportData ? 0.6 : 1,
                 height: 36,
               }}
@@ -825,23 +794,25 @@ export const UserLookupPage: React.FC = () => {
                         key={user.userId}
                         onClick={() => setSelectedUserId(user.userId)}
                         style={{ cursor: 'pointer' }}
+                        className="hover:bg-[var(--panel-2)] transition-colors"
                         title="Click to view granular details"
                       >
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
-                              width: 34, height: 34, borderRadius: '50%', background: 'var(--ink)',
+                              width: 34, height: 34, borderRadius: 8, background: 'var(--panel-2)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                              border: '1px solid var(--line)',
                             }}>
-                              <span style={{ color: '#2DD4BF', fontWeight: 700, fontSize: 12, fontFamily: 'Geist, sans-serif' }}>
+                              <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 12, fontFamily: 'Sora, sans-serif' }}>
                                 {user.firstName[0]}{user.lastName[0]}
                               </span>
                             </div>
                             <div>
-                              <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14, marginBottom: 2 }}>
+                              <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13.5, marginBottom: 2 }}>
                                 {user.firstName} {user.lastName}
                               </p>
-                              <p style={{ fontSize: 12, color: 'var(--text-2)' }}>{user.email}</p>
+                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user.email}</p>
                             </div>
                           </div>
                         </td>
@@ -866,7 +837,7 @@ export const UserLookupPage: React.FC = () => {
                         </td>
 
                         <td>
-                          <span className="badge badge-neutral" style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace' }}>
+                          <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>
                             {ext.totalEvents ?? 0} events
                           </span>
                         </td>
@@ -882,9 +853,9 @@ export const UserLookupPage: React.FC = () => {
                               setSelectedUserId(user.userId);
                             }}
                             className="btn btn-ghost"
-                            style={{ padding: '5px 10px', fontSize: 12, gap: 5, color: 'var(--accent2)' }}
+                            style={{ padding: '4px 10px', fontSize: 11.5, gap: 5 }}
                           >
-                            Granular Profile <ArrowRight size={13} />
+                            Profile <ArrowRight size={12} />
                           </button>
                         </td>
                       </tr>

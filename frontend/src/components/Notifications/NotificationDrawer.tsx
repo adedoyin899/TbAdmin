@@ -178,22 +178,16 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
             gap: 8,
           }}
         >
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4 }}>
+          {/* Mistral Style Pill Tabs */}
+          <div className="pill-group">
             {(['all', 'unread', 'alerts', 'system'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
+                className={`pill-tab ${activeTab === tab ? 'active' : ''}`}
                 style={{
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: activeTab === tab ? 700 : 500,
-                  background: activeTab === tab ? 'var(--panel)' : 'transparent',
-                  color: activeTab === tab ? 'var(--text)' : 'var(--dim)',
-                  boxShadow: activeTab === tab ? 'var(--shadow-sm)' : 'none',
-                  cursor: 'pointer',
+                  fontSize: 11.5,
+                  padding: '4px 10px',
                   textTransform: 'capitalize',
                 }}
               >

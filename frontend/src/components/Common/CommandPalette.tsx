@@ -318,9 +318,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.65)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'rgba(9, 12, 18, 0.72)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'flex-start',
@@ -336,16 +336,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
           maxWidth: 640,
           background: 'var(--panel)',
           border: '1px solid var(--line)',
-          borderRadius: 16,
-          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.2)',
+          borderRadius: 18,
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           maxHeight: 'calc(100vh - 140px)',
+          position: 'relative',
         }}
         onClick={e => e.stopPropagation()}
         className="animate-slide-up"
       >
+        {/* Subtle Mistral Sunset Stripe */}
+        <div className="sunset-stripe" style={{ height: 2 }} />
+
         {/* Search Input Header */}
         <div
           style={{
@@ -357,7 +361,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             background: 'var(--panel)',
           }}
         >
-          <Search size={20} color="#2DD4BF" style={{ flexShrink: 0 }} />
+          <Search size={18} color="var(--accent)" style={{ flexShrink: 0 }} />
           <input
             ref={inputRef}
             type="text"
@@ -370,7 +374,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              fontSize: 16,
+              fontSize: 15,
               color: 'var(--text)',
               fontFamily: 'inherit',
             }}

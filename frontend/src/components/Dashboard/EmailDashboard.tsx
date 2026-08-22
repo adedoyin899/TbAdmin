@@ -6,12 +6,11 @@ import {
 } from 'recharts';
 import {
   Mail, MousePointerClick, AlertTriangle, Trophy,
-  Inbox, ArrowRight, Download,
+  Inbox, ArrowRight, Download, Sparkles,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { EmailDashboardResponse, EmailCampaign } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
-import { CHART_COLORS } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { CampaignDetailView } from '../Email/CampaignDetailView';
 import { exportToCsv } from '../../utils/exportCsv';
@@ -51,7 +50,7 @@ export const EmailDashboard: React.FC = () => {
     'Click %': c.clickPercentage ?? 0,
   }));
 
-  // If a campaign is selected, render its granular drill-down view!
+  // If a campaign is selected, render its granular drill-down view
   if (selectedCampaign) {
     return (
       <CampaignDetailView
@@ -65,14 +64,14 @@ export const EmailDashboard: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }} className="animate-fade-in">
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* Header Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-            Email Campaigns
+          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 4, letterSpacing: '-0.02em' }}>
+            Email Campaigns &amp; Deliverability
           </h2>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Open rates, click rates, and bounce data from Mailgun. Click any campaign to explore granular details.
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
+            Open rates, link CTRs, and deliverability health logs from Mailgun dispatch stream.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -86,14 +85,8 @@ export const EmailDashboard: React.FC = () => {
             disabled={!data?.campaigns?.length}
             className="btn btn-ghost"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
               fontSize: 13,
-              padding: '7px 12px',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-xs)',
-              cursor: data?.campaigns?.length ? 'pointer' : 'not-allowed',
+              gap: 6,
             }}
             title="Export Email Campaigns to CSV"
           >
@@ -115,38 +108,38 @@ export const EmailDashboard: React.FC = () => {
       )}
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
-      {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
+      {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load email analytics data.</div>}
 
       {data && (!data.campaigns || data.campaigns.length === 0) ? (
-        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-            <Mail size={24} color="#2DD4BF" />
+        <div className="card-mistral" style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(20, 184, 166, 0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color: 'var(--accent)' }}>
+            <Mail size={24} />
           </div>
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
             No Email Campaigns Sent Yet
           </h3>
-          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5, maxWidth: 480, margin: '0 auto' }}>
             When onboarding or lifecycle emails are delivered through Mailgun, live delivery rates, open percentages, clicks, and bounce logs will stream here.
           </p>
         </div>
       ) : data && data.campaigns && data.campaigns.length > 0 && (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {[
-              { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: CHART_COLORS.primary, icon: <Inbox size={16} color={CHART_COLORS.primary} /> },
-              { label: 'Avg Open Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.openPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: CHART_COLORS.info, icon: <Mail size={16} color={CHART_COLORS.info} /> },
-              { label: 'Avg Click Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.clickPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: CHART_COLORS.success, icon: <MousePointerClick size={16} color={CHART_COLORS.success} /> },
-              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + (c.bounceCount || 0), 0), suffix: '', color: CHART_COLORS.warning, icon: <AlertTriangle size={16} color={CHART_COLORS.warning} /> },
+              { label: 'Total Campaigns', value: data.campaigns.length, suffix: '', color: 'var(--text)', icon: <Inbox size={16} color="var(--accent)" /> },
+              { label: 'Avg Open Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.openPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: '#3B82F6', icon: <Mail size={16} color="#3B82F6" /> },
+              { label: 'Avg Click Rate', value: data.campaigns.length ? Math.round(data.campaigns.reduce((a, c) => a + (c.clickPercentage || 0), 0) / data.campaigns.length) : 0, suffix: '%', color: 'var(--accent)', icon: <MousePointerClick size={16} color="var(--accent)" /> },
+              { label: 'Total Bounces', value: data.campaigns.reduce((a, c) => a + (c.bounceCount || 0), 0), suffix: '', color: totalBounces > 0 ? '#EF4444' : 'var(--text)', icon: <AlertTriangle size={16} color={totalBounces > 0 ? '#EF4444' : 'var(--dim)'} /> },
             ].map(card => (
               <div key={card.label} className="stat-card animate-slide-up">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <p style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
                     {card.label}
                   </p>
                   {card.icon}
                 </div>
-                <p style={{ fontSize: 32, fontWeight: 800, color: card.color, fontFamily: 'Geist, sans-serif' }}>
+                <p className="mono-metric" style={{ fontSize: 30, fontWeight: 800, color: card.color }}>
                   {card.value}{card.suffix}
                 </p>
               </div>
@@ -154,21 +147,31 @@ export const EmailDashboard: React.FC = () => {
           </div>
 
           {/* Chart */}
-          <div className="chart-container">
-            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
-              Open & Click Rates by Campaign
-            </h3>
+          <div className="card-mistral">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                  Open &amp; Click Rates by Campaign
+                </h3>
+                <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 2 }}>
+                  Direct engagement comparison across broadcast batches
+                </p>
+              </div>
+              <span className="badge badge-teal" style={{ fontSize: 11 }}>
+                <Sparkles size={12} /> Metric Comparison
+              </span>
+            </div>
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.4)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => `${v}%`} tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
+                <XAxis dataKey="name" tick={{ fill: 'var(--text-2)', fontSize: 11.5, fontFamily: 'Geist' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => `${v}%`} tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
+                  contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
                 />
-                <Bar dataKey="Open %" fill={CHART_COLORS.info} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Click %" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Open %" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Click %" fill="#0D9488" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -177,10 +180,10 @@ export const EmailDashboard: React.FC = () => {
           <div className="table-wrap">
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
               <div>
-                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                   All Campaigns
                 </h3>
-                <p style={{ fontSize: 12, color: 'var(--faint)' }}>Click any campaign row to explore its link CTRs, recipient logs, and email mockup</p>
+                <p style={{ fontSize: 12.5, color: 'var(--text-2)' }}>Click any campaign row to explore its link CTRs, recipient logs, and email preview</p>
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
@@ -215,34 +218,35 @@ export const EmailDashboard: React.FC = () => {
                       key={c.campaignId}
                       onClick={() => setSelectedCampaign(c)}
                       style={{ cursor: 'pointer' }}
+                      className="hover:bg-[var(--panel-2)] transition-colors"
                       title="Click to explore campaign details"
                     >
                       <td>
                         <div>
-                          <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>{c.campaignName}</p>
-                          <p style={{ fontSize: 11, color: 'var(--text-2)' }}>{c.subjectLine || c.campaignId}</p>
+                          <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13.5 }}>{c.campaignName}</p>
+                          <p style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{c.subjectLine || c.campaignId}</p>
                         </div>
                       </td>
                       <td style={{ color: 'var(--text-2)', fontSize: 13 }}>{formatDate(c.sentDate)}</td>
-                      <td style={{ fontFamily: 'Geist Mono, monospace' }}>{formatNumber(c.sentCount)}</td>
+                      <td className="mono-metric" style={{ fontWeight: 700 }}>{formatNumber(c.sentCount)}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontFamily: 'Geist Mono, monospace' }}>{c.openPercentage}%</span>
-                          <span className="badge badge-info" style={{ fontSize: 11 }}>{formatNumber(c.openCount)}</span>
+                          <span className="mono-metric">{c.openPercentage}%</span>
+                          <span className="badge badge-neutral mono-metric" style={{ fontSize: 11 }}>{formatNumber(c.openCount)}</span>
                         </div>
                       </td>
-                      <td style={{ fontFamily: 'Geist Mono, monospace' }}>{formatNumber(c.clickCount)}</td>
+                      <td className="mono-metric" style={{ fontWeight: 700 }}>{formatNumber(c.clickCount)}</td>
                       <td>
                         <span
-                          className={`badge ${c.clickPercentage >= 15 ? 'badge-success' : c.clickPercentage >= 10 ? 'badge-warning' : 'badge-error'}`}
+                          className={`badge mono-metric ${c.clickPercentage >= 15 ? 'badge-success' : c.clickPercentage >= 10 ? 'badge-warning' : 'badge-error'}`}
                         >
                           {c.clickPercentage}%
                         </span>
                       </td>
                       <td>
                         {c.bounceCount > 0
-                          ? <span className="badge badge-error">{c.bounceCount}</span>
-                          : <span style={{ color: 'var(--faint)' }}>—</span>}
+                          ? <span className="badge badge-error mono-metric">{c.bounceCount}</span>
+                          : <span style={{ color: 'var(--dim)' }}>—</span>}
                       </td>
                       <td>
                         <button
@@ -251,7 +255,7 @@ export const EmailDashboard: React.FC = () => {
                             setSelectedCampaign(c);
                           }}
                           className="btn btn-ghost"
-                          style={{ padding: '4px 8px', fontSize: 12, gap: 4, color: 'var(--accent2)' }}
+                          style={{ padding: '4px 10px', fontSize: 11.5, gap: 4 }}
                         >
                           Explore <ArrowRight size={12} />
                         </button>

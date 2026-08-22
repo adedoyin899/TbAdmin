@@ -8,7 +8,7 @@ import {
 import {
   Filter, ArrowDownRight, Download, X, ExternalLink,
   Users, Clock, Zap, CheckCircle2, ChevronRight,
-  TrendingUp, AlertCircle,
+  TrendingUp, AlertCircle, Sparkles,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { FunnelDashboardResponse, FunnelStage, Dropoff } from '../../types';
@@ -20,7 +20,7 @@ import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 import { useRbac } from '../../utils/rbac';
 
 const STAGE_COLORS = [
-  '#2DD4BF', '#1FB8A7', '#13A090', '#0A8A7A', '#057060',
+  '#0D9488', '#14B8A6', '#2DD4BF', '#059669', '#10B981',
 ];
 
 const STAGE_METADATA: Record<string, {
@@ -97,14 +97,21 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payl
     const d = payload[0].payload;
     return (
       <div style={{
-        background: 'var(--panel)', border: '1px solid var(--line)',
-        borderRadius: 10, padding: '10px 14px', boxShadow: 'var(--shadow)',
+        background: 'var(--panel)',
+        border: '1px solid var(--line)',
+        borderRadius: 12,
+        padding: '12px 16px',
+        boxShadow: 'var(--shadow-lg)',
         fontSize: 13,
       }}>
-        <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{d.stage}</p>
-        <p style={{ color: 'var(--text-2)' }}>Count: <strong style={{ color: '#2DD4BF' }}>{formatNumber(d.count)}</strong></p>
-        <p style={{ color: 'var(--text-2)' }}>Conversion: <strong style={{ color: '#2DD4BF' }}>{formatPercentage(d.percentage)}</strong></p>
-        <p style={{ color: 'var(--dim)', fontSize: 11, marginTop: 4 }}>Click column to explore details ↗</p>
+        <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6, fontFamily: 'Sora, sans-serif' }}>{d.stage}</p>
+        <p style={{ color: 'var(--text-2)', display: 'flex', justifyContent: 'space-between', gap: 12, margin: '2px 0' }}>
+          <span>Count:</span> <strong className="mono-metric" style={{ color: 'var(--accent)' }}>{formatNumber(d.count)}</strong>
+        </p>
+        <p style={{ color: 'var(--text-2)', display: 'flex', justifyContent: 'space-between', gap: 12, margin: '2px 0' }}>
+          <span>Conversion:</span> <strong className="mono-metric" style={{ color: 'var(--accent)' }}>{formatPercentage(d.percentage)}</strong>
+        </p>
+        <p style={{ color: 'var(--dim)', fontSize: 11, marginTop: 6 }}>Click column to explore details ↗</p>
       </div>
     );
   }
@@ -145,17 +152,17 @@ export const FunnelDashboard: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* Header Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
               Funnel Conversion
             </h2>
             {isFetching && <div className="spinner" style={{ width: 14, height: 14 }} />}
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Track step-by-step conversion from signup to 3D room publish. Click any stage to inspect cohort drill-downs.
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
+            Real-time creator onboarding telemetry from initial signup to published 3D rooms.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -181,14 +188,8 @@ export const FunnelDashboard: React.FC = () => {
             disabled={!data?.funnel?.length || !rbac.canExportData}
             className="btn btn-ghost"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
               fontSize: 13,
-              padding: '7px 12px',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-xs)',
-              cursor: data?.funnel?.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+              gap: 6,
               opacity: !rbac.canExportData ? 0.6 : 1,
             }}
           >
@@ -208,41 +209,44 @@ export const FunnelDashboard: React.FC = () => {
         />
       )}
 
+      {/* Metric Cards Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="stat-card" style={{ height: 80, background: 'var(--panel-2)', animation: 'pulse 1.5s infinite' }} />
+            <div key={i} className="stat-card" style={{ height: 110, background: 'var(--panel-2)', animation: 'pulse 1.5s infinite' }} />
           ))}
         </div>
       ) : error ? (
-        <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>
+        <div style={{ padding: 24, color: '#EF4444', textAlign: 'center', background: 'var(--panel)', borderRadius: 'var(--radius)', border: '1px solid var(--line)' }}>
+          Failed to load funnel analytics data.
+        </div>
       ) : data && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {(data.funnel || []).map((stage, i) => (
             <div
               key={stage.stage || i}
               onClick={() => setSelectedStage(stage)}
-              className="stat-card animate-slide-up hover:border-[var(--accent)] hover:translate-y-[-2px] transition-all cursor-pointer"
-              style={{ animationDelay: `${i * 60}ms`, position: 'relative' }}
+              className="stat-card card-interactive animate-slide-up"
+              style={{ animationDelay: `${i * 50}ms` }}
               title={`Click to inspect ${stage.stage} details`}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <p style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
                   {stage.stage}
                 </p>
-                <ChevronRight size={14} color="var(--dim)" />
+                <ChevronRight size={13} color="var(--dim)" />
               </div>
-              <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif', marginBottom: 2 }}>
+              <p className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
                 {formatNumber(stage.count)}
               </p>
-              <p style={{ fontSize: 13, color: STAGE_COLORS[i % STAGE_COLORS.length], fontWeight: 600 }}>
+              <p style={{ fontSize: 12.5, color: STAGE_COLORS[i % STAGE_COLORS.length], fontWeight: 600 }}>
                 {formatPercentage(stage.percentage)} of total
               </p>
               {data.dropoff && i < data.dropoff.length && data.dropoff[i] && (
-                <div style={{ marginTop: 8, padding: '3px 7px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ marginTop: 10, padding: '3px 8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: 9999, display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid rgba(239,68,68,0.18)' }}>
                   <ArrowDownRight size={11} color="#EF4444" />
                   <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 600 }}>
-                    {formatPercentage(data.dropoff[i]?.percentage)} drop-off
+                    {formatPercentage(data.dropoff[i]?.percentage)} drop
                   </span>
                 </div>
               )}
@@ -251,25 +255,36 @@ export const FunnelDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Chart Visualization */}
       {data && data.funnel && data.funnel.length > 0 && (
-        <div className="chart-container">
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>
-            Funnel Visualisation
-          </h3>
+        <div className="card-mistral">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                Funnel Conversion Step Progression
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginTop: 2 }}>
+                Visual volume transition across consecutive milestones
+              </p>
+            </div>
+            <span className="badge badge-teal" style={{ fontSize: 11 }}>
+              <Sparkles size={12} /> Interactive
+            </span>
+          </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart
               data={data.funnel}
-              margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+              margin={{ top: 20, right: 10, left: -10, bottom: 0 }}
               onClick={(state: any) => {
                 if (state?.activePayload?.[0]) setSelectedStage(state.activePayload[0].payload as FunnelStage);
               }}
               style={{ cursor: 'pointer' }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.3)" vertical={false} />
-              <XAxis dataKey="stage" tick={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'Geist' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(45,212,191,0.06)' }} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
+              <XAxis dataKey="stage" tick={{ fill: 'var(--text-2)', fontSize: 11.5, fontFamily: 'Geist' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(20,184,166,0.06)' }} />
+              <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                 {data.funnel.map((_, i) => <Cell key={i} fill={STAGE_COLORS[i % STAGE_COLORS.length]} />)}
               </Bar>
             </BarChart>
@@ -277,16 +292,16 @@ export const FunnelDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Stage Breakdown Table — Clickable Rows */}
+      {/* Stage Breakdown Table */}
       {data && data.funnel && data.funnel.length > 0 && (
         <div className="table-wrap">
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                Stage Breakdown
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Milestone Stage Breakdown
               </h3>
-              <p style={{ color: 'var(--text-2)', fontSize: 12 }}>
-                Click on any stage row to explore user cohorts, drop-off factors, and optimization playbooks
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>
+                Click any stage row to explore user cohorts, drop-off factors, and optimization playbooks
               </p>
             </div>
             <span className="badge badge-neutral" style={{ fontSize: 11 }}>
@@ -314,28 +329,30 @@ export const FunnelDashboard: React.FC = () => {
                   >
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: STAGE_COLORS[i % STAGE_COLORS.length], flexShrink: 0 }} />
+                        <div style={{ width: 9, height: 9, borderRadius: '50%', background: STAGE_COLORS[i % STAGE_COLORS.length], flexShrink: 0 }} />
                         <span style={{ fontWeight: 600, color: 'var(--text)' }}>{stage.stage}</span>
                       </div>
                     </td>
-                    <td style={{ fontFamily: 'Geist Mono, monospace', fontWeight: 700 }}>{formatNumber(stage.count)}</td>
+                    <td className="mono-metric" style={{ fontWeight: 700 }}>{formatNumber(stage.count)}</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 80, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 84, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
                           <div style={{ width: `${stage.percentage || 0}%`, height: '100%', background: STAGE_COLORS[i % STAGE_COLORS.length], borderRadius: 99 }} />
                         </div>
-                        <span style={{ fontWeight: 600, color: STAGE_COLORS[i % STAGE_COLORS.length] }}>{formatPercentage(stage.percentage)}</span>
+                        <span className="mono-metric" style={{ fontWeight: 600, color: STAGE_COLORS[i % STAGE_COLORS.length], fontSize: 12.5 }}>
+                          {formatPercentage(stage.percentage)}
+                        </span>
                       </div>
                     </td>
                     <td>
                       {data.dropoff && i < data.dropoff.length && data.dropoff[i] ? (
                         <span className="badge badge-error">↓ {formatPercentage(data.dropoff[i]?.percentage)}</span>
                       ) : (
-                        <span style={{ color: 'var(--faint)' }}>—</span>
+                        <span style={{ color: 'var(--dim)' }}>—</span>
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11, gap: 4, display: 'inline-flex' }}>
+                      <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11.5, gap: 4, display: 'inline-flex' }}>
                         Explore Stage <ChevronRight size={12} />
                       </span>
                     </td>
@@ -344,18 +361,18 @@ export const FunnelDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: '10px 20px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--faint)' }}>
+          <div style={{ padding: '10px 20px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, background: 'var(--panel-2)' }}>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>
               Cached at {data.cachedAt ? new Date(data.cachedAt).toLocaleTimeString('en-GB') : '—'}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--faint)' }}>
+            <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>
               Refreshes at {data.expiresAt ? new Date(data.expiresAt).toLocaleTimeString('en-GB') : '—'}
             </span>
           </div>
         </div>
       )}
 
-      {/* ── Granular Stage Drill-Down Modal ──────────────────────── */}
+      {/* Granular Stage Drill-Down Modal */}
       {selectedStage && stageMeta && (
         <div
           style={{
@@ -367,6 +384,7 @@ export const FunnelDashboard: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 16,
+            backdropFilter: 'blur(6px)',
           }}
           className="animate-fade-in"
           onClick={() => setSelectedStage(null)}
@@ -384,7 +402,7 @@ export const FunnelDashboard: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: 20,
-              padding: '24px',
+              padding: '26px',
             }}
             className="animate-slide-up"
             onClick={e => e.stopPropagation()}
@@ -394,24 +412,24 @@ export const FunnelDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: 'rgba(45, 212, 191, 0.12)',
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    background: 'rgba(20, 184, 166, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#2DD4BF',
+                    color: 'var(--accent)',
                   }}
                 >
                   <TrendingUp size={20} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                       {selectedStage.stage}
                     </h3>
-                    <span className="badge badge-success" style={{ fontSize: 11 }}>
+                    <span className="badge badge-teal" style={{ fontSize: 11 }}>
                       {formatNumber(selectedStage.count)} Creators ({formatPercentage(selectedStage.percentage)})
                     </span>
                   </div>
@@ -435,25 +453,25 @@ export const FunnelDashboard: React.FC = () => {
             {/* Stage Quick KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 12, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11.5, marginBottom: 4 }}>
                   <Users size={14} /> Total Converted
                 </div>
-                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist Mono, monospace', margin: 0 }}>
+                <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
                   {formatNumber(selectedStage.count)}
                 </p>
               </div>
 
               <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 12, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11.5, marginBottom: 4 }}>
                   <Clock size={14} /> Median Stage Time
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist, sans-serif', margin: 0 }}>
+                <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                   {stageMeta.avgDuration}
                 </p>
               </div>
 
               <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 12, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11.5, marginBottom: 4 }}>
                   <Zap size={14} /> Device Split
                 </div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', margin: 0 }}>
@@ -465,7 +483,7 @@ export const FunnelDashboard: React.FC = () => {
             {/* Friction & Drop-off Root Cause */}
             <div style={{ padding: '14px 16px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#EF4444', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                <AlertCircle size={15} /> Observed Friction & Drop-off Cause
+                <AlertCircle size={15} /> Observed Friction &amp; Drop-off Cause
               </div>
               <p style={{ fontSize: 13, color: 'var(--text)', margin: 0 }}>
                 {stageMeta.topDropoffReason}
@@ -473,9 +491,9 @@ export const FunnelDashboard: React.FC = () => {
             </div>
 
             {/* Recommended Optimization Playbook */}
-            <div style={{ padding: '14px 16px', background: 'rgba(45, 212, 191, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(45, 212, 191, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0F766E', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                <CheckCircle2 size={15} color="#2DD4BF" /> Recommended UX Optimization Action
+            <div style={{ padding: '14px 16px', background: 'rgba(20, 184, 166, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(20, 184, 166, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+                <CheckCircle2 size={15} color="var(--accent)" /> Recommended UX Optimization Action
               </div>
               <p style={{ fontSize: 13, color: 'var(--text)', margin: 0 }}>
                 {stageMeta.recommendedAction}
@@ -485,7 +503,7 @@ export const FunnelDashboard: React.FC = () => {
             {/* Active User Cohort Sample List */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                <h4 style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, fontFamily: 'Sora, sans-serif' }}>
                   Recent Cohort Creators at this Milestone ({stageMeta.sampleUsers.length})
                 </h4>
                 <span style={{ fontSize: 11, color: 'var(--dim)' }}>
@@ -513,7 +531,7 @@ export const FunnelDashboard: React.FC = () => {
                       <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', margin: 0 }}>
                         {u.name}
                       </p>
-                      <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0', fontFamily: 'Geist Mono, monospace' }}>
+                      <p className="mono-metric" style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
                         {u.email} • {u.country} ({u.source})
                       </p>
                     </div>
@@ -527,7 +545,7 @@ export const FunnelDashboard: React.FC = () => {
                           navigate('/lookup');
                         }}
                         className="btn btn-ghost"
-                        style={{ padding: '4px 10px', fontSize: 11, gap: 4 }}
+                        style={{ padding: '4px 10px', fontSize: 11.5, gap: 4 }}
                       >
                         Inspect Profile <ExternalLink size={11} />
                       </button>

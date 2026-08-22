@@ -298,38 +298,27 @@ export const SettingsPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
-              Settings & Portal Preferences
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+              Settings &amp; Portal Preferences
             </h2>
-            <span className="badge badge-success" style={{ gap: 4 }}>
+            <span className="badge badge-teal" style={{ gap: 4 }}>
               <SlidersHorizontal size={11} /> Admin Suite
             </span>
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Configure live provider API keys, anomaly thresholds, telemetry cache TTLs, and team policies with instant validation.
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
+            Configure live provider API keys, anomaly triggers, telemetry cache TTLs, and RBAC team access policies.
           </p>
         </div>
 
         {saveSuccess && (
           <div className="badge badge-success animate-fade-in" style={{ padding: '8px 14px', gap: 6, fontSize: 13 }}>
-            <CheckCircle2 size={14} /> Preferences and API Keys saved & synced!
+            <CheckCircle2 size={14} /> Preferences and API Keys saved &amp; synced!
           </div>
         )}
       </div>
 
-      {/* ── Embedded Navigation Tab Bar ────────────────────────────── */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 6,
-          background: 'var(--panel)',
-          padding: '6px',
-          borderRadius: 'var(--radius)',
-          border: '1px solid var(--line)',
-          overflowX: 'auto',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
+      {/* ── Embedded Navigation Tab Bar (Mistral Style Pill Group) ────────────── */}
+      <div className="pill-group" style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -338,22 +327,7 @@ export const SettingsPage: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-xs)',
-                background: isActive ? 'var(--panel-2)' : 'transparent',
-                color: isActive ? 'var(--text)' : 'var(--text-2)',
-                border: isActive ? '1px solid var(--line-2)' : '1px solid transparent',
-                cursor: 'pointer',
-                fontWeight: isActive ? 700 : 500,
-                fontSize: 13,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:text-[var(--text)] hover:bg-[var(--panel-2)]"
+              className={`pill-tab ${isActive ? 'active' : ''}`}
             >
               <Icon size={15} color={isActive ? 'var(--accent)' : 'var(--dim)'} />
               <span>{tab.label}</span>
@@ -361,11 +335,10 @@ export const SettingsPage: React.FC = () => {
                 <span
                   style={{
                     fontSize: 10,
-                    padding: '2px 7px',
-                    borderRadius: 99,
-                    background: isActive ? 'rgba(45, 212, 191, 0.14)' : 'var(--panel-2)',
-                    color: isActive ? 'var(--accent2)' : 'var(--faint)',
-                    border: '1px solid var(--line)',
+                    padding: '1px 6px',
+                    borderRadius: 9999,
+                    background: isActive ? 'var(--panel-2)' : 'var(--line)',
+                    color: isActive ? 'var(--text)' : 'var(--dim)',
                     fontWeight: 700,
                   }}
                 >

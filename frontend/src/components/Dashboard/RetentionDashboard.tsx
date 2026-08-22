@@ -7,12 +7,12 @@ import {
 } from 'recharts';
 import {
   TrendingUp, Filter, Download, X, ExternalLink,
-  ChevronRight, Activity, Calendar,
+  ChevronRight, Activity, Calendar, Sparkles,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RetentionDashboardResponse } from '../../types';
 import { formatPercentage } from '../../utils/formatters';
-import { SIGNUP_SOURCES, CHART_COLORS } from '../../config/constants';
+import { SIGNUP_SOURCES } from '../../config/constants';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
@@ -113,14 +113,14 @@ export const RetentionDashboard: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* Header Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-            Retention & Cohorts
+          <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 4, letterSpacing: '-0.02em' }}>
+            Retention &amp; Cohort Dynamics
           </h2>
-          <p style={{ color: 'var(--text-2)', fontSize: 14 }}>
-            Track recurring creator activity across 7-day and 30-day cohorts. Click any cohort row or card to explore returning user profiles.
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
+            Analyze recurring creator engagement cycles across 7-day and 30-day cohorts.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -146,14 +146,8 @@ export const RetentionDashboard: React.FC = () => {
             disabled={!data?.trend?.length || !rbac.canExportData}
             className="btn btn-ghost"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
               fontSize: 13,
-              padding: '7px 12px',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-xs)',
-              cursor: data?.trend?.length && rbac.canExportData ? 'pointer' : 'not-allowed',
+              gap: 6,
               opacity: !rbac.canExportData ? 0.6 : 1,
             }}
             title={!rbac.canExportData ? 'Export restricted for Viewer role' : 'Export Retention Trends to CSV'}
@@ -176,18 +170,18 @@ export const RetentionDashboard: React.FC = () => {
       )}
 
       {isLoading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>}
-      {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load data.</div>}
+      {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load retention data.</div>}
 
       {data && (!data.trend || data.trend.length === 0) ? (
-        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-            <TrendingUp size={24} color="#2DD4BF" />
+        <div className="card-mistral" style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(20, 184, 166, 0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color: 'var(--accent)' }}>
+            <TrendingUp size={24} />
           </div>
-          <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
             No Retention Cohort Data Yet
           </h3>
-          <p style={{ color: 'var(--text-2)', fontSize: 13, maxWidth: 460, margin: '0 auto' }}>
-            Cohort analytics begin tracking returning creators 7 days and 30 days after their initial signup. Weekly trends will populate here once enough session history is established.
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5, maxWidth: 480, margin: '0 auto' }}>
+            Cohort analytics begin tracking returning creators 7 days and 30 days after their initial signup. Weekly trends will populate here once session telemetry matures.
           </p>
         </div>
       ) : data && (
@@ -201,6 +195,7 @@ export const RetentionDashboard: React.FC = () => {
                 change: data.retention7d?.change ?? 0,
                 desc: 'Creators active in 3D studio within 7 days of signup',
                 cohortKey: 'Week 3',
+                accentColor: 'var(--accent)',
               },
               {
                 label: '30-Day Retention',
@@ -208,22 +203,23 @@ export const RetentionDashboard: React.FC = () => {
                 change: data.retention30d?.change ?? 0,
                 desc: 'Creators maintaining active rooms after 30 days',
                 cohortKey: 'Week 1',
+                accentColor: 'var(--sunset)',
               },
             ].map(stat => (
               <div
                 key={stat.label}
                 onClick={() => setSelectedCohort(COHORT_DETAILS[stat.cohortKey])}
-                className="stat-card animate-slide-up p-5 sm:p-7 hover:border-[var(--accent)] hover:translate-y-[-2px] transition-all cursor-pointer"
+                className="stat-card card-interactive animate-slide-up p-5 sm:p-7"
                 title={`Click to inspect ${stat.label} cohort breakdown`}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                  <p style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', margin: 0 }}>
                     {stat.label}
                   </p>
                   <ChevronRight size={15} color="var(--dim)" />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontSize: 52, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif', lineHeight: 1 }}>
+                  <span className="mono-metric" style={{ fontSize: 50, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
                     {formatPercentage(stat.value)}
                   </span>
                   <span
@@ -233,16 +229,16 @@ export const RetentionDashboard: React.FC = () => {
                     <TrendingUp size={13} /> +{stat.change}% this week
                   </span>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--faint)' }}>{stat.desc}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-2)' }}>{stat.desc}</p>
 
-                {/* Visual arc */}
-                <div style={{ marginTop: 16, position: 'relative', height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                {/* Progress bar */}
+                <div style={{ marginTop: 18, position: 'relative', height: 6, background: 'var(--line)', borderRadius: 9999, overflow: 'hidden' }}>
                   <div
                     style={{
                       position: 'absolute', left: 0, top: 0, bottom: 0,
                       width: `${stat.value}%`,
-                      background: `linear-gradient(90deg, ${CHART_COLORS.primary}, ${CHART_COLORS.secondary})`,
-                      borderRadius: 99,
+                      background: `linear-gradient(90deg, #14B8A6, #FA520F)`,
+                      borderRadius: 9999,
                       transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
                     }}
                   />
@@ -252,16 +248,23 @@ export const RetentionDashboard: React.FC = () => {
           </div>
 
           {/* Trend chart */}
-          <div className="chart-container">
+          <div className="card-mistral">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                Retention Trend (Weekly)
-              </h3>
-              <span style={{ fontSize: 12, color: 'var(--dim)' }}>7-day and 30-day returning user trajectories</span>
+              <div>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                  Cohort Retention Trajectory
+                </h3>
+                <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 2 }}>
+                  Weekly 7-day and 30-day returning user trajectories
+                </p>
+              </div>
+              <span className="badge badge-teal" style={{ fontSize: 11 }}>
+                <Sparkles size={12} /> Trend Lines
+              </span>
             </div>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={data.trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.3)" vertical={false} />
+              <LineChart data={data.trend} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
                 <XAxis
                   dataKey="week"
                   tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
@@ -270,34 +273,37 @@ export const RetentionDashboard: React.FC = () => {
                 <YAxis
                   tickFormatter={v => `${v}%`}
                   domain={[0, 60]}
-                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
+                  tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }}
                   axisLine={false} tickLine={false}
                 />
                 <Tooltip
                   formatter={(v: unknown, name: unknown) => [`${v}%`, name === 'retention7d' ? '7-Day Retention' : '30-Day Retention']}
                   contentStyle={{
-                    background: 'var(--panel)', border: '1px solid var(--line)',
-                    borderRadius: 10, fontFamily: 'Geist',
+                    background: 'var(--panel)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 12,
+                    fontFamily: 'Geist',
+                    boxShadow: 'var(--shadow-lg)',
                   }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
                 />
                 <Legend
-                  formatter={v => <span style={{ color: 'var(--text-2)', fontSize: 13 }}>{v === 'retention7d' ? '7-Day' : '30-Day'}</span>}
+                  formatter={v => <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>{v === 'retention7d' ? '7-Day' : '30-Day'}</span>}
                 />
-                <Line type="monotone" dataKey="retention7d" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={{ fill: CHART_COLORS.primary, r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="retention30d" stroke={CHART_COLORS.secondary} strokeWidth={2.5} dot={{ fill: CHART_COLORS.secondary, r: 4 }} activeDot={{ r: 6 }} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="retention7d" stroke="#0D9488" strokeWidth={2.8} dot={{ fill: '#0D9488', r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="retention30d" stroke="#FA520F" strokeWidth={2.8} dot={{ fill: '#FA520F', r: 4 }} activeDot={{ r: 6 }} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Weekly Cohort Breakdown Matrix Table — Clickable Rows */}
+          {/* Weekly Cohort Breakdown Matrix Table */}
           <div className="table-wrap">
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
                   Cohort Retention Matrix
                 </h3>
-                <p style={{ color: 'var(--text-2)', fontSize: 12 }}>
+                <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>
                   Click any cohort week row to inspect active returning users, top actions, and retention curves
                 </p>
               </div>
@@ -331,41 +337,41 @@ export const RetentionDashboard: React.FC = () => {
                         title={`Click to inspect ${t.week} cohort`}
                       >
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                             <Calendar size={14} color="var(--dim)" />
                             <span style={{ fontWeight: 600, color: 'var(--text)' }}>{detail.week}</span>
                           </div>
                         </td>
-                        <td style={{ fontFamily: 'Geist Mono, monospace', fontWeight: 700 }}>
+                        <td className="mono-metric" style={{ fontWeight: 700 }}>
                           {detail.signups}
                         </td>
                         <td>
-                          <span className="badge badge-neutral" style={{ fontFamily: 'Geist Mono, monospace' }}>
+                          <span className="badge badge-neutral mono-metric">
                             {detail.day1}%
                           </span>
                         </td>
                         <td>
-                          <span className="badge badge-success" style={{ fontFamily: 'Geist Mono, monospace' }}>
+                          <span className="badge badge-teal mono-metric">
                             {t.retention7d}%
                           </span>
                         </td>
                         <td>
-                          <span className="badge badge-info" style={{ fontFamily: 'Geist Mono, monospace' }}>
+                          <span className="badge badge-sunset mono-metric">
                             {detail.day14}%
                           </span>
                         </td>
                         <td>
-                          <span className="badge badge-neutral" style={{ fontFamily: 'Geist Mono, monospace' }}>
+                          <span className="badge badge-neutral mono-metric">
                             {t.retention30d}%
                           </span>
                         </td>
                         <td>
-                          <span className="badge badge-success" style={{ gap: 4 }}>
+                          <span className="badge badge-success">
                             ✓ Performing
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11, gap: 4, display: 'inline-flex' }}>
+                          <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11.5, gap: 4, display: 'inline-flex' }}>
                             Explore Cohort <ChevronRight size={12} />
                           </span>
                         </td>
@@ -391,6 +397,7 @@ export const RetentionDashboard: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 16,
+            backdropFilter: 'blur(6px)',
           }}
           className="animate-fade-in"
           onClick={() => setSelectedCohort(null)}
@@ -408,7 +415,7 @@ export const RetentionDashboard: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: 20,
-              padding: '24px',
+              padding: '26px',
             }}
             className="animate-slide-up"
             onClick={e => e.stopPropagation()}
@@ -418,24 +425,24 @@ export const RetentionDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: 'rgba(45, 212, 191, 0.12)',
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    background: 'rgba(20, 184, 166, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#2DD4BF',
+                    color: 'var(--accent)',
                   }}
                 >
                   <Calendar size={20} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                       {selectedCohort.week}
                     </h3>
-                    <span className="badge badge-success" style={{ fontSize: 11 }}>
+                    <span className="badge badge-teal" style={{ fontSize: 11 }}>
                       {selectedCohort.signups} Cohort Signups
                     </span>
                   </div>
@@ -464,11 +471,11 @@ export const RetentionDashboard: React.FC = () => {
                 { label: 'Day 14 Return', rate: selectedCohort.day14 },
                 { label: 'Day 30 Return', rate: selectedCohort.day30 },
               ].map(step => (
-                <div key={step.label} style={{ padding: '12px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                  <p style={{ fontSize: 11, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                <div key={step.label} style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                  <p style={{ fontSize: 11, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, fontWeight: 600 }}>
                     {step.label}
                   </p>
-                  <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)', fontFamily: 'Geist Mono, monospace', margin: '4px 0 0 0' }}>
+                  <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)', margin: '4px 0 0 0' }}>
                     {step.rate}%
                   </p>
                 </div>
@@ -476,9 +483,9 @@ export const RetentionDashboard: React.FC = () => {
             </div>
 
             {/* Top Returning Creator Action */}
-            <div style={{ padding: '14px 16px', background: 'rgba(45, 212, 191, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(45, 212, 191, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0F766E', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                <Activity size={15} color="#2DD4BF" /> Primary Returning User Behavior
+            <div style={{ padding: '14px 16px', background: 'rgba(20, 184, 166, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(20, 184, 166, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+                <Activity size={15} color="var(--accent)" /> Primary Returning User Behavior
               </div>
               <p style={{ fontSize: 13, color: 'var(--text)', margin: 0 }}>
                 {selectedCohort.topReturningAction}
@@ -488,7 +495,7 @@ export const RetentionDashboard: React.FC = () => {
             {/* Active Users in this Cohort */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                <h4 style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, fontFamily: 'Sora, sans-serif' }}>
                   Active Creators in this Cohort ({selectedCohort.activeUsers.length})
                 </h4>
                 <span style={{ fontSize: 11, color: 'var(--dim)' }}>
@@ -516,7 +523,7 @@ export const RetentionDashboard: React.FC = () => {
                       <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', margin: 0 }}>
                         {u.name}
                       </p>
-                      <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0', fontFamily: 'Geist Mono, monospace' }}>
+                      <p className="mono-metric" style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
                         {u.email} • {u.sessions} sessions logged • Active {u.lastActive}
                       </p>
                     </div>
@@ -528,7 +535,7 @@ export const RetentionDashboard: React.FC = () => {
                         navigate('/lookup');
                       }}
                       className="btn btn-ghost"
-                      style={{ padding: '4px 10px', fontSize: 11, gap: 4 }}
+                      style={{ padding: '4px 10px', fontSize: 11.5, gap: 4 }}
                     >
                       Inspect Profile <ExternalLink size={11} />
                     </button>

@@ -30,6 +30,7 @@ interface NavItem {
   label: string;
   icon: string;
   badge?: string;
+  badgeType?: 'sunset' | 'teal';
 }
 
 interface NavSection {
@@ -39,7 +40,7 @@ interface NavSection {
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'Main Navigation',
+    title: 'Executive Analytics',
     items: [
       { path: '/dashboard/funnel', label: 'Funnel Conversion', icon: 'TrendingDown' },
       { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle' },
@@ -47,21 +48,16 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Analytics & Media',
+    title: 'Engagement & Media',
     items: [
       { path: '/dashboard/email', label: 'Email Campaigns', icon: 'Mail' },
-      { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles', badge: '3D' },
+      { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles', badge: '3D', badgeType: 'sunset' },
     ],
   },
   {
-    title: 'Tools & Directory',
+    title: 'Directory & Admin',
     items: [
       { path: '/lookup', label: 'User Directory', icon: 'Search' },
-    ],
-  },
-  {
-    title: 'System & Config',
-    items: [
       { path: '/settings', label: 'Settings & Alerts', icon: 'Settings' },
     ],
   },
@@ -127,9 +123,9 @@ export const Sidebar: React.FC<{
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+            background: 'rgba(11, 14, 20, 0.65)',
             zIndex: 40,
-            backdropFilter: 'blur(2px)',
+            backdropFilter: 'blur(4px)',
           }}
           className="md:hidden animate-fade-in"
         />
@@ -154,42 +150,43 @@ export const Sidebar: React.FC<{
           ${collapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Logo */}
+        {/* Logo Header */}
         <div
           style={{
-            padding: collapsed ? '18px 0' : '18px 16px',
+            padding: collapsed ? '16px 0' : '16px 18px',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             justifyContent: collapsed ? 'center' : 'space-between',
             borderBottom: '1px solid var(--line)',
-            minHeight: 57,
+            minHeight: 58,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {collapsed ? (
-              /* Collapsed: show square icon only */
               <img
                 src={tbicon}
                 alt="TalentBridge"
-                style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 7 }}
+                style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 8 }}
               />
             ) : (
-              /* Expanded: full wordmark + Admin badge */
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <img
                   src={tblogo}
                   alt="TalentBridge"
-                  style={{ height: 24, width: 'auto' }}
+                  style={{ height: 23, width: 'auto' }}
                 />
                 <span
                   style={{
-                    fontSize: 10,
-                    color: 'var(--text-2)',
+                    fontSize: 9.5,
                     fontWeight: 700,
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    paddingLeft: 2,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: 'var(--panel-2)',
+                    color: 'var(--text-2)',
+                    border: '1px solid var(--line)',
                   }}
                 >
                   Admin
@@ -202,34 +199,35 @@ export const Sidebar: React.FC<{
           <button
             onClick={onMobileClose}
             className="btn-icon md:hidden"
-            style={{ width: 28, height: 28, border: 'none' }}
+            style={{ width: 30, height: 30, border: 'none' }}
           >
             <X size={16} />
           </button>
         </div>
 
-        {/* Scrollable Nav Sections with Subheadings */}
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 8px' }}>
+        {/* Scrollable Nav Sections */}
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '14px 10px' }}>
           {NAV_SECTIONS.map((section, sIdx) => (
-            <div key={section.title} style={{ marginBottom: 16 }}>
+            <div key={section.title} style={{ marginBottom: 18 }}>
               {!collapsed && (
                 <div
                   style={{
-                    padding: '6px 12px',
-                    fontSize: 10,
+                    padding: '4px 10px 8px',
+                    fontSize: 10.5,
                     fontWeight: 700,
-                    color: 'var(--faint)',
+                    color: 'var(--dim)',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
+                    fontFamily: 'Sora, sans-serif',
                   }}
                 >
                   {section.title}
                 </div>
               )}
               {collapsed && sIdx > 0 && (
-                <div style={{ height: 1, background: 'var(--line)', margin: '8px 6px' }} />
+                <div style={{ height: 1, background: 'var(--line)', margin: '8px 4px 12px' }} />
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {section.items.map(link => {
                   const Icon = ICON_MAP[link.icon];
                   return (
@@ -240,26 +238,25 @@ export const Sidebar: React.FC<{
                       className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                       style={{
                         justifyContent: collapsed ? 'center' : 'space-between',
-                        padding: collapsed ? '10px 0' : '8px 12px',
-                        borderRadius: 'var(--radius-xs)',
+                        padding: collapsed ? '9px 0' : '8px 12px',
+                        borderRadius: 'var(--radius-sm)',
                         fontSize: 13,
                         fontWeight: 500,
                       }}
                       title={collapsed ? link.label : undefined}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {Icon && <Icon size={16} strokeWidth={1.8} />}
+                        {Icon && <Icon size={16} strokeWidth={1.8} style={{ opacity: 0.9 }} />}
                         {!collapsed && <span>{link.label}</span>}
                       </div>
                       {!collapsed && link.badge && (
                         <span
-                          className="badge"
+                          className={link.badgeType === 'sunset' ? 'badge badge-sunset' : 'badge badge-teal'}
                           style={{
                             fontSize: 10,
                             padding: '1px 6px',
-                            background: 'rgba(45, 212, 191, 0.12)',
-                            color: '#2DD4BF',
                             fontWeight: 700,
+                            letterSpacing: '0.04em',
                           }}
                         >
                           {link.badge}
@@ -273,10 +270,10 @@ export const Sidebar: React.FC<{
           ))}
         </div>
 
-        {/* Sidebar Footer: Collapse button & User Profile Card at Bottom Left */}
+        {/* Sidebar Footer */}
         <div style={{ borderTop: '1px solid var(--line)', background: 'var(--panel-2)' }}>
           {/* Collapse Toggle */}
-          <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: '6px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', padding: '6px 10px' }}>
             <button
               onClick={onToggle}
               className="btn-icon hidden md:flex"
@@ -285,7 +282,7 @@ export const Sidebar: React.FC<{
                 height: 24,
                 border: 'none',
                 background: 'transparent',
-                color: 'var(--faint)',
+                color: 'var(--dim)',
               }}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
@@ -293,32 +290,30 @@ export const Sidebar: React.FC<{
             </button>
           </div>
 
-          {/* User Profile Card at Bottom Left (with Popover Dropdown) */}
-          <div ref={userMenuRef} style={{ position: 'relative', padding: collapsed ? '8px 6px 14px' : '8px 10px 14px' }}>
-            {/* Popover popup */}
+          {/* User Profile Card */}
+          <div ref={userMenuRef} style={{ position: 'relative', padding: collapsed ? '6px 6px 12px' : '6px 10px 12px' }}>
             {userMenuOpen && (
               <div
                 style={{
                   position: 'absolute',
-                  bottom: '100%',
+                  bottom: 'calc(100% + 6px)',
                   left: 8,
                   right: 8,
-                  marginBottom: 8,
                   background: 'var(--panel)',
                   border: '1px solid var(--line)',
-                  borderRadius: 12,
+                  borderRadius: 14,
                   boxShadow: 'var(--shadow-lg)',
-                  padding: 6,
+                  padding: 8,
                   zIndex: 60,
                 }}
                 className="animate-slide-up"
               >
-                <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
+                <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--line)', marginBottom: 6 }}>
                   <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{getDisplayName(user?.email)}</p>
                   <p style={{ fontSize: 11, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user?.email}
                   </p>
-                  <span className="badge badge-neutral" style={{ fontSize: 10, marginTop: 4, textTransform: 'uppercase' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: 10, marginTop: 5, textTransform: 'uppercase' }}>
                     {user?.role || 'admin'}
                   </span>
                 </div>
@@ -333,14 +328,14 @@ export const Sidebar: React.FC<{
                   style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8 }}
                 >
                   <Settings size={14} />
-                  Settings & Alerts
+                  Settings &amp; Alerts
                 </button>
 
                 <button
                   id="logout-btn"
                   onClick={handleLogout}
                   className="btn btn-ghost"
-                  style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8, color: '#EF4444' }}
+                  style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8, color: '#EF4444', marginTop: 4 }}
                 >
                   <LogOut size={14} />
                   Sign out
@@ -360,7 +355,7 @@ export const Sidebar: React.FC<{
                 gap: 8,
                 padding: collapsed ? '6px 0' : '6px 8px',
                 background: userMenuOpen ? 'var(--panel)' : 'transparent',
-                borderRadius: 'var(--radius-xs)',
+                borderRadius: 'var(--radius-sm)',
                 border: '1px solid transparent',
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -373,7 +368,7 @@ export const Sidebar: React.FC<{
                     width: 32,
                     height: 32,
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #0D1F1E, #2DD4BF)',
+                    background: 'linear-gradient(135deg, #0D9488, #FA520F)',
                     color: '#FFFFFF',
                     fontWeight: 700,
                     fontSize: 12,
@@ -381,7 +376,7 @@ export const Sidebar: React.FC<{
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
                   }}
                 >
                   {getInitials(user?.email)}
@@ -392,7 +387,7 @@ export const Sidebar: React.FC<{
                     <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {getDisplayName(user?.email)}
                     </p>
-                    <p style={{ fontSize: 11, color: 'var(--faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 10.5, color: 'var(--dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {user?.email}
                     </p>
                   </div>
@@ -400,7 +395,7 @@ export const Sidebar: React.FC<{
               </div>
 
               {!collapsed && (
-                <ChevronsUpDown size={14} style={{ color: 'var(--faint)', flexShrink: 0 }} />
+                <ChevronsUpDown size={14} style={{ color: 'var(--dim)', flexShrink: 0 }} />
               )}
             </button>
           </div>
@@ -455,15 +450,19 @@ export const Header: React.FC<{
       style={{
         background: 'var(--panel)',
         borderBottom: '1px solid var(--line)',
-        height: 57,
+        height: 58,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
         gap: 12,
+        position: 'relative',
       }}
       className="px-3 sm:px-6"
     >
+      {/* Subtle Mistral Accent Bar at top edge of header */}
+      <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 2 }} />
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Mobile menu trigger */}
         <button
@@ -480,23 +479,22 @@ export const Header: React.FC<{
           <span style={{ color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
             Hello, <strong style={{ color: 'var(--text)', fontWeight: 700 }}>{user?.name || getDisplayName(user?.email)}</strong>
           </span>
-          <span style={{ fontSize: 14 }}>👋</span>
 
           {/* Role Tier Badge */}
           {user?.role === 'Super Admin' || user?.email?.toLowerCase() === 'maz@talentbridge.cv' ? (
-            <span className="badge badge-success" style={{ fontSize: 10, padding: '2px 7px' }}>
+            <span className="badge badge-success" style={{ fontSize: 10, padding: '2px 8px' }}>
               👑 Super Admin
             </span>
           ) : user?.role === 'Admin' ? (
-            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 7px' }}>
+            <span className="badge badge-neutral" style={{ fontSize: 10, padding: '2px 8px' }}>
               🛠️ Admin
             </span>
           ) : user?.role === 'Data Analyst' ? (
-            <span className="badge" style={{ fontSize: 10, padding: '2px 7px', background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', fontWeight: 700 }}>
+            <span className="badge" style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.22)' }}>
               📊 Data Analyst
             </span>
           ) : (
-            <span className="badge" style={{ fontSize: 10, padding: '2px 7px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', fontWeight: 700 }}>
+            <span className="badge" style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.22)' }}>
               👁️ Read-Only
             </span>
           )}
@@ -515,26 +513,27 @@ export const Header: React.FC<{
             gap: 8,
             padding: '6px 14px',
             background: 'var(--panel-2)',
-            borderRadius: 99,
+            borderRadius: 9999,
             border: '1px solid var(--line)',
             cursor: 'pointer',
-            minWidth: 180,
-            transition: 'all 0.15s ease',
+            minWidth: 190,
+            transition: 'all 0.18s ease',
           }}
           className="hover:border-[var(--accent)] hover:shadow-sm transition-all flex items-center"
           title="Search users, dashboards, actions, and telemetry (⌘K)"
         >
-          <Search size={14} color="#2DD4BF" />
-          <span style={{ fontSize: 12, color: 'var(--text-2)', flex: 1 }}>Search anything...</span>
+          <Search size={13.5} color="var(--accent)" />
+          <span style={{ fontSize: 12.5, color: 'var(--text-2)', flex: 1 }}>Search anything...</span>
           <kbd
             style={{
               fontSize: 10,
-              fontFamily: 'Geist Mono, monospace',
+              fontFamily: 'JetBrains Mono, monospace',
               color: 'var(--dim)',
               background: 'var(--panel)',
-              padding: '2px 5px',
+              padding: '1px 5px',
               borderRadius: 4,
               border: '1px solid var(--line)',
+              fontWeight: 600,
             }}
           >
             ⌘K
@@ -560,7 +559,7 @@ export const Header: React.FC<{
                 height: 16,
                 padding: '0 4px',
                 borderRadius: 99,
-                background: '#EF4444',
+                background: 'linear-gradient(135deg, #FA520F, #EF4444)',
                 color: '#FFFFFF',
                 fontSize: 9,
                 fontWeight: 800,
@@ -585,7 +584,7 @@ export const Header: React.FC<{
           {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
         </button>
 
-        {/* Top-Right Avatar Dropdown — Slack-style */}
+        {/* Top-Right Avatar Dropdown */}
         <div ref={avatarDropdownRef} style={{ position: 'relative' }}>
           <button
             type="button"
@@ -594,7 +593,7 @@ export const Header: React.FC<{
               width: 34,
               height: 34,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #02ABAC, #0D9488)',
+              background: 'linear-gradient(135deg, #0D9488, #FA520F)',
               color: '#FFFFFF',
               fontWeight: 800,
               fontSize: 13,
@@ -602,7 +601,7 @@ export const Header: React.FC<{
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid var(--panel)',
-              boxShadow: '0 2px 8px rgba(2,171,172,0.35)',
+              boxShadow: '0 2px 8px rgba(13, 148, 136, 0.25)',
               cursor: 'pointer',
               letterSpacing: '0.02em',
             }}
@@ -616,9 +615,9 @@ export const Header: React.FC<{
             <div
               style={{
                 position: 'absolute',
-                top: 'calc(100% + 10px)',
+                top: 'calc(100% + 8px)',
                 right: 0,
-                width: 248,
+                width: 250,
                 background: 'var(--panel)',
                 border: '1px solid var(--line)',
                 borderRadius: 14,
@@ -636,7 +635,7 @@ export const Header: React.FC<{
                       width: 36,
                       height: 36,
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #02ABAC, #0D9488)',
+                      background: 'linear-gradient(135deg, #0D9488, #FA520F)',
                       color: '#fff',
                       fontWeight: 800,
                       fontSize: 14,
@@ -659,8 +658,8 @@ export const Header: React.FC<{
                 </div>
                 {/* Role pill */}
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2DD4BF', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: '#2DD4BF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#14B8A6', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {user?.role || 'Administrator'}
                   </span>
                 </div>
@@ -766,8 +765,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         {isReadOnly && (
           <div
             style={{
-              background: 'rgba(245, 158, 11, 0.09)',
-              borderBottom: '1px solid rgba(245, 158, 11, 0.22)',
+              background: 'rgba(245, 158, 11, 0.08)',
+              borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
               padding: '6px 20px',
               fontSize: 12,
               color: '#F59E0B',
@@ -780,7 +779,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <span>
               👁️ <strong>Read-Only Mode:</strong> Browsing as <strong>{user?.name || user?.email}</strong> ({user?.role || 'Viewer'}). Administrative mutations, team provisioning, and API key editing are view-only.
             </span>
-            <span style={{ fontSize: 10, background: 'rgba(245, 158, 11, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+            <span style={{ fontSize: 10, background: 'rgba(245, 158, 11, 0.16)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
               RBAC PROTECTED
             </span>
           </div>
@@ -791,7 +790,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}
           className="p-3 sm:p-5 md:p-6 lg:p-7"
         >
-          <div className="animate-fade-in w-full" style={{ maxWidth: 1240, margin: '0 auto' }}>
+          <div className="animate-fade-in w-full" style={{ maxWidth: 1280, margin: '0 auto' }}>
             {children}
           </div>
         </main>

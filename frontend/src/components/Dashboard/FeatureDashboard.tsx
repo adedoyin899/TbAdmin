@@ -669,14 +669,14 @@ export const FeatureDashboard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
               Feature &amp; Template Adoption
             </h2>
-            <span className="badge badge-primary" style={{ fontSize: 11, fontWeight: 700 }}>
+            <span className="badge badge-teal" style={{ fontSize: 11, fontWeight: 700 }}>
               Live Telemetry
             </span>
           </div>
-          <p style={{ color: 'var(--text-2)', fontSize: 14, margin: 0 }}>
+          <p style={{ color: 'var(--text-2)', fontSize: 13.5, margin: 0 }}>
             Analyze creator adoption of modular showcase blocks and curated industry templates. Click any row or card for granular drill-downs.
           </p>
         </div>
@@ -692,14 +692,8 @@ export const FeatureDashboard: React.FC = () => {
             disabled={(!blockList.length && !templateList.length) || !rbac.canExportData}
             className="btn btn-ghost"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
               fontSize: 13,
-              padding: '7px 12px',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-xs)',
-              cursor: (blockList.length || templateList.length) && rbac.canExportData ? 'pointer' : 'not-allowed',
+              gap: 6,
               opacity: !rbac.canExportData ? 0.6 : 1,
             }}
             title={!rbac.canExportData ? 'Export restricted for Viewer role' : 'Export current telemetry to CSV'}
@@ -723,82 +717,82 @@ export const FeatureDashboard: React.FC = () => {
 
       {/* Summary KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="stat-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
               Active Blocks in App
             </span>
-            <Layers size={16} color="#02ABAC" />
+            <Layers size={16} color="var(--accent)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
               {blockList.length || 23}
             </span>
-            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
               Across 5 Categories
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
             Top block: <strong>{topBlock?.blockType || 'Video intro'}</strong> ({topBlock?.percentage || 87}%)
           </p>
         </div>
 
-        <div className="card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="stat-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
               Industry Templates
             </span>
             <LayoutTemplate size={16} color="#3B82F6" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
               {templateList.length || 9}
             </span>
             <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
               7 Target Disciplines
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
             Top template: <strong>{topTemplate?.templateName || 'Software Eng / Architect'}</strong> ({topTemplate?.percentage || 36}%)
           </p>
         </div>
 
-        <div className="card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="stat-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
               Avg Customization Depth
             </span>
-            <Activity size={16} color="#F59E0B" />
+            <Activity size={16} color="var(--sunshine)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
               5.8 Blocks
             </span>
-            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
               +14% vs Q2
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
             Creators combine multiple proof &amp; work blocks
           </p>
         </div>
 
-        <div className="card" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="stat-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
               Room Theme Preference
             </span>
             <Star size={16} color="#8B5CF6" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}>
+            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
               60% Dark
             </span>
             <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>
               / 40% Light
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0 }}>
+          <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
             {data?.totalRoomsCreated || 1080} total active custom showcase rooms
           </p>
         </div>
@@ -812,49 +806,26 @@ export const FeatureDashboard: React.FC = () => {
       {error && <div style={{ padding: 20, color: '#EF4444', textAlign: 'center' }}>Failed to load feature telemetry data.</div>}
 
       {/* ── Main Dashboard Controls & Badge Switcher ─────────────── */}
-      <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="card-mistral" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
-          {/* Badge Switcher: Blocks vs Templates */}
-          <div
-            style={{
-              display: 'inline-flex',
-              padding: 4,
-              background: 'var(--panel-2)',
-              borderRadius: 12,
-              border: '1px solid var(--line)',
-              gap: 4,
-            }}
-          >
+          {/* Mistral Style Pill Switcher: Blocks vs Templates */}
+          <div className="pill-group">
             <button
               type="button"
               onClick={() => handleTabChange('blocks')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 18px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.18s ease',
-                background: activeTab === 'blocks' ? '#02ABAC' : 'transparent',
-                color: activeTab === 'blocks' ? '#FFFFFF' : 'var(--text-2)',
-                boxShadow: activeTab === 'blocks' ? '0 2px 8px rgba(2,171,172,0.3)' : 'none',
-              }}
+              className={`pill-tab ${activeTab === 'blocks' ? 'active' : ''}`}
               id="tab-blocks-btn"
             >
-              <Layers size={16} />
+              <Layers size={15} />
               <span>Blocks</span>
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 10.5,
                   padding: '1px 6px',
-                  borderRadius: 99,
-                  background: activeTab === 'blocks' ? 'rgba(255,255,255,0.25)' : 'var(--line)',
-                  color: activeTab === 'blocks' ? '#FFFFFF' : 'var(--dim)',
-                  fontWeight: 800,
+                  borderRadius: 9999,
+                  background: activeTab === 'blocks' ? 'var(--panel-2)' : 'var(--line)',
+                  color: activeTab === 'blocks' ? 'var(--text)' : 'var(--dim)',
+                  fontWeight: 700,
                 }}
               >
                 {blockList.length || 23}
@@ -864,33 +835,19 @@ export const FeatureDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => handleTabChange('templates')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 18px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.18s ease',
-                background: activeTab === 'templates' ? '#02ABAC' : 'transparent',
-                color: activeTab === 'templates' ? '#FFFFFF' : 'var(--text-2)',
-                boxShadow: activeTab === 'templates' ? '0 2px 8px rgba(2,171,172,0.3)' : 'none',
-              }}
+              className={`pill-tab ${activeTab === 'templates' ? 'active' : ''}`}
               id="tab-templates-btn"
             >
-              <LayoutTemplate size={16} />
+              <LayoutTemplate size={15} />
               <span>Templates</span>
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 10.5,
                   padding: '1px 6px',
-                  borderRadius: 99,
-                  background: activeTab === 'templates' ? 'rgba(255,255,255,0.25)' : 'var(--line)',
-                  color: activeTab === 'templates' ? '#FFFFFF' : 'var(--dim)',
-                  fontWeight: 800,
+                  borderRadius: 9999,
+                  background: activeTab === 'templates' ? 'var(--panel-2)' : 'var(--line)',
+                  color: activeTab === 'templates' ? 'var(--text)' : 'var(--dim)',
+                  fontWeight: 700,
                 }}
               >
                 {templateList.length || 9}
@@ -907,14 +864,10 @@ export const FeatureDashboard: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder={`Search ${activeTab === 'blocks' ? 'blocks' : 'templates'}...`}
+                className="input"
                 style={{
-                  width: '100%',
                   padding: '7px 12px 7px 32px',
-                  borderRadius: 8,
                   fontSize: 13,
-                  background: 'var(--panel-2)',
-                  border: '1px solid var(--line)',
-                  color: 'var(--text)',
                 }}
               />
               {searchQuery && (
@@ -928,38 +881,18 @@ export const FeatureDashboard: React.FC = () => {
             </div>
 
             {/* View Mode Toggle */}
-            <div style={{ display: 'flex', background: 'var(--panel-2)', borderRadius: 8, border: '1px solid var(--line)', padding: 2 }}>
+            <div className="segmented-control">
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: viewMode === 'table' ? 'var(--panel)' : 'transparent',
-                  color: viewMode === 'table' ? 'var(--text)' : 'var(--dim)',
-                  boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                }}
+                className={`segmented-item ${viewMode === 'table' ? 'active' : ''}`}
               >
                 Table View
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: viewMode === 'grid' ? 'var(--panel)' : 'transparent',
-                  color: viewMode === 'grid' ? 'var(--text)' : 'var(--dim)',
-                  boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                }}
+                className={`segmented-item ${viewMode === 'grid' ? 'active' : ''}`}
               >
                 Visual Grid
               </button>
@@ -969,7 +902,7 @@ export const FeatureDashboard: React.FC = () => {
 
         {/* Category Pill Filters */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
-          <span style={{ fontSize: 12, color: 'var(--dim)', fontWeight: 600, marginRight: 4 }}>
+          <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 600, marginRight: 4 }}>
             Filter Category:
           </span>
           {(activeTab === 'blocks' ? blockCategories : templateCategories).map(cat => {
@@ -984,13 +917,13 @@ export const FeatureDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
                 style={{
-                  padding: '5px 12px',
-                  borderRadius: 20,
+                  padding: '4px 12px',
+                  borderRadius: 9999,
                   fontSize: 12,
                   fontWeight: isSelected ? 700 : 500,
-                  border: isSelected ? '1px solid #02ABAC' : '1px solid var(--line)',
-                  background: isSelected ? 'rgba(2, 171, 172, 0.12)' : 'var(--panel-2)',
-                  color: isSelected ? '#02ABAC' : 'var(--text-2)',
+                  border: isSelected ? '1px solid var(--accent)' : '1px solid var(--line)',
+                  background: isSelected ? 'var(--panel-2)' : 'transparent',
+                  color: isSelected ? 'var(--text)' : 'var(--text-2)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   display: 'inline-flex',
@@ -999,7 +932,7 @@ export const FeatureDashboard: React.FC = () => {
                 }}
               >
                 <span>{cat === 'all' ? (activeTab === 'blocks' ? 'All Blocks' : 'All Templates') : cat}</span>
-                <span style={{ fontSize: 10, opacity: 0.8, fontWeight: 700 }}>({count})</span>
+                <span style={{ fontSize: 10, color: 'var(--dim)', fontWeight: 700 }}>({count})</span>
               </button>
             );
           })}
@@ -1068,21 +1001,21 @@ export const FeatureDashboard: React.FC = () => {
                     fontFamily: 'Geist, sans-serif',
                     boxShadow: 'var(--shadow-lg)',
                   }}
-                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist, sans-serif' }}
+                  labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}
                 />
                 <Bar
                   dataKey="percentage"
-                  radius={[0, 6, 6, 0]}
-                  fill="#02ABAC"
-                  label={{ position: 'right', formatter: (v: unknown) => `${v}%`, fill: 'var(--text-2)', fontSize: 12, fontWeight: 700 }}
+                  radius={[0, 8, 8, 0]}
+                  fill="#0D9488"
+                  label={{ position: 'right', formatter: (v: unknown) => `${v}%`, fill: 'var(--text-2)', fontSize: 12, fontWeight: 700, fontFamily: 'JetBrains Mono' }}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Theme & Category Distribution */}
-          <div className="chart-container" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+          <div className="card-mistral" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
               Showcase Theme Split
             </h3>
             
@@ -1107,7 +1040,7 @@ export const FeatureDashboard: React.FC = () => {
                 />
                 <Tooltip
                   formatter={(v: unknown) => [`${v}%`, 'Distribution']}
-                  contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
+                  contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
                 />
               </PieChart>
             </ResponsiveContainer>

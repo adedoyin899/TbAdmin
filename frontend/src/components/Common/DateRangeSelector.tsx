@@ -103,11 +103,12 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           style={{
             background: 'var(--panel)',
             border: '1px solid var(--line)',
-            padding: '7px 12px',
+            padding: '7px 13px',
             fontSize: 13,
             gap: 8,
             color: 'var(--text)',
-            borderRadius: 'var(--radius-xs)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <Calendar size={14} color="var(--accent)" />
@@ -119,7 +120,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           <button
             onClick={() => onChange({ preset: '30d' })}
             className="btn-icon"
-            style={{ width: 26, height: 26, border: 'none', background: 'var(--panel-2)' }}
+            style={{ width: 28, height: 28, border: 'none', background: 'var(--panel-2)' }}
             title="Reset to default (30 days)"
           >
             <X size={12} />
@@ -136,54 +137,57 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             top: 'calc(100% + 6px)',
             right: 0,
             zIndex: 100,
-            minWidth: 320,
+            minWidth: 330,
             maxWidth: '90vw',
             background: 'var(--panel)',
             border: '1px solid var(--line)',
             borderRadius: 'var(--radius)',
             boxShadow: 'var(--shadow-lg)',
-            padding: 16,
+            padding: 18,
           }}
         >
-          <div style={{ marginBottom: 12, borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Standard Ranges
+          <div style={{ marginBottom: 14, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
+            <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, fontFamily: 'Sora, sans-serif' }}>
+              Standard Timeframes
             </p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {PRESET_OPTIONS.map(p => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => handleSelectPreset(p.value)}
-                  style={{
-                    padding: '5px 10px',
-                    fontSize: 12,
-                    borderRadius: 6,
-                    border: '1px solid var(--line)',
-                    background: value.preset === p.value ? 'var(--ink)' : 'var(--panel-2)',
-                    color: value.preset === p.value ? '#2DD4BF' : 'var(--text-2)',
-                    cursor: 'pointer',
-                    fontWeight: value.preset === p.value ? 600 : 400,
-                    transition: 'all 0.12s ease',
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
+              {PRESET_OPTIONS.map(p => {
+                const isActive = value.preset === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => handleSelectPreset(p.value)}
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: 12,
+                      borderRadius: 9999,
+                      border: isActive ? '1px solid var(--accent)' : '1px solid var(--line)',
+                      background: isActive ? 'var(--panel-2)' : 'var(--panel)',
+                      color: isActive ? 'var(--text)' : 'var(--text-2)',
+                      cursor: 'pointer',
+                      fontWeight: isActive ? 600 : 400,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Custom Date Inputs Section */}
           <form onSubmit={handleApplyCustom}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
                 Exact Date Range
               </p>
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={setThisMonth}
-                  style={{ fontSize: 10, background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ fontSize: 11, background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
                 >
                   This Month
                 </button>
@@ -191,16 +195,16 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
                 <button
                   type="button"
                   onClick={setLastMonth}
-                  style={{ fontSize: 10, background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{ fontSize: 11, background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
                 >
                   Last Month
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div>
-                <label htmlFor={`${idPrefix}-start`} style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', marginBottom: 4 }}>
+                <label htmlFor={`${idPrefix}-start`} style={{ display: 'block', fontSize: 11.5, color: 'var(--text-2)', marginBottom: 4 }}>
                   Start Date
                 </label>
                 <input
@@ -209,13 +213,13 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
                   value={tempStart}
                   onChange={e => setTempStart(e.target.value)}
                   className="input"
-                  style={{ fontSize: 12, padding: '6px 8px', width: '100%' }}
+                  style={{ fontSize: 12, padding: '7px 9px', width: '100%' }}
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor={`${idPrefix}-end`} style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', marginBottom: 4 }}>
+                <label htmlFor={`${idPrefix}-end`} style={{ display: 'block', fontSize: 11.5, color: 'var(--text-2)', marginBottom: 4 }}>
                   End Date
                 </label>
                 <input
@@ -224,7 +228,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
                   value={tempEnd}
                   onChange={e => setTempEnd(e.target.value)}
                   className="input"
-                  style={{ fontSize: 12, padding: '6px 8px', width: '100%' }}
+                  style={{ fontSize: 12, padding: '7px 9px', width: '100%' }}
                   required
                 />
               </div>

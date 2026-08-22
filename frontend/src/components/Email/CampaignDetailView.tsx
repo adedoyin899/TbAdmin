@@ -36,7 +36,7 @@ export const CampaignDetailView: React.FC<{
         <button
           onClick={onBack}
           className="btn btn-ghost"
-          style={{ width: 'fit-content', gap: 6, padding: '8px 14px' }}
+          style={{ width: 'fit-content', gap: 6, padding: '7px 14px', fontSize: 13 }}
           id="campaign-back-btn"
         >
           <ArrowLeft size={15} strokeWidth={2} />
@@ -45,37 +45,33 @@ export const CampaignDetailView: React.FC<{
       </div>
 
       {/* Campaign Hero Card */}
-      <div style={{
-        background: 'var(--panel)',
-        border: '1px solid var(--line)',
-        borderRadius: 'var(--radius)',
-        padding: '24px',
-        boxShadow: 'var(--shadow-sm)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 18 }}>
+      <div className="card-mistral" style={{ padding: '26px' }}>
+        <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 2 }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-              <h2 style={{ fontFamily: 'Geist, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+              <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
                 {campaign.campaignName}
               </h2>
               <span className="badge badge-success" style={{ gap: 4 }}>
                 <CheckCircle2 size={11} /> Delivered via Mailgun
               </span>
-              <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+              <span className="badge badge-neutral mono-metric" style={{ fontSize: 11 }}>
                 ID: {campaign.campaignId}
               </span>
             </div>
 
             <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 4 }}>
-              <strong>Subject:</strong> <em>"{campaign.subjectLine || 'Welcome to TalentBridge'}"</em>
+              <strong>Subject:</strong> <em>&quot;{campaign.subjectLine || 'Welcome to TalentBridge'}&quot;</em>
             </p>
-            <p style={{ fontSize: 12, color: 'var(--faint)' }}>
+            <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>
               <strong>Audience:</strong> {campaign.targetAudience || 'All Registered Creators'} • <strong>Trigger:</strong> {campaign.triggerType || 'Automated Journey'}
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--faint)' }}>
+            <span style={{ fontSize: 12, color: 'var(--dim)' }}>
               Sent on {formatDate(campaign.sentDate)}
             </span>
           </div>
@@ -83,93 +79,71 @@ export const CampaignDetailView: React.FC<{
 
         {/* 6 Performance Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Total Sent</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{formatNumber(campaign.sentCount)}</p>
-            <p style={{ fontSize: 10, color: 'var(--accent)', marginTop: 2 }}>{campaign.deliveredCount || campaign.sentCount} delivered</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>Total Sent</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(campaign.sentCount)}</p>
+            <p style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2 }}>{campaign.deliveredCount || campaign.sentCount} delivered</p>
           </div>
 
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Open Rate</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6', fontFamily: 'Geist' }}>{campaign.openPercentage}%</p>
-            <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{formatNumber(campaign.openCount)} opens</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>Open Rate</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6' }}>{campaign.openPercentage}%</p>
+            <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>{formatNumber(campaign.openCount)} opens</p>
           </div>
 
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Click Rate</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#2DD4BF', fontFamily: 'Geist' }}>{campaign.clickPercentage}%</p>
-            <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{formatNumber(campaign.clickCount)} clicks</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>Click Rate</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>{campaign.clickPercentage}%</p>
+            <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>{formatNumber(campaign.clickCount)} clicks</p>
           </div>
 
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>CTOR</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#10B981', fontFamily: 'Geist' }}>{campaign.ctor || 40.5}%</p>
-            <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>Click-to-open ratio</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>CTOR</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--success)' }}>{campaign.ctor || 40.5}%</p>
+            <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>Click-to-open</p>
           </div>
 
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Bounces</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: campaign.bounceCount > 0 ? '#EF4444' : 'var(--text)', fontFamily: 'Geist' }}>{campaign.bounceCount}</p>
-            <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>{((campaign.bounceCount / campaign.sentCount) * 100).toFixed(1)}% rate</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>Bounces</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: campaign.bounceCount > 0 ? 'var(--error)' : 'var(--text)' }}>{campaign.bounceCount}</p>
+            <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>{((campaign.bounceCount / campaign.sentCount) * 100).toFixed(1)}% rate</p>
           </div>
 
-          <div style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', textTransform: 'uppercase', marginBottom: 4 }}>Unsubscribes</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist' }}>{campaign.unsubscribeCount}</p>
-            <p style={{ fontSize: 10, color: 'var(--faint)', marginTop: 2 }}>Opt-outs</p>
+          <div style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>Unsubscribes</p>
+            <p className="mono-metric" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>{campaign.unsubscribeCount}</p>
+            <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>Opt-outs</p>
           </div>
         </div>
       </div>
 
-      {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--line)', paddingBottom: 8, overflowX: 'auto' }}>
+      {/* ── Sub-Navigation Tabs (Mistral Style) ────────────────── */}
+      <div className="pill-group" style={{ alignSelf: 'flex-start' }}>
         <button
           onClick={() => setActiveTab('performance')}
-          className="btn"
-          style={{
-            background: activeTab === 'performance' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'performance' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'performance' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
+          className={`pill-tab ${activeTab === 'performance' ? 'active' : ''}`}
         >
-          <TrendingUp size={14} color={activeTab === 'performance' ? '#2DD4BF' : undefined} />
-          Hourly Trajectory & Link Clicks
+          <TrendingUp size={14} />
+          <span>Hourly Engagement &amp; Links</span>
         </button>
 
         <button
           onClick={() => setActiveTab('recipients')}
-          className="btn"
-          style={{
-            background: activeTab === 'recipients' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'recipients' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'recipients' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
+          className={`pill-tab ${activeTab === 'recipients' ? 'active' : ''}`}
         >
           <User size={14} />
-          Recipient Logs
-          <span className="badge badge-neutral" style={{ fontSize: 10 }}>{campaign.recipients?.length || 0}</span>
+          <span>Recipient Logs</span>
+          <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
+            {campaign.recipients?.length || 0}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('template')}
-          className="btn"
-          style={{
-            background: activeTab === 'template' ? 'var(--ink)' : 'transparent',
-            color: activeTab === 'template' ? '#FFFFFF' : 'var(--text-2)',
-            border: activeTab === 'template' ? 'none' : '1px solid var(--line)',
-            fontSize: 13,
-            padding: '8px 16px',
-            gap: 6,
-          }}
+          className={`pill-tab ${activeTab === 'template' ? 'active' : ''}`}
         >
           <Eye size={14} />
-          Email Template Preview
+          <span>Template Preview</span>
         </button>
       </div>
 
@@ -178,13 +152,13 @@ export const CampaignDetailView: React.FC<{
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Hourly opens vs clicks chart */}
           {campaign.hourlyEngagement && (
-            <div className="chart-container">
+            <div className="card-mistral">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
                 <div>
-                  <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                    Hourly Engagement Curve
+                  <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    Hourly Engagement Trajectory
                   </h3>
-                  <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Opens and click interactions after email delivery</p>
+                  <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginTop: 2 }}>Opens and click interactions after email delivery</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -192,7 +166,7 @@ export const CampaignDetailView: React.FC<{
                     <span style={{ color: 'var(--text-2)' }}>Opens</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: '#2DD4BF' }} />
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: '#0D9488' }} />
                     <span style={{ color: 'var(--text-2)' }}>Clicks</span>
                   </div>
                 </div>
@@ -206,61 +180,61 @@ export const CampaignDetailView: React.FC<{
                       <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
                     </linearGradient>
                     <linearGradient id="emailClickGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#0D9488" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#0D9488" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(229,234,239,0.3)" vertical={false} />
-                  <XAxis dataKey="hour" tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--text-2)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
+                  <XAxis dataKey="hour" tick={{ fill: 'var(--text-2)', fontSize: 11.5 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
-                    labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Geist' }}
+                    contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
+                    labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
                   />
                   <Area type="monotone" dataKey="opens" stroke="#3B82F6" strokeWidth={2.5} fillOpacity={1} fill="url(#emailOpenGrad)" name="Opens" />
-                  <Area type="monotone" dataKey="clicks" stroke="#2DD4BF" strokeWidth={2.5} fillOpacity={1} fill="url(#emailClickGrad)" name="Clicks" />
+                  <Area type="monotone" dataKey="clicks" stroke="#0D9488" strokeWidth={2.5} fillOpacity={1} fill="url(#emailClickGrad)" name="Clicks" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {/* Links & CTA Performance */}
-          <div className="card" style={{ padding: '20px 24px' }}>
+          <div className="card-mistral" style={{ padding: '22px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <h3 style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                  Links & CTA Performance
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                  Links &amp; CTA Performance Breakdown
                 </h3>
-                <p style={{ color: 'var(--text-2)', fontSize: 12 }}>Which buttons and hyperlinks drove recipient actions</p>
+                <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginTop: 2 }}>Buttons and hyperlinks clicked by recipients</p>
               </div>
               <span className="badge badge-neutral" style={{ fontSize: 11 }}>
                 {campaign.links?.length || 0} trackable links
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {campaign.links?.map((link, idx) => (
-                <div key={idx} style={{ padding: '12px 16px', background: 'var(--panel-2)', borderRadius: 10, border: '1px solid var(--line)' }}>
+                <div key={idx} style={{ padding: '14px 16px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
                     <div>
-                      <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13, marginBottom: 2 }}>{link.label}</p>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13.5, marginBottom: 2 }}>{link.label}</p>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                         {link.url} <ExternalLink size={10} />
                       </a>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', fontFamily: 'Geist' }}>{link.clicks} clicks</p>
-                      <span style={{ fontSize: 11, color: 'var(--faint)' }}>{link.percentage}% of total clicks</span>
+                      <p className="mono-metric" style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{link.clicks} clicks</p>
+                      <span className="mono-metric" style={{ fontSize: 11, color: 'var(--dim)' }}>{link.percentage}% of total</span>
                     </div>
                   </div>
 
-                  <div style={{ height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: 6, background: 'var(--line)', borderRadius: 9999, overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
                         width: `${link.percentage}%`,
-                        background: 'linear-gradient(90deg, #2DD4BF, #0D9488)',
-                        borderRadius: 99,
+                        background: 'linear-gradient(90deg, #14B8A6, #FA520F)',
+                        borderRadius: 9999,
                       }}
                     />
                   </div>
@@ -323,14 +297,8 @@ export const CampaignDetailView: React.FC<{
                 disabled={!filteredRecipients.length}
                 className="btn btn-ghost"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
                   fontSize: 13,
-                  padding: '7px 12px',
-                  border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius-xs)',
-                  cursor: filteredRecipients.length ? 'pointer' : 'not-allowed',
+                  gap: 6,
                 }}
                 title="Export Filtered Recipients to CSV"
               >
@@ -373,13 +341,13 @@ export const CampaignDetailView: React.FC<{
                         <td>
                           <div>
                             <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>{r.name}</p>
-                            <p style={{ fontSize: 11, color: 'var(--text-2)' }}>{r.email}</p>
+                            <p className="mono-metric" style={{ fontSize: 11, color: 'var(--text-2)' }}>{r.email}</p>
                           </div>
                         </td>
                         <td>
                           <span className={`badge ${
                             r.status === 'clicked'
-                              ? 'badge-success'
+                              ? 'badge-teal'
                               : r.status === 'opened'
                               ? 'badge-info'
                               : r.status === 'bounced'
@@ -391,20 +359,20 @@ export const CampaignDetailView: React.FC<{
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDateTime(r.sentAt)}</td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                          {r.openedAt ? formatDateTime(r.openedAt) : <span style={{ color: 'var(--faint)' }}>—</span>}
+                          {r.openedAt ? formatDateTime(r.openedAt) : <span style={{ color: 'var(--dim)' }}>—</span>}
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
                           {r.clickedAt ? (
                             <span style={{ color: 'var(--accent)', fontWeight: 600 }}>✓ {formatDateTime(r.clickedAt)}</span>
                           ) : (
-                            <span style={{ color: 'var(--faint)' }}>—</span>
+                            <span style={{ color: 'var(--dim)' }}>—</span>
                           )}
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
                           {r.client} ({r.device})
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <span className="btn btn-ghost" style={{ padding: '3px 8px', fontSize: 11, gap: 4, display: 'inline-flex' }}>
+                          <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11.5, gap: 4, display: 'inline-flex' }}>
                             Profile <ChevronRight size={11} />
                           </span>
                         </td>
@@ -420,27 +388,27 @@ export const CampaignDetailView: React.FC<{
 
       {/* ── Tab 3: Email Template Mockup Preview ──────────────── */}
       {activeTab === 'template' && (
-        <div className="card" style={{ padding: '24px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+        <div className="card-mistral" style={{ padding: '28px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
           <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 14, marginBottom: 18 }}>
-            <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>
+            <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginBottom: 4 }}>
               <strong>From:</strong> TalentBridge Team &lt;notifications@talentbridge.io&gt;
             </p>
-            <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>
+            <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginBottom: 4 }}>
               <strong>Subject:</strong> {campaign.subjectLine || campaign.campaignName}
             </p>
-            <p style={{ fontSize: 11, color: 'var(--faint)' }}>
+            <p style={{ fontSize: 11.5, color: 'var(--dim)' }}>
               <strong>Preheader:</strong> Your interactive 3D portfolio room is waiting.
             </p>
           </div>
 
-          {/* Email Body HTML rendered safely with realistic email canvas frame */}
+          {/* Email Body HTML */}
           <div
             style={{
               padding: '32px 28px',
               background: '#FFFFFF',
-              borderRadius: 12,
-              border: '1px solid var(--line)',
-              color: '#0F172A',
+              borderRadius: 14,
+              border: '1px solid #E5E5E5',
+              color: '#1F1F1F',
               boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)',
             }}
             dangerouslySetInnerHTML={{
@@ -448,8 +416,8 @@ export const CampaignDetailView: React.FC<{
             }}
           />
 
-          <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <p style={{ fontSize: 11, color: 'var(--faint)' }}>
+          <div style={{ marginTop: 22, textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--dim)' }}>
               TalentBridge Inc. • 100 King Street, London • Unsubscribe preferences
             </p>
           </div>
