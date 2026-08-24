@@ -17,7 +17,8 @@ export const ENV = {
   MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || 'mg.talentbridge.io',
   MAILGUN_WEBHOOK_SIGNING_KEY: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
   BUFFER_API_KEY: process.env.BUFFER_API_KEY || '',
-  BUFFER_API_URL: process.env.BUFFER_API_URL || 'https://api.bufferapp.com/1',
+  BUFFER_API_URL: process.env.BUFFER_API_URL || 'https://api.buffer.com',
+  BUFFER_ORGANIZATION_ID: process.env.BUFFER_ORGANIZATION_ID || '',
   LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || '',
   LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || '',
   LINKEDIN_COMPANY_URN: process.env.LINKEDIN_COMPANY_URN || 'urn:li:organization:12345',
@@ -26,6 +27,7 @@ export const ENV = {
   REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET || '',
   REDDIT_REFRESH_TOKEN: process.env.REDDIT_REFRESH_TOKEN || '',
   REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'TalentBridge Analytics (by /u/talentbridge_admin)',
+  CRON_SECRET: process.env.CRON_SECRET || '',
 };
 
 

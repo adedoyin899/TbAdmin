@@ -1,13 +1,13 @@
 // src/services/bufferService.ts
-// Buffer API Client & Sync Service for Scheduled & Published Social Media Posts
+// Buffer GraphQL API Client & Sync Service for Scheduled & Published Social Media Posts
 
 import axios, { type AxiosInstance } from 'axios';
 import { ENV } from '../config/env.js';
 import { query } from '../db/connection.js';
 import type {
-  BufferProfile,
-  BufferUpdate,
-  BufferUpdatesResponse,
+  BufferChannel,
+  BufferPost,
+  BufferPostMetric,
   ParsedBufferPost,
   BufferEngagementMetrics,
 } from '../types/buffer.js';
@@ -26,34 +26,40 @@ class BufferService {
   private client: AxiosInstance;
   private apiKey: string;
   private baseUrl: string;
+  private organizationId: string;
 
   constructor() {
     this.apiKey = ENV.BUFFER_API_KEY;
     this.baseUrl = ENV.BUFFER_API_URL.replace(/\/$/, '');
+    this.organizationId = ENV.BUFFER_ORGANIZATION_ID;
 
     this.client = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   /**
-   * Check if Buffer API is configured with an active API Key
+   * Check if Buffer API is configured with an active API Key and Organization ID
    */
   public isConfigured(): boolean {
-    return Boolean(this.apiKey && this.apiKey !== 'your-buffer-api-key-here');
+    return Boolean(this.apiKey && this.apiKey !== 'your-buffer-api-key-here' && this.organizationId);
   }
 
   /**
    * Hot-swap credentials at runtime (e.g. from the Settings page) without a process restart
    */
-  public updateConfig(config: { accessToken?: string; baseUrl?: string }): void {
+  public updateConfig(config: { accessToken?: string; baseUrl?: string; organizationId?: string }): void {
     if (config.accessToken !== undefined) {
       this.apiKey = config.accessToken.trim();
     }
+    if (config.organizationId !== undefined) {
+      this.organizationId = config.organizationId.trim();
+    }
     if (config.baseUrl !== undefined && config.baseUrl.trim()) {
       this.baseUrl = config.baseUrl.replace(/\/+$/, '');
-      this.client = axios.create({ baseURL: this.baseUrl, timeout: 10000 });
+      this.client = axios.create({ baseURL: this.baseUrl, timeout: 10000, headers: { 'Content-Type': 'application/json' } });
     }
   }
 
@@ -69,8 +75,26 @@ class BufferService {
     return {
       accessToken: maskedKey,
       baseUrl: this.baseUrl,
+      organizationId: this.organizationId,
       hasApiKey: this.isConfigured(),
     };
+  }
+
+  /**
+   * Execute a GraphQL request against the Buffer API, throwing on transport or GraphQL errors
+   */
+  private async graphqlRequest<T = any>(gqlQuery: string, variables: Record<string, any>, token?: string): Promise<T> {
+    const response = await this.client.post(
+      '',
+      { query: gqlQuery, variables },
+      { headers: { Authorization: `Bearer ${token || this.apiKey}` } }
+    );
+
+    if (response.data?.errors?.length) {
+      throw new Error(response.data.errors.map((e: any) => e.message).join('; '));
+    }
+
+    return response.data.data as T;
   }
 
   /**
@@ -78,9 +102,10 @@ class BufferService {
    */
   public async testConnection(overrideCredentials?: {
     accessToken?: string;
-    profileId?: string;
+    organizationId?: string;
   }): Promise<{ success: boolean; message: string; ping?: string }> {
     const token = overrideCredentials?.accessToken?.trim() || this.apiKey;
+    const orgId = overrideCredentials?.organizationId?.trim() || this.organizationId;
 
     if (!token || token === 'your-buffer-api-key-here') {
       return {
@@ -88,208 +113,210 @@ class BufferService {
         message: 'Buffer Access Token is missing. Add it in Settings or backend/.env (BUFFER_API_KEY).',
       };
     }
+    if (!orgId) {
+      return {
+        success: false,
+        message: 'Buffer Organization ID is missing. Add it in Settings or backend/.env (BUFFER_ORGANIZATION_ID).',
+      };
+    }
 
     const startTime = Date.now();
     try {
-      const response = await axios.get<BufferProfile[]>(`${this.baseUrl}/profiles.json`, {
-        params: { access_token: token },
-        timeout: 10000,
-      });
+      const data = await this.graphqlRequest<{ channels: BufferChannel[] }>(
+        `query Channels($input: ChannelsInput!) { channels(input: $input) { id name service displayName } }`,
+        { input: { organizationId: orgId } },
+        token
+      );
       const ping = `${Date.now() - startTime}ms`;
-      const profiles = Array.isArray(response.data) ? response.data : [];
-
-      if (overrideCredentials?.profileId) {
-        const match = profiles.find((p) => p.id === overrideCredentials.profileId);
-        if (!match) {
-          return {
-            success: false,
-            message: `Token is valid, but Profile ID "${overrideCredentials.profileId}" was not found among your ${profiles.length} connected Buffer profile(s).`,
-            ping,
-          };
-        }
-      }
+      const channels = Array.isArray(data.channels) ? data.channels : [];
 
       return {
         success: true,
-        message: `Buffer Access Token verified! Found ${profiles.length} connected profile(s).`,
+        message: `Buffer Access Token verified! Found ${channels.length} connected channel(s).`,
         ping,
       };
     } catch (error: any) {
+      const ping = `${Date.now() - startTime}ms`;
       const status = error.response?.status;
       if (status === 401 || status === 403) {
-        return { success: false, message: 'Buffer rejected the Access Token (unauthorized). Double-check the token value.' };
+        return { success: false, message: 'Buffer rejected the Access Token (unauthorized). Double-check the token value.', ping };
       }
       if (status === 429) {
-        return { success: false, message: 'Buffer API rate limit hit while testing. Try again shortly.' };
+        return { success: false, message: 'Buffer API rate limit hit while testing. Try again shortly.', ping };
       }
       return {
         success: false,
-        message: `Failed to reach Buffer API: ${error.message || 'Unknown error'}`,
+        message: `Buffer rejected the request: ${error.message || 'Unknown error'}`,
+        ping,
       };
     }
   }
 
   /**
-   * Fetch connected social media profiles from Buffer
+   * Fetch connected social media channels from Buffer
    */
-  public async fetchProfiles(): Promise<BufferProfile[]> {
+  public async fetchChannels(): Promise<BufferChannel[]> {
     if (!this.isConfigured()) {
-      return this.getMockProfiles();
+      return this.getMockChannels();
     }
 
     try {
-      const response = await this.client.get<BufferProfile[]>('/profiles.json', {
-        params: { access_token: this.apiKey },
-      });
-      return response.data;
+      const data = await this.graphqlRequest<{ channels: BufferChannel[] }>(
+        `query Channels($input: ChannelsInput!) { channels(input: $input) { id name service displayName avatar } }`,
+        { input: { organizationId: this.organizationId } }
+      );
+      return data.channels || [];
     } catch (error: any) {
-      this.handleApiError('fetchProfiles', error);
-      return this.getMockProfiles();
+      this.handleApiError('fetchChannels', error);
+      return this.getMockChannels();
     }
   }
 
   /**
-   * Fetch scheduled and/or published updates/posts from Buffer API
+   * Fetch scheduled and/or published posts from Buffer
    */
   public async fetchBufferPosts(
-    profileId?: string,
+    channelId?: string,
     status: 'pending' | 'sent' | 'all' = 'all'
-  ): Promise<BufferUpdate[]> {
+  ): Promise<BufferPost[]> {
     if (!this.isConfigured()) {
-      return this.getMockUpdates(status);
+      return this.getMockPosts(status);
     }
 
+    const statusFilter =
+      status === 'pending' ? ['BUFFER', 'DRAFT', 'APPROVAL_PENDING'] :
+      status === 'sent' ? ['SENT'] :
+      undefined;
+
     try {
-      let targetProfileIds: string[] = [];
-
-      if (profileId) {
-        targetProfileIds = [profileId];
+      let channelIds: string[];
+      if (channelId) {
+        channelIds = [channelId];
       } else {
-        const profiles = await this.fetchProfiles();
-        targetProfileIds = profiles.map((p) => p.id);
+        const channels = await this.fetchChannels();
+        channelIds = channels.map((c) => c.id);
       }
 
-      const allUpdates: BufferUpdate[] = [];
-
-      for (const pId of targetProfileIds) {
-        if (status === 'pending' || status === 'all') {
-          try {
-            const pendingRes = await this.client.get<BufferUpdatesResponse>(
-              `/profiles/${pId}/updates/pending.json`,
-              { params: { access_token: this.apiKey } }
-            );
-            if (pendingRes.data?.updates) {
-              allUpdates.push(...pendingRes.data.updates);
+      // Fetches the first 100 posts per status filter; Buffer's `posts` query is cursor-paginated
+      // (first/after) but the old REST integration this replaces never paginated either.
+      const data = await this.graphqlRequest<{ posts: { edges: Array<{ node: BufferPost }> } }>(
+        `query Posts($input: PostsInput!) {
+          posts(input: $input) {
+            edges {
+              node {
+                id text status channelId channelService dueAt sentAt createdAt updatedAt
+                externalLink assets { source thumbnail } tags { id name } ideaId
+                metrics { type name value unit description }
+              }
             }
-          } catch (err: any) {
-            console.warn(`[WARN] Failed to fetch pending updates for Buffer profile ${pId}:`, err.message);
           }
+        }`,
+        {
+          input: {
+            organizationId: this.organizationId,
+            filter: { channelIds, ...(statusFilter ? { status: statusFilter } : {}) },
+            first: 100,
+          },
         }
+      );
 
-        if (status === 'sent' || status === 'all') {
-          try {
-            const sentRes = await this.client.get<BufferUpdatesResponse>(
-              `/profiles/${pId}/updates/sent.json`,
-              { params: { access_token: this.apiKey } }
-            );
-            if (sentRes.data?.updates) {
-              allUpdates.push(...sentRes.data.updates);
-            }
-          } catch (err: any) {
-            console.warn(`[WARN] Failed to fetch sent updates for Buffer profile ${pId}:`, err.message);
-          }
-        }
-      }
-
-      return allUpdates.length > 0 ? allUpdates : this.getMockUpdates(status);
+      const posts = (data.posts?.edges || []).map((edge) => edge.node);
+      return posts.length > 0 ? posts : this.getMockPosts(status);
     } catch (error: any) {
       this.handleApiError('fetchBufferPosts', error);
-      return this.getMockUpdates(status);
+      return this.getMockPosts(status);
     }
   }
 
   /**
    * Fetch engagement statistics for a single Buffer post
    */
-  public async fetchBufferEngagement(updateId: string): Promise<BufferEngagementMetrics> {
+  public async fetchBufferEngagement(postId: string): Promise<BufferEngagementMetrics> {
     if (!this.isConfigured()) {
-      return this.getMockEngagement(updateId);
+      return this.getMockEngagement(postId);
     }
 
     try {
-      const response = await this.client.get<{ interactions?: any[]; statistics?: any }>(
-        `/updates/${updateId}/interactions.json`,
-        { params: { access_token: this.apiKey } }
+      const data = await this.graphqlRequest<{ post: { metrics?: BufferPostMetric[] } }>(
+        `query Post($input: PostInput!) { post(input: $input) { metrics { type name value unit description } } }`,
+        { input: { id: postId } }
       );
-
-      const stats = response.data?.statistics || {};
-      const likes = Number(stats.likes || stats.favorites || 0);
-      const comments = Number(stats.comments || 0);
-      const shares = Number(stats.shares || stats.retweets || 0);
-      const clicks = Number(stats.clicks || 0);
-      const impressions = Number(stats.reach || stats.impressions || (likes + comments + shares + clicks) * 12);
-      const reactions = likes;
-      const totalEngagement = reactions + comments + shares;
-      const rate = calculateEngagementRate(totalEngagement, impressions);
-
-      return {
-        impressions,
-        views: impressions,
-        reactions,
-        comments,
-        shares,
-        reposts: Number(stats.retweets || stats.reshares || 0),
-        clicks,
-        score: reactions - comments > 0 ? reactions - comments : 0,
-        upvote_ratio: 0.95,
-        awards: 0,
-        engagement_rate: rate,
-        measured_at: new Date(),
-      };
+      return this.extractEngagementMetrics(data.post?.metrics);
     } catch (error: any) {
-      this.handleApiError(`fetchBufferEngagement (${updateId})`, error);
-      return this.getMockEngagement(updateId);
+      this.handleApiError(`fetchBufferEngagement (${postId})`, error);
+      return this.getMockEngagement(postId);
     }
   }
 
   /**
-   * Extract standardized post data from raw Buffer update payload
+   * Normalize Buffer's named PostMetric list into our standard engagement shape.
+   * Metric name matching is best-effort — Buffer's exact metric naming hasn't been
+   * verified against a live account yet, so unmatched names fall back to 0.
    */
-  public parseBufferPost(rawUpdate: BufferUpdate): ParsedBufferPost {
-    const rawPlatform = rawUpdate.profile_service || rawUpdate.service || 'buffer';
-    const platform = transformBufferPlatform(rawPlatform);
-    const bufferStatus = mapBufferStatus(rawUpdate.status);
+  private extractEngagementMetrics(metrics?: BufferPostMetric[] | null): BufferEngagementMetrics {
+    const list = metrics || [];
+    const metricValue = (name: string) => list.find((m) => m.name?.toLowerCase() === name)?.value || 0;
 
-    const imageUrls: string[] = [];
-    if (rawUpdate.media?.picture) imageUrls.push(rawUpdate.media.picture);
-    if (rawUpdate.media?.thumbnail && !imageUrls.includes(rawUpdate.media.thumbnail)) {
-      imageUrls.push(rawUpdate.media.thumbnail);
-    }
-    if (rawUpdate.media?.photo && !imageUrls.includes(rawUpdate.media.photo)) {
-      imageUrls.push(rawUpdate.media.photo);
-    }
-
-    const linkUrl = rawUpdate.media?.link || null;
-    const postedAt = formatBufferTimestamp(rawUpdate.sent_at || rawUpdate.created_at);
-    const scheduledTime = rawUpdate.due_at ? formatBufferTimestamp(rawUpdate.due_at) : null;
+    const likes = metricValue('likes') || metricValue('reactions') || metricValue('favorites');
+    const comments = metricValue('comments');
+    const shares = metricValue('shares') || metricValue('retweets');
+    const clicks = metricValue('clicks');
+    const impressions = metricValue('impressions') || metricValue('reach') || (likes + comments + shares + clicks) * 12;
+    const totalEngagement = likes + comments + shares;
 
     return {
-      platform_post_id: `buf_${rawUpdate.id}`,
+      impressions,
+      views: impressions,
+      reactions: likes,
+      comments,
+      shares,
+      reposts: metricValue('reposts') || shares,
+      clicks,
+      score: likes - comments > 0 ? likes - comments : 0,
+      upvote_ratio: 0.95,
+      awards: 0,
+      engagement_rate: calculateEngagementRate(totalEngagement, impressions),
+      measured_at: new Date(),
+    };
+  }
+
+  /**
+   * Extract standardized post data from a raw Buffer post payload
+   */
+  public parseBufferPost(rawPost: BufferPost): ParsedBufferPost {
+    const platform = transformBufferPlatform(rawPost.channelService);
+    const bufferStatus = mapBufferStatus(rawPost.status);
+
+    const imageUrls: string[] = [];
+    for (const asset of rawPost.assets || []) {
+      if (asset.source && !imageUrls.includes(asset.source)) imageUrls.push(asset.source);
+      if (asset.thumbnail && !imageUrls.includes(asset.thumbnail)) imageUrls.push(asset.thumbnail);
+    }
+
+    const postedAt = formatBufferTimestamp(rawPost.sentAt || rawPost.createdAt);
+    const scheduledTime = rawPost.dueAt ? formatBufferTimestamp(rawPost.dueAt) : null;
+
+    const tagsRecord: Record<string, any> = {};
+    for (const tag of rawPost.tags || []) {
+      tagsRecord[tag.id] = tag.name || tag.id;
+    }
+
+    return {
+      platform_post_id: `buf_${rawPost.id}`,
       platform,
-      content_text: rawUpdate.text || '',
+      content_text: rawPost.text || '',
       content_image_urls: imageUrls,
-      link_url: linkUrl,
+      link_url: rawPost.externalLink || null,
       posted_at: postedAt,
-      buffer_id: rawUpdate.id,
+      buffer_id: rawPost.id,
       buffer_status: bufferStatus,
       buffer_scheduled_time: scheduledTime,
-      campaign_id: rawUpdate.campaign_id || null,
-      tags: typeof rawUpdate.tags === 'object' && rawUpdate.tags !== null ? rawUpdate.tags : {},
+      campaign_id: null,
+      tags: tagsRecord,
       metadata: {
-        raw_service: rawUpdate.profile_service || rawUpdate.service,
-        profile_id: rawUpdate.profile_id,
-        user_id: rawUpdate.user_id,
-        pinned: rawUpdate.pinned || false,
+        raw_service: rawPost.channelService,
+        channel_id: rawPost.channelId,
+        idea_id: rawPost.ideaId || null,
       },
     };
   }
@@ -424,47 +451,25 @@ class BufferService {
     let syncedCount = 0;
 
     try {
-      const rawUpdates = await this.fetchBufferPosts();
+      const rawPosts = await this.fetchBufferPosts();
 
-      for (const update of rawUpdates) {
+      for (const rawPost of rawPosts) {
         try {
-          const parsed = this.parseBufferPost(update);
+          const parsed = this.parseBufferPost(rawPost);
           parsedPosts.push(parsed);
 
           // 1. Upsert Post
           const storedPost = await this.storeBufferPost(parsed, adminUserId);
 
-          // 2. Fetch and store engagement if post stored and published
+          // 2. Store engagement if post stored and published
           if (storedPost && parsed.buffer_status === 'published') {
-            const stats = update.statistics;
-            const impressions = Number(stats?.reach || stats?.impressions || 1200);
-            const reactions = Number(stats?.likes || stats?.favorites || 45);
-            const comments = Number(stats?.comments || 8);
-            const shares = Number(stats?.shares || stats?.retweets || 12);
-            const clicks = Number(stats?.clicks || 34);
-            const engagementRate = calculateEngagementRate(reactions + comments + shares, impressions);
-
-            const engagementMetrics: BufferEngagementMetrics = {
-              impressions,
-              views: impressions,
-              reactions,
-              comments,
-              shares,
-              reposts: shares,
-              clicks,
-              score: reactions,
-              upvote_ratio: 0.98,
-              awards: 0,
-              engagement_rate: engagementRate,
-              measured_at: new Date(),
-            };
-
+            const engagementMetrics = this.extractEngagementMetrics(rawPost.metrics);
             await this.storeBufferEngagement(storedPost.id, parsed.platform, engagementMetrics);
           }
 
           syncedCount++;
         } catch (err: any) {
-          errors.push(`Error processing update ${update.id}: ${err.message}`);
+          errors.push(`Error processing post ${rawPost.id}: ${err.message}`);
         }
       }
     } catch (err: any) {
@@ -492,122 +497,117 @@ class BufferService {
   }
 
   /**
-   * Mock profiles for local development and demo purposes
+   * Mock channels for local development and demo purposes
    */
-  private getMockProfiles(): BufferProfile[] {
+  private getMockChannels(): BufferChannel[] {
     return [
       {
-        id: 'buf_prof_linkedin_01',
+        id: 'buf_ch_linkedin_01',
+        name: 'talentbridge-hq',
+        displayName: 'TalentBridge HQ',
         service: 'linkedin',
-        service_id: 'li_org_1092837',
-        service_username: 'talentbridge-hq',
-        formatted_username: 'TalentBridge HQ',
         avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60',
-        counts: { pending: 4, sent: 28 },
       },
       {
-        id: 'buf_prof_twitter_02',
+        id: 'buf_ch_twitter_02',
+        name: 'talentbridge_app',
+        displayName: '@talentbridge_app',
         service: 'twitter',
-        service_id: 'tw_991823',
-        service_username: 'talentbridge_app',
-        formatted_username: '@talentbridge_app',
         avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=60',
-        counts: { pending: 6, sent: 42 },
       },
     ];
   }
 
   /**
-   * Mock updates for development and testing
+   * Mock posts for development and testing
    */
-  private getMockUpdates(status: 'pending' | 'sent' | 'all'): BufferUpdate[] {
-    const now = Math.floor(Date.now() / 1000);
+  private getMockPosts(status: 'pending' | 'sent' | 'all'): BufferPost[] {
+    const now = Date.now();
+    const iso = (ms: number) => new Date(ms).toISOString();
 
-    const sentUpdates: BufferUpdate[] = [
+    const sentPosts: BufferPost[] = [
       {
         id: 'buf_sent_001',
-        created_at: now - 86400 * 2,
-        sent_at: now - 86400 * 2,
-        status: 'sent',
-        profile_service: 'linkedin',
-        profile_id: 'buf_prof_linkedin_01',
         text: '🚀 Showcase Rooms 2.0 is officially live! Transform how candidate presentations are viewed in real-time.',
-        media: {
-          link: 'https://talentbridge.cv/rooms',
-          picture: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=60',
-        },
-        statistics: {
-          clicks: 145,
-          likes: 312,
-          comments: 42,
-          shares: 28,
-          reach: 8420,
-        },
-        tags: { topic: 'product-launch', campaign: 'Q3 Launch' },
+        status: 'SENT',
+        channelId: 'buf_ch_linkedin_01',
+        channelService: 'LINKEDIN',
+        sentAt: iso(now - 86400000 * 2),
+        createdAt: iso(now - 86400000 * 2),
+        updatedAt: iso(now - 86400000 * 2),
+        externalLink: 'https://talentbridge.cv/rooms',
+        assets: [{ source: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=60' }],
+        metrics: [
+          { type: 'ENGAGEMENT', name: 'clicks', value: 145, unit: 'COUNT', description: 'Clicks' },
+          { type: 'ENGAGEMENT', name: 'likes', value: 312, unit: 'COUNT', description: 'Likes' },
+          { type: 'ENGAGEMENT', name: 'comments', value: 42, unit: 'COUNT', description: 'Comments' },
+          { type: 'ENGAGEMENT', name: 'shares', value: 28, unit: 'COUNT', description: 'Shares' },
+          { type: 'REACH', name: 'reach', value: 8420, unit: 'COUNT', description: 'Reach' },
+        ],
+        tags: [{ id: 'topic', name: 'product-launch' }, { id: 'campaign', name: 'Q3 Launch' }],
       },
       {
         id: 'buf_sent_002',
-        created_at: now - 86400 * 4,
-        sent_at: now - 86400 * 4,
-        status: 'sent',
-        profile_service: 'twitter',
-        profile_id: 'buf_prof_twitter_02',
         text: 'Recruiters: what is your single biggest bottleneck during high-volume hiring sprints? Reply below 👇',
-        media: {
-          link: 'https://talentbridge.cv/blog/hiring-bottlenecks',
-        },
-        statistics: {
-          clicks: 89,
-          likes: 154,
-          comments: 67,
-          retweets: 19,
-          reach: 4200,
-        },
-        tags: { topic: 'community-engagement' },
+        status: 'SENT',
+        channelId: 'buf_ch_twitter_02',
+        channelService: 'TWITTER',
+        sentAt: iso(now - 86400000 * 4),
+        createdAt: iso(now - 86400000 * 4),
+        updatedAt: iso(now - 86400000 * 4),
+        externalLink: 'https://talentbridge.cv/blog/hiring-bottlenecks',
+        assets: [],
+        metrics: [
+          { type: 'ENGAGEMENT', name: 'clicks', value: 89, unit: 'COUNT', description: 'Clicks' },
+          { type: 'ENGAGEMENT', name: 'likes', value: 154, unit: 'COUNT', description: 'Likes' },
+          { type: 'ENGAGEMENT', name: 'comments', value: 67, unit: 'COUNT', description: 'Comments' },
+          { type: 'ENGAGEMENT', name: 'retweets', value: 19, unit: 'COUNT', description: 'Retweets' },
+          { type: 'REACH', name: 'reach', value: 4200, unit: 'COUNT', description: 'Reach' },
+        ],
+        tags: [{ id: 'topic', name: 'community-engagement' }],
       },
     ];
 
-    const pendingUpdates: BufferUpdate[] = [
+    const pendingPosts: BufferPost[] = [
       {
         id: 'buf_pend_003',
-        created_at: now - 3600,
-        due_at: now + 7200, // Due in 2 hours
-        due_time: '2 hours from now',
-        status: 'buffer',
-        profile_service: 'linkedin',
-        profile_id: 'buf_prof_linkedin_01',
         text: '5 tips for engineering leaders evaluating candidate portfolios with deep telemetry data. Thread 🧵',
-        media: {
-          link: 'https://talentbridge.cv/resources/evaluation-playbook',
-          picture: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60',
-        },
-        tags: { topic: 'thought-leadership' },
+        status: 'BUFFER',
+        channelId: 'buf_ch_linkedin_01',
+        channelService: 'LINKEDIN',
+        dueAt: iso(now + 7200000),
+        createdAt: iso(now - 3600000),
+        updatedAt: iso(now - 3600000),
+        externalLink: 'https://talentbridge.cv/resources/evaluation-playbook',
+        assets: [{ source: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60' }],
+        metrics: null,
+        tags: [{ id: 'topic', name: 'thought-leadership' }],
       },
       {
         id: 'buf_pend_004',
-        created_at: now - 7200,
-        due_at: now + 86400, // Due tomorrow
-        due_time: 'Tomorrow at 10:00 AM',
-        status: 'buffer',
-        profile_service: 'twitter',
-        profile_id: 'buf_prof_twitter_02',
         text: 'Sneak peek at our upcoming hiring manager portal updates. Faster filters, instant shortlists.',
-        media: {
-          link: 'https://talentbridge.cv/features',
-        },
-        tags: { topic: 'product-teaser' },
+        status: 'BUFFER',
+        channelId: 'buf_ch_twitter_02',
+        channelService: 'TWITTER',
+        dueAt: iso(now + 86400000),
+        createdAt: iso(now - 7200000),
+        updatedAt: iso(now - 7200000),
+        externalLink: 'https://talentbridge.cv/features',
+        assets: [],
+        metrics: null,
+        tags: [{ id: 'topic', name: 'product-teaser' }],
       },
     ];
 
-    if (status === 'pending') return pendingUpdates;
-    if (status === 'sent') return sentUpdates;
-    return [...sentUpdates, ...pendingUpdates];
+    if (status === 'pending') return pendingPosts;
+    if (status === 'sent') return sentPosts;
+    return [...sentPosts, ...pendingPosts];
   }
 
   /**
-   * Mock engagement statistics for single update
+   * Mock engagement statistics for a single post
    */
-  private getMockEngagement(updateId: string): BufferEngagementMetrics {
+  private getMockEngagement(_postId: string): BufferEngagementMetrics {
     return {
       impressions: 8420,
       views: 8420,

@@ -8,7 +8,7 @@ import {
   mapBufferStatus,
   calculateEngagementRate,
 } from '../utils/bufferHelpers.js';
-import type { BufferUpdate } from '../types/buffer.js';
+import type { BufferPost } from '../types/buffer.js';
 
 async function runBufferServiceVerification() {
   console.log('🧪 Starting Buffer Service Verification...\n');
@@ -55,13 +55,13 @@ async function runBufferServiceVerification() {
   }
   console.log(`  ✓ calculateEngagementRate calculated rate correctly: 382 interactions / 8,420 impressions = ${er1}%`);
 
-  // Test 2: fetchProfiles & fetchBufferPosts
-  console.log('\nTest 2: Testing fetchProfiles & fetchBufferPosts');
-  const profiles = await bufferService.fetchProfiles();
-  if (!Array.isArray(profiles) || profiles.length === 0) {
-    throw new Error('fetchProfiles failed to return profiles!');
+  // Test 2: fetchChannels & fetchBufferPosts
+  console.log('\nTest 2: Testing fetchChannels & fetchBufferPosts');
+  const channels = await bufferService.fetchChannels();
+  if (!Array.isArray(channels) || channels.length === 0) {
+    throw new Error('fetchChannels failed to return channels!');
   }
-  console.log(`  ✓ fetchProfiles returned ${profiles.length} connected profiles:`, profiles.map((p) => `${p.formatted_username} (${p.service})`).join(', '));
+  console.log(`  ✓ fetchChannels returned ${channels.length} connected channels:`, channels.map((c) => `${c.displayName || c.name} (${c.service})`).join(', '));
 
   const posts = await bufferService.fetchBufferPosts();
   if (!Array.isArray(posts) || posts.length === 0) {
@@ -75,27 +75,27 @@ async function runBufferServiceVerification() {
 
   // Test 3: parseBufferPost
   console.log('\nTest 3: Testing parseBufferPost Extraction');
-  const sampleUpdate: BufferUpdate = {
+  const sampleUpdate: BufferPost = {
     id: 'test_upd_123',
-    created_at: Math.floor(Date.now() / 1000) - 3600,
-    sent_at: Math.floor(Date.now() / 1000) - 1800,
-    status: 'sent',
-    profile_service: 'linkedin',
-    profile_id: 'prof_li_1',
+    createdAt: new Date(Date.now() - 3600 * 1000).toISOString(),
+    sentAt: new Date(Date.now() - 1800 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1800 * 1000).toISOString(),
+    status: 'SENT',
+    channelService: 'LINKEDIN',
+    channelId: 'ch_li_1',
     text: 'Test post for TalentBridge candidate analytics! Check out the showcase demo.',
-    media: {
-      link: 'https://talentbridge.cv/demo',
-      picture: 'https://example.com/demo.png',
-      thumbnail: 'https://example.com/thumb.png',
-    },
-    statistics: {
-      clicks: 45,
-      likes: 120,
-      comments: 15,
-      shares: 8,
-      reach: 3500,
-    },
-    tags: { campaign: 'Summer Hiring Sprint' },
+    externalLink: 'https://talentbridge.cv/demo',
+    assets: [
+      { source: 'https://example.com/demo.png', thumbnail: 'https://example.com/thumb.png' },
+    ],
+    metrics: [
+      { type: 'ENGAGEMENT', name: 'clicks', value: 45, unit: 'COUNT', description: 'Clicks' },
+      { type: 'ENGAGEMENT', name: 'likes', value: 120, unit: 'COUNT', description: 'Likes' },
+      { type: 'ENGAGEMENT', name: 'comments', value: 15, unit: 'COUNT', description: 'Comments' },
+      { type: 'ENGAGEMENT', name: 'shares', value: 8, unit: 'COUNT', description: 'Shares' },
+      { type: 'REACH', name: 'reach', value: 3500, unit: 'COUNT', description: 'Reach' },
+    ],
+    tags: [{ id: 'campaign', name: 'Summer Hiring Sprint' }],
   };
 
   const parsed = bufferService.parseBufferPost(sampleUpdate);

@@ -1,11 +1,20 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd backend && npm install --include=dev && npx rimraf dist && npx tsc && cd ../frontend && npm install --include=dev && npx tsc -b && npx vite build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
+  "fluid": true,
+  "functions": {
+    "api/index.ts": { "maxDuration": 300 }
+  },
+  "crons": [
+    { "path": "/api/cron/buffer", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/reddit", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/linkedin", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/campaign", "schedule": "0 5 * * *" }
+  ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

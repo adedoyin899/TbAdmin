@@ -1,86 +1,49 @@
 // src/types/buffer.ts
-// TypeScript interfaces and types for Buffer API responses, profiles, updates, and telemetry
+// TypeScript interfaces for the Buffer GraphQL API (channels, posts, metrics) and internal telemetry
 
 import type { SocialPlatform, BufferStatus } from './socialMedia.js';
 
-export interface BufferProfile {
+export interface BufferChannel {
   id: string;
-  service: string; // 'linkedin', 'twitter', 'facebook', 'instagram', 'pinterest', etc.
-  service_id: string;
-  service_username?: string;
-  formatted_username?: string;
-  avatar?: string;
-  avatar_https?: string;
-  default?: boolean;
-  schedules?: Array<{
-    days: string[];
-    times: string[];
-  }>;
-  counts?: {
-    daily_suggestions?: number;
-    drafts?: number;
-    pending?: number;
-    sent?: number;
-  };
+  name: string;
+  displayName?: string | null;
+  service: string; // Service enum: TWITTER, LINKEDIN, INSTAGRAM, FACEBOOK, PINTEREST, TIKTOK, YOUTUBE, BLUESKY, MASTODON, THREADS, GOOGLE_BUSINESS_PROFILE
+  avatar: string;
 }
 
-export interface BufferMedia {
-  link?: string;
-  picture?: string;
-  thumbnail?: string;
-  photo?: string;
-  title?: string;
-  description?: string;
-  video?: {
-    details?: {
-      duration?: number;
-      width?: number;
-      height?: number;
-    };
-    thumbnail?: string;
-    transcoded_location?: string;
-  };
+export interface BufferAsset {
+  source: string;
+  thumbnail?: string | null;
 }
 
-export interface BufferStatistics {
-  clicks?: number;
-  favorites?: number;
-  likes?: number;
-  retweets?: number;
-  shares?: number;
-  comments?: number;
-  impressions?: number;
-  reach?: number;
-  reshares?: number;
-  mentions?: number;
-  [key: string]: any;
+export interface BufferPostMetric {
+  type: string;
+  name: string;
+  value: number;
+  unit: string;
+  description: string;
 }
 
-export interface BufferUpdate {
+export interface BufferPostTag {
   id: string;
-  created_at: number; // Unix epoch seconds
-  day?: string;
-  due_at?: number; // Unix epoch seconds
-  due_time?: string;
-  media?: BufferMedia;
-  profile_id?: string;
-  profile_service?: string;
-  service?: string;
-  service_update_id?: string;
-  status: 'buffer' | 'sent' | 'error' | 'pending' | 'draft' | string;
+  name?: string;
+}
+
+export interface BufferPost {
+  id: string;
   text: string;
-  text_formatted?: string;
-  user_id?: string;
-  sent_at?: number; // Unix epoch seconds
-  statistics?: BufferStatistics;
-  pinned?: boolean;
-  campaign_id?: string;
-  tags?: string[] | Record<string, any>;
-}
-
-export interface BufferUpdatesResponse {
-  total: number;
-  updates: BufferUpdate[];
+  status: string; // PostStatus enum: DRAFT, BUFFER, SENT, FAILED, APPROVAL_PENDING
+  channelId: string;
+  channelService: string;
+  dueAt?: string | null; // DateTime (ISO 8601)
+  sentAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  externalLink?: string | null;
+  assets: BufferAsset[];
+  metrics?: BufferPostMetric[] | null;
+  ideaId?: string | null;
+  tags: BufferPostTag[];
 }
 
 export interface ParsedBufferPost {

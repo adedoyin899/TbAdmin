@@ -5,9 +5,10 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: ENV.DATABASE_URL,
-  max: 20,
+  max: ENV.NODE_ENV === 'production' ? 5 : 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: ENV.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on('error', (err) => {

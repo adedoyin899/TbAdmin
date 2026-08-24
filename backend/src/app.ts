@@ -15,6 +15,7 @@ import { notificationRouter } from './routes/notifications.js';
 import { integrationRouter } from './routes/integrations.js';
 import { socialMediaRouter } from './routes/socialMedia.js';
 import { campaignRouter } from './routes/campaigns.js';
+import { cronRouter } from './routes/cron.js';
 
 export const app = express();
 
@@ -84,6 +85,9 @@ app.use('/api/social-media', socialMediaRouter);
 app.use('/social-media', socialMediaRouter);
 app.use('/api/campaigns', campaignRouter);
 app.use('/campaigns', campaignRouter);
+
+// Cron Job Routes (Vercel Cron only — secured via CRON_SECRET bearer token, not JWT)
+app.use('/api/cron', cronRouter);
 
 // Global Error Handler
 app.use(errorHandler);

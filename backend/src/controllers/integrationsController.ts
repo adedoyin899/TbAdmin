@@ -134,7 +134,10 @@ export async function updateIntegrationsConfig(req: Request, res: Response) {
         ...RUNTIME_INTEGRATION_CONFIG.buffer,
         ...credentials.buffer,
       };
-      bufferService.updateConfig({ accessToken: credentials.buffer.accessToken });
+      bufferService.updateConfig({
+        accessToken: credentials.buffer.accessToken,
+        organizationId: credentials.buffer.organizationId,
+      });
     }
 
     if (credentials?.redis) {

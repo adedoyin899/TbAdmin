@@ -5,8 +5,12 @@ import {
   testIntegration,
   flushAllCache,
 } from '../controllers/integrationsController.js';
+import { authenticateToken } from '../middleware/authenticateToken.js';
 
 export const integrationRouter = Router();
+
+// Protect all integration endpoints with JWT authentication
+integrationRouter.use(authenticateToken);
 
 // GET /api/integrations - Fetch active integration credentials & cache TTLs
 integrationRouter.get('/', getIntegrationsConfig);
