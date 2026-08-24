@@ -37,7 +37,8 @@ export const RoomInsightsDetailView: React.FC<{
   const [page, setPage] = useState(1);
 
   // Filter viewers
-  const filteredViewers = room.viewers.filter(v => {
+  const viewers = room.viewers || [];
+  const filteredViewers = viewers.filter(v => {
     const matchesSearch =
       v.name.toLowerCase().includes(viewerSearch.toLowerCase()) ||
       v.role.toLowerCase().includes(viewerSearch.toLowerCase()) ||
@@ -183,7 +184,7 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
 
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={room.viewsTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <AreaChart data={room.viewsTrend || []} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="totalViewsGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#FA520F" stopOpacity={0.3} />
@@ -305,7 +306,7 @@ export const RoomInsightsDetailView: React.FC<{
             {/* Filter pills */}
             <div className="pill-group no-scrollbar touch-scroll" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
               {[
-                { key: 'all', label: 'All', count: room.viewers.length },
+                { key: 'all', label: 'All', count: viewers.length },
                 { key: 'returning', label: 'Returning' },
                 { key: 'new', label: 'New' },
                 { key: 'high_value', label: 'High Value' },
@@ -470,7 +471,7 @@ export const RoomInsightsDetailView: React.FC<{
                   {slot}
                 </div>
                 {DAYS.map(day => {
-                  const cell = room.heatmap.find(h => h.day === day && h.timeSlot === slot);
+                  const cell = (room.heatmap || []).find(h => h.day === day && h.timeSlot === slot);
                   const intensity = cell ? cell.intensity : 1;
                   const val = cell ? (cell.views > 1000 ? `${(cell.views / 1000).toFixed(1)}k` : `${cell.views}`) : '100';
 
