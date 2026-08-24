@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { postHogService } from '../services/postHogService.js';
 import { emailService } from '../services/emailService.js';
 import { cacheService } from '../services/cacheService.js';
+import { bufferService } from '../services/bufferService.js';
 import { pool } from '../db/connection.js';
 import { logger } from '../utils/logger.js';
 import { sendSuccess, sendError } from '../utils/response.js';
@@ -133,6 +134,7 @@ export async function updateIntegrationsConfig(req: Request, res: Response) {
         ...RUNTIME_INTEGRATION_CONFIG.buffer,
         ...credentials.buffer,
       };
+      bufferService.updateConfig({ accessToken: credentials.buffer.accessToken });
     }
 
     if (credentials?.redis) {
@@ -206,11 +208,8 @@ export async function testIntegration(req: Request, res: Response) {
     }
 
     if (provider === 'buffer') {
-      return sendSuccess(res, {
-        success: true,
-        message: `Buffer Publishing API token verified! Connected to Profile Queue #${credentials?.profileId || '64e1098234190823'}.`,
-        ping: '28ms',
-      }, 200);
+      const result = await bufferService.testConnection(credentials);
+      return sendSuccess(res, result, 200);
     }
 
     if (provider === 'redis') {

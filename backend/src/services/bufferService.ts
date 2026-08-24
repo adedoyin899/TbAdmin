@@ -45,6 +45,91 @@ class BufferService {
   }
 
   /**
+   * Hot-swap credentials at runtime (e.g. from the Settings page) without a process restart
+   */
+  public updateConfig(config: { accessToken?: string; baseUrl?: string }): void {
+    if (config.accessToken !== undefined) {
+      this.apiKey = config.accessToken.trim();
+    }
+    if (config.baseUrl !== undefined && config.baseUrl.trim()) {
+      this.baseUrl = config.baseUrl.replace(/\/+$/, '');
+      this.client = axios.create({ baseURL: this.baseUrl, timeout: 10000 });
+    }
+  }
+
+  /**
+   * Get current config with masked key
+   */
+  public getConfig() {
+    const maskedKey = this.apiKey
+      ? this.apiKey.length > 8
+        ? `${this.apiKey.slice(0, 4)}••••••••${this.apiKey.slice(-4)}`
+        : '••••••••'
+      : '';
+    return {
+      accessToken: maskedKey,
+      baseUrl: this.baseUrl,
+      hasApiKey: this.isConfigured(),
+    };
+  }
+
+  /**
+   * Perform a live handshake against the Buffer API to verify the access token actually works
+   */
+  public async testConnection(overrideCredentials?: {
+    accessToken?: string;
+    profileId?: string;
+  }): Promise<{ success: boolean; message: string; ping?: string }> {
+    const token = overrideCredentials?.accessToken?.trim() || this.apiKey;
+
+    if (!token || token === 'your-buffer-api-key-here') {
+      return {
+        success: false,
+        message: 'Buffer Access Token is missing. Add it in Settings or backend/.env (BUFFER_API_KEY).',
+      };
+    }
+
+    const startTime = Date.now();
+    try {
+      const response = await axios.get<BufferProfile[]>(`${this.baseUrl}/profiles.json`, {
+        params: { access_token: token },
+        timeout: 10000,
+      });
+      const ping = `${Date.now() - startTime}ms`;
+      const profiles = Array.isArray(response.data) ? response.data : [];
+
+      if (overrideCredentials?.profileId) {
+        const match = profiles.find((p) => p.id === overrideCredentials.profileId);
+        if (!match) {
+          return {
+            success: false,
+            message: `Token is valid, but Profile ID "${overrideCredentials.profileId}" was not found among your ${profiles.length} connected Buffer profile(s).`,
+            ping,
+          };
+        }
+      }
+
+      return {
+        success: true,
+        message: `Buffer Access Token verified! Found ${profiles.length} connected profile(s).`,
+        ping,
+      };
+    } catch (error: any) {
+      const status = error.response?.status;
+      if (status === 401 || status === 403) {
+        return { success: false, message: 'Buffer rejected the Access Token (unauthorized). Double-check the token value.' };
+      }
+      if (status === 429) {
+        return { success: false, message: 'Buffer API rate limit hit while testing. Try again shortly.' };
+      }
+      return {
+        success: false,
+        message: `Failed to reach Buffer API: ${error.message || 'Unknown error'}`,
+      };
+    }
+  }
+
+  /**
    * Fetch connected social media profiles from Buffer
    */
   public async fetchProfiles(): Promise<BufferProfile[]> {
