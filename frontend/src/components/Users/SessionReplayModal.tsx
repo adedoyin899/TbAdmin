@@ -11,9 +11,7 @@ interface SessionReplayModalProps {
   onClose: () => void;
 }
 
-export const SessionReplayModal: React.FC<SessionReplayModalProps> = ({ recording, onClose }) => {
-  if (!recording) return null;
-
+const SessionReplayModalContent: React.FC<{ recording: SessionRecording; onClose: () => void }> = ({ recording, onClose }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -24,7 +22,7 @@ export const SessionReplayModal: React.FC<SessionReplayModalProps> = ({ recordin
 
   const duration = Math.max(1, recording.duration || 10);
   const animationFrameRef = useRef<number | null>(null);
-  const lastTickRef = useRef<number>(Date.now());
+  const lastTickRef = useRef<number>(0);
 
   // Handle Playback Clock
   useEffect(() => {
@@ -617,4 +615,9 @@ export const SessionReplayModal: React.FC<SessionReplayModalProps> = ({ recordin
       </div>
     </div>
   );
+};
+
+export const SessionReplayModal: React.FC<SessionReplayModalProps> = ({ recording, onClose }) => {
+  if (!recording) return null;
+  return <SessionReplayModalContent recording={recording} onClose={onClose} />;
 };

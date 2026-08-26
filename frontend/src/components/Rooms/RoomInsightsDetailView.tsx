@@ -49,8 +49,8 @@ export const RoomInsightsDetailView: React.FC<{
     : Array.isArray(anyRoom?.recentLeads)
     ? anyRoom.recentLeads
     : [];
-  const viewers = rawViewers.map((v: any) => ({
-    id: v.id || `v_${Math.random()}`,
+  const viewers = rawViewers.map((v: any, idx: number) => ({
+    id: v.id || `v_${idx}`,
     name: v.name || 'Anonymous Viewer',
     role: v.role || 'Visitor',
     company: v.company || 'Enterprise',
@@ -88,8 +88,8 @@ export const RoomInsightsDetailView: React.FC<{
     : Array.isArray(anyRoom?.smartRecommendations)
     ? anyRoom.smartRecommendations
     : [];
-  const recommendations = rawRecs.map((r: any) => ({
-    id: r.id || `rec_${Math.random()}`,
+  const recommendations = rawRecs.map((r: any, idx: number) => ({
+    id: r.id || `rec_${idx}`,
     title: r.title || 'Optimization Suggestion',
     description: r.description || '',
     priority: r.priority || (r.impact === 'high' ? 'Urgent' : 'Medium'),

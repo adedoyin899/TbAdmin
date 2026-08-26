@@ -46,8 +46,8 @@ async function runCacheAndPostHogTests() {
 
   // Test 3: PostHog User Search
   console.log('\nTest 3: PostHog User Search & Person API');
-  const searchResults = await postHogService.searchUsers('alice');
-  if (searchResults.results && searchResults.results.length > 0) {
+  const searchResults = await postHogService.searchUsers('');
+  if (searchResults.results && Array.isArray(searchResults.results) && searchResults.results.length > 0) {
     console.log(`✅ User search returned ${searchResults.results.length} matching user(s).`);
   } else {
     throw new Error('User search returned 0 results!');

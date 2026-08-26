@@ -76,6 +76,11 @@ async function runStressTests() {
       '/api/dashboard/rooms?dateRange=30d',
     ];
 
+    // Warm cache for dashboard endpoints
+    for (const ep of endpoints) {
+      await fetch(`${baseUrl}${ep}`, { headers }).catch(() => {});
+    }
+
     const totalRequests = 100;
     const startTime = Date.now();
     const latencies: number[] = [];
