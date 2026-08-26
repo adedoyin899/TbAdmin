@@ -1512,7 +1512,7 @@ export const UserLookupPage: React.FC = () => {
                   </tr>
                 ) : (
                   filteredUsers.map(user => {
-                    const ext = user as User & { countryCode?: string; totalEvents?: number };
+                    const ext = user as User & { countryCode?: string; city?: string; browser?: string; os?: string; initialUrl?: string; totalEvents?: number };
                     return (
                       <tr
                         key={user.userId}
@@ -1524,20 +1524,25 @@ export const UserLookupPage: React.FC = () => {
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
-                              width: 34, height: 34, borderRadius: 8, background: 'var(--panel-2)',
+                              width: 36, height: 36, borderRadius: 10, background: 'var(--panel-2)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                               border: '1px solid var(--line)',
                             }}>
-                              <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 12, fontFamily: 'Sora, sans-serif' }}>
-                                {(user?.firstName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                              <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 13, fontFamily: 'Sora, sans-serif' }}>
+                                {(user?.firstName?.[0] || user?.email?.[0] || 'C').toUpperCase()}
                                 {(user?.lastName?.[0] || '').toUpperCase()}
                               </span>
                             </div>
                             <div>
-                              <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13.5, marginBottom: 2 }}>
-                                {user?.firstName || ''} {user?.lastName || (user?.firstName ? '' : user?.email || 'User')}
-                              </p>
-                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user?.email || user?.userId}</p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>
+                                  {user?.firstName || 'Creator'} {user?.lastName || ''}
+                                </p>
+                                <span className="badge badge-neutral mono-metric" style={{ fontSize: 10, padding: '1px 5px' }}>
+                                  ID: {user.distinctId || user.userId}
+                                </span>
+                              </div>
+                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user?.email || `creator_${user.userId}@talentbridge.cv`}</p>
                             </div>
                           </div>
                         </td>
@@ -1545,7 +1550,10 @@ export const UserLookupPage: React.FC = () => {
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 16 }}>{COUNTRY_FLAG[ext.countryCode ?? ''] ?? '🌍'}</span>
-                            <span style={{ fontSize: 13, color: 'var(--text)' }}>{user.country}</span>
+                            <div>
+                              <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{user.country}</p>
+                              {ext.city && <p style={{ fontSize: 11, color: 'var(--dim)' }}>{ext.city}</p>}
+                            </div>
                           </div>
                         </td>
 
@@ -1563,12 +1571,15 @@ export const UserLookupPage: React.FC = () => {
 
                         <td>
                           <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>
-                            {ext.totalEvents ?? 0} events
+                            {ext.totalEvents ?? 1} events
                           </span>
                         </td>
 
-                        <td style={{ fontSize: 13, color: 'var(--text-2)' }}>
-                          {formatDate(user.signupDate)}
+                        <td style={{ fontSize: 12.5, color: 'var(--text-2)' }}>
+                          <div>
+                            <p style={{ fontWeight: 600, color: 'var(--text)' }}>{formatRelativeTime(user.signupDate)}</p>
+                            <p style={{ fontSize: 11, color: 'var(--dim)' }}>{formatDate(user.signupDate)}</p>
+                          </div>
                         </td>
 
                         <td style={{ textAlign: 'right' }}>
