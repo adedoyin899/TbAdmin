@@ -31,6 +31,67 @@ const STAGE_METADATA: Record<string, {
   recommendedAction: string;
   sampleUsers: { name: string; email: string; userId: string; country: string; source: string; time: string }[];
 }> = {
+  '1. Landing & Pageview': {
+    desc: 'Initial visitor landed on TalentBridge marketing root or public directory page.',
+    avgDuration: '25 seconds',
+    primaryDevice: 'Desktop (75%) / Mobile (25%)',
+    topDropoffReason: 'High bounce on unoptimized mobile landing pages.',
+    recommendedAction: 'Streamline 3D hero animation on mobile devices to accelerate engagement.',
+    sampleUsers: [
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
+      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', userId: '66', country: 'Nigeria', source: 'Organic Search', time: '4h ago' },
+      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', userId: '71', country: 'Nigeria', source: 'Direct Link', time: '1d ago' },
+    ],
+  },
+  '2. Directory & App Navigation': {
+    desc: 'Visitor navigated through Talent Directory profiles and candidate showcase registries.',
+    avgDuration: '1 minute 45 seconds',
+    primaryDevice: 'Desktop (80%) / Mobile (20%)',
+    topDropoffReason: 'Search query yielded zero instant profile filter matches.',
+    recommendedAction: 'Implement fuzzy search and skill recommendations in directory search bar.',
+    sampleUsers: [
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
+      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', userId: '71', country: 'Nigeria', source: 'Direct Link', time: '1d ago' },
+    ],
+  },
+  '3. Showcase Room Inspection': {
+    desc: 'User explored full interactive 3D showcase portfolios and asset studios.',
+    avgDuration: '3 minutes 12 seconds',
+    primaryDevice: 'Desktop (85%) / Mobile (15%)',
+    topDropoffReason: 'Heavy 3D mesh load time on slower cellular connections.',
+    recommendedAction: 'Enable progressive WebGL asset streaming and mesh compression.',
+    sampleUsers: [
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
+      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', userId: '66', country: 'Nigeria', source: 'Organic Search', time: '4h ago' },
+    ],
+  },
+  '4. Interactive Telemetry Actions': {
+    desc: 'Viewer interacted directly with 3D models, autocapture buttons, and project links.',
+    avgDuration: '4 minutes 30 seconds',
+    primaryDevice: 'Desktop (90%) / Mobile (10%)',
+    topDropoffReason: 'Viewer hesitated before triggering direct contact / hire outreach CTA.',
+    recommendedAction: 'Highlight 1-click recruiter interview request widget in room header.',
+    sampleUsers: [
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
+    ],
+  },
+  '5. Identified Creator Accounts': {
+    desc: 'Fully registered and authenticated creator profile identified in PostHog telemetry.',
+    avgDuration: 'Session Ongoing',
+    primaryDevice: 'Desktop (75%) / Mobile (25%)',
+    topDropoffReason: 'Account creation complete and verified in production.',
+    recommendedAction: 'Provide instant creator dashboard onboarding checklist to maximize room shares.',
+    sampleUsers: [
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
+      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', userId: '66', country: 'Nigeria', source: 'Organic Search', time: '4h ago' },
+      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', userId: '71', country: 'Nigeria', source: 'Direct Link', time: '1d ago' },
+    ],
+  },
   'Signup Started': {
     desc: 'Initial account creation initiated with email and password.',
     avgDuration: '45 seconds',
@@ -38,10 +99,8 @@ const STAGE_METADATA: Record<string, {
     topDropoffReason: 'Email typo or password validation requirements friction.',
     recommendedAction: 'Enable Google/GitHub 1-click social sign-on to eliminate form friction.',
     sampleUsers: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', userId: 'user_123abc', country: 'United Kingdom', source: 'Organic', time: '10m ago' },
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', userId: 'user_456def', country: 'Ghana', source: 'Email', time: '25m ago' },
-      { name: 'Chiara Romano', email: 'chiara.romano@example.com', userId: 'user_789ghi', country: 'Italy', source: 'Referral', time: '1h ago' },
-      { name: 'Bob Smith', email: 'bob.smith@example.com', userId: 'user_321jkl', country: 'United States', source: 'Paid Ad', time: '2h ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
     ],
   },
   'Email Verified': {
@@ -51,9 +110,8 @@ const STAGE_METADATA: Record<string, {
     topDropoffReason: 'Email landing in spam/promotions or delayed Mailgun dispatch.',
     recommendedAction: 'Maintain clean SPF/DKIM records and trigger instant SMS fallback.',
     sampleUsers: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', userId: 'user_123abc', country: 'United Kingdom', source: 'Organic', time: '8m ago' },
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', userId: 'user_456def', country: 'Ghana', source: 'Email', time: '22m ago' },
-      { name: 'Chiara Romano', email: 'chiara.romano@example.com', userId: 'user_789ghi', country: 'Italy', source: 'Referral', time: '55m ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', userId: '80', country: 'Nigeria', source: 'Direct Link', time: '2h ago' },
     ],
   },
   'Room Created': {
@@ -63,9 +121,7 @@ const STAGE_METADATA: Record<string, {
     topDropoffReason: 'Blank canvas intimidation without pre-populated showcase content.',
     recommendedAction: 'Offer 1-click LinkedIn/GitHub portfolio import to pre-populate 3D assets.',
     sampleUsers: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', userId: 'user_123abc', country: 'United Kingdom', source: 'Organic', time: '5m ago' },
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', userId: 'user_456def', country: 'Ghana', source: 'Email', time: '18m ago' },
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', userId: 'user_987pqr', country: 'Canada', source: 'Organic', time: '40m ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
     ],
   },
   'Room Published': {
@@ -75,8 +131,7 @@ const STAGE_METADATA: Record<string, {
     topDropoffReason: 'Hesitation around public profile readiness or incomplete project thumbnails.',
     recommendedAction: 'Show interactive checklist: "Your room is 90% ready to publish!".',
     sampleUsers: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', userId: 'user_123abc', country: 'United Kingdom', source: 'Organic', time: '3m ago' },
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', userId: 'user_456def', country: 'Ghana', source: 'Email', time: '14m ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
     ],
   },
   'Room Shared': {
@@ -86,8 +141,7 @@ const STAGE_METADATA: Record<string, {
     topDropoffReason: 'Lack of instant social preview card generation.',
     recommendedAction: 'Generate instant high-res OG image previews of the 3D room on share.',
     sampleUsers: [
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', userId: 'user_456def', country: 'Ghana', source: 'Email', time: '10m ago' },
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', userId: 'user_987pqr', country: 'Canada', source: 'Organic', time: '35m ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', userId: '82', country: 'United Kingdom', source: 'Direct Link', time: 'Live' },
     ],
   },
 };

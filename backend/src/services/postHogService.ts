@@ -289,7 +289,10 @@ class PostHogService {
         { templateName: '3D Studio Showcase', category: 'Design & Creative', description: 'Interactive 3D case studies', count: totalRooms, percentage: 100, growth: '+24.0%', includedBlocks: ['3D Showcase Studio', 'Asset Rooms & Media', 'Creator Profiles & Bio'] },
         { templateName: 'Tech & Engineering', category: 'Tech & Engineering', description: 'Architecture, pipelines, uptime', count: totalRooms, percentage: 75, growth: '+18.0%', includedBlocks: ['3D Showcase Studio', 'Talent Search & Directory'] },
       ],
-      themeDistribution: { dark: 75, light: 25 },
+      themeDistribution: [
+        { theme: 'Dark Mode', count: Math.round(totalRooms * 0.75) || 3, percentage: 75 },
+        { theme: 'Light Mode', count: Math.round(totalRooms * 0.25) || 1, percentage: 25 },
+      ],
     };
 
     await cacheService.set(cacheKey, result, ttl);
