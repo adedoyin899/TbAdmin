@@ -38,7 +38,7 @@ async function runUserLookupVerification() {
 
   // Test 4: Fetch Live User Overview (Lifetime vs Horizon)
   console.log('\nTest 4: Fetch Live User Overview (Lifetime & 30d)');
-  const overview = await postHogService.fetchUserOverview('30d');
+  const overview: any = await postHogService.fetchUserOverview('30d');
   if (overview && overview.lifetime && overview.recent && overview.acquisitionChannels) {
     console.log(`✅ Overview Lifetime Users: ${overview.lifetime.totalRegisteredUsers}`);
     console.log(`   Overview Recent (30d) Signups: ${overview.recent.newSignups}`);
