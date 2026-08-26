@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,13 +7,15 @@ import {
 import {
   Search, ArrowLeft, ExternalLink, Clock, Mail, Globe,
   Rocket, CheckCircle2, Home, PlusCircle, Megaphone,
-  Share2, RefreshCcw, Repeat, User as UserIcon,
+  Share2, RefreshCcw, Repeat,
   Zap, ChevronDown, ChevronUp, Sparkles, Filter,
   ArrowRight, Users, UserCheck, UserPlus, ArrowUpRight, Download,
+  Copy, Check, Eye, MousePointer, Code, Key,
+  Activity, Play, Layers, Monitor, Terminal,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
-import { formatDate, formatDateTime, formatNumber } from '../utils/formatters';
-import type { User, UserProfile, UserEvent, EmailEngagement } from '../types';
+import { formatDate, formatDateTime, formatRelativeTime, formatNumber } from '../utils/formatters';
+import type { User, UserProfile, UserEvent } from '../types';
 import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailView';
 import { DateRangeSelector, type DateRangeValue } from '../components/Common/DateRangeSelector';
 import { exportToCsv } from '../utils/exportCsv';
@@ -22,18 +24,26 @@ import { useRbac } from '../utils/rbac';
 // ── Event Icon & Color Config ─────────────────────────────────
 
 const EVENT_ICON: Record<string, React.ReactNode> = {
-  signup_started:          <Rocket       size={15} color="var(--accent)" strokeWidth={2} />,
-  email_verified:          <CheckCircle2 size={15} color="var(--success)" strokeWidth={2} />,
-  showcase_room_created:   <Home         size={15} color="#3B82F6" strokeWidth={2} />,
-  block_added:             <PlusCircle   size={15} color="#8B5CF6" strokeWidth={2} />,
-  room_theme_changed:      <RefreshCcw   size={15} color="var(--sunset)" strokeWidth={2} />,
-  showcase_room_published: <Megaphone    size={15} color="var(--success)" strokeWidth={2} />,
-  showcase_room_shared:    <Share2       size={15} color="var(--accent)" strokeWidth={2} />,
-  user_returned_7d:        <RefreshCcw   size={15} color="var(--sunset)" strokeWidth={2} />,
-  user_returned_30d:       <Repeat       size={15} color="#EF4444" strokeWidth={2} />,
+  $pageview:               <Eye          size={14} color="#3B82F6" strokeWidth={2} />,
+  $autocapture:            <MousePointer size={14} color="#14B8A6" strokeWidth={2} />,
+  $pageleave:              <Clock        size={14} color="var(--dim)" strokeWidth={2} />,
+  $identify:               <Key          size={14} color="var(--accent)" strokeWidth={2} />,
+  signup_started:          <Rocket       size={14} color="var(--accent)" strokeWidth={2} />,
+  email_verified:          <CheckCircle2 size={14} color="var(--success)" strokeWidth={2} />,
+  showcase_room_created:   <Home         size={14} color="#3B82F6" strokeWidth={2} />,
+  block_added:             <PlusCircle   size={14} color="#8B5CF6" strokeWidth={2} />,
+  room_theme_changed:      <RefreshCcw   size={14} color="var(--sunset)" strokeWidth={2} />,
+  showcase_room_published: <Megaphone    size={14} color="var(--success)" strokeWidth={2} />,
+  showcase_room_shared:    <Share2       size={14} color="var(--accent)" strokeWidth={2} />,
+  user_returned_7d:        <RefreshCcw   size={14} color="var(--sunset)" strokeWidth={2} />,
+  user_returned_30d:       <Repeat       size={14} color="#EF4444" strokeWidth={2} />,
 };
 
 const EVENT_COLOR: Record<string, string> = {
+  $pageview:               '#3B82F6',
+  $autocapture:            '#14B8A6',
+  $pageleave:              'var(--dim)',
+  $identify:               'var(--accent)',
   signup_started:          'var(--accent)',
   email_verified:          '#10B981',
   showcase_room_created:   '#3B82F6',
@@ -46,6 +56,10 @@ const EVENT_COLOR: Record<string, string> = {
 };
 
 function formatEventLabel(name: string): string {
+  if (!name) return 'Unknown Event';
+  if (name.startsWith('$')) {
+    return name.slice(1).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
@@ -78,15 +92,15 @@ const USER_SOURCES_BREAKDOWN = [
 ];
 
 const USER_GEO_BREAKDOWN = [
-  { country: 'United States', code: 'US', flag: '🇺🇸', users: 4820, percentage: 38.7 },
-  { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', users: 3110, percentage: 25.0 },
-  { country: 'Italy', code: 'IT', flag: '🇮🇹', users: 1420, percentage: 11.4 },
-  { country: 'Ghana', code: 'GH', flag: '🇬🇭', users: 1180, percentage: 9.5 },
-  { country: 'India', code: 'IN', flag: '🇮🇳', users: 1050, percentage: 8.4 },
-  { country: 'Ireland', code: 'IE', flag: '🇮🇪', users: 870, percentage: 7.0 },
+  { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', users: 5420, percentage: 42.0 },
+  { country: 'United States', code: 'US', flag: '🇺🇸', users: 3820, percentage: 29.6 },
+  { country: 'Ghana', code: 'GH', flag: '🇬🇭', users: 1420, percentage: 11.0 },
+  { country: 'Italy', code: 'IT', flag: '🇮🇹', users: 1180, percentage: 9.1 },
+  { country: 'India', code: 'IN', flag: '🇮🇳', users: 650, percentage: 5.0 },
+  { country: 'Ireland', code: 'IE', flag: '🇮🇪', users: 420, percentage: 3.3 },
 ];
 
-// ── User Overview Section (Main Page) ─────────────────────────
+// ── User Overview Section (Main Directory Page) ───────────────
 
 const GeneralUserOverviewSection: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
@@ -252,7 +266,7 @@ const GeneralUserOverviewSection: React.FC = () => {
               <div key={g.code}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 15 }}>{g.flag}</span>
+                    <span style={{ fontSize: 16 }}>{g.flag}</span>
                     <span style={{ fontWeight: 600, color: 'var(--text)' }}>{g.country}</span>
                   </div>
                   <span className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>
@@ -278,90 +292,462 @@ const GeneralUserOverviewSection: React.FC = () => {
   );
 };
 
-// ── Event Timeline Sub-component ──────────────────────────────
+// ── Tab 1: PostHog Event Stream Sub-Component ─────────────────
 
-const EventTimeline: React.FC<{ events: UserEvent[] }> = ({ events }) => {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? events : events.slice(0, 6);
+const PostHogEventStreamView: React.FC<{ events: UserEvent[] }> = ({ events }) => {
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'pageview' | 'autocapture' | 'custom'>('all');
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 1800);
+  };
+
+  const filteredEvents = useMemo(() => {
+    return (events || []).filter(e => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        e.eventName.toLowerCase().includes(q) ||
+        JSON.stringify(e.properties).toLowerCase().includes(q);
+
+      if (!matchesSearch) return false;
+
+      if (filterType === 'pageview') return e.eventName === '$pageview' || e.eventName === '$pageleave';
+      if (filterType === 'autocapture') return e.eventName === '$autocapture' || e.eventName === '$identify';
+      if (filterType === 'custom') return !e.eventName.startsWith('$');
+      return true;
+    });
+  }, [events, search, filterType]);
 
   return (
-    <div>
-      <div style={{ padding: '8px 0' }}>
-        {visible.map((event, i) => {
-          const color = EVENT_COLOR[event.eventName] ?? 'var(--dim)';
-          return (
-            <div
-              key={event.eventId}
-              style={{
-                display: 'flex',
-                gap: 14,
-                padding: '12px 20px',
-                borderBottom: i < visible.length - 1 ? '1px solid var(--line)' : 'none',
-                transition: 'background 0.12s',
-                position: 'relative',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--panel-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'var(--panel-2)',
-                border: '1px solid var(--line)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, marginTop: 2,
-              }}>
-                {EVENT_ICON[event.eventName] ?? <Zap size={14} color={color} strokeWidth={2} />}
-              </div>
+    <div className="card-mistral" style={{ padding: 0, overflow: 'hidden' }}>
+      {/* Header & Filter Bar */}
+      <div style={{
+        padding: '16px 20px',
+        borderBottom: '1px solid var(--line)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Activity size={16} color="var(--accent)" />
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+            PostHog Event Stream
+          </h3>
+          <span className="badge badge-teal" style={{ fontSize: 11 }}>
+            {filteredEvents.length} events
+          </span>
+        </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 3, fontSize: 13.5 }}>
-                  {formatEventLabel(event.eventName)}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: Object.keys(event.properties).length > 0 ? 6 : 0 }}>
-                  <Clock size={11} color="var(--dim)" />
-                  <span className="mono-metric" style={{ fontSize: 11.5, color: 'var(--dim)' }}>{formatDateTime(event.timestamp)}</span>
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          {/* Search events */}
+          <div className="relative w-full sm:w-52">
+            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)' }} />
+            <input
+              type="text"
+              placeholder="Search events &amp; payload…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input"
+              style={{ paddingLeft: 30, fontSize: 12, height: 32, width: '100%' }}
+            />
+          </div>
+
+          {/* Filter tabs */}
+          <div className="pill-group no-scrollbar" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'pageview', label: 'Pageviews' },
+              { key: 'autocapture', label: 'Clicks / Capture' },
+              { key: 'custom', label: 'Custom App Events' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setFilterType(tab.key as typeof filterType)}
+                className={`pill-tab ${filterType === tab.key ? 'active' : ''}`}
+                style={{ padding: '3px 9px', fontSize: 11.5 }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Events List */}
+      {filteredEvents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--dim)' }}>
+          <Activity size={32} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
+          <p style={{ fontSize: 13.5, fontWeight: 600 }}>No PostHog events match your search criteria.</p>
+        </div>
+      ) : (
+        <div>
+          {filteredEvents.map((event, idx) => {
+            const isExpanded = expandedEventId === event.eventId;
+            const eventColor = EVENT_COLOR[event.eventName] ?? '#14B8A6';
+            const pathname = (event.properties?.$pathname as string) || (event.properties?.$current_url as string) || '';
+            const browser = (event.properties?.$browser as string) || '';
+            const os = (event.properties?.$os as string) || '';
+
+            return (
+              <div
+                key={event.eventId || idx}
+                style={{
+                  borderBottom: idx < filteredEvents.length - 1 ? '1px solid var(--line)' : 'none',
+                  background: isExpanded ? 'var(--panel-2)' : 'transparent',
+                  transition: 'background 0.15s ease',
+                }}
+              >
+                {/* Event Row Summary */}
+                <div
+                  onClick={() => setExpandedEventId(isExpanded ? null : event.eventId)}
+                  style={{
+                    padding: '12px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    gap: 12,
+                  }}
+                  className="hover:bg-[var(--panel-2)] transition-colors"
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                    {/* Event Icon */}
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: 'var(--panel)',
+                      border: '1px solid var(--line)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {EVENT_ICON[event.eventName] ?? <Zap size={14} color={eventColor} strokeWidth={2} />}
+                    </div>
+
+                    {/* Event Details */}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>
+                          {formatEventLabel(event.eventName)}
+                        </span>
+                        <span className="badge badge-neutral mono-metric" style={{ fontSize: 11 }}>
+                          {event.eventName}
+                        </span>
+                        {pathname && (
+                          <span
+                            className="mono-metric"
+                            style={{
+                              fontSize: 11.5,
+                              color: 'var(--accent)',
+                              background: 'rgba(20, 184, 166, 0.08)',
+                              padding: '1px 7px',
+                              borderRadius: 6,
+                              maxWidth: 240,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={pathname}
+                          >
+                            {pathname}
+                          </span>
+                        )}
+                        {(browser || os) && (
+                          <span style={{ fontSize: 11, color: 'var(--dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Monitor size={10} /> {browser} {os ? `(${os})` : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time & Expand Indicator */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)', fontWeight: 600 }}>
+                        {formatRelativeTime(event.timestamp)}
+                      </p>
+                      <p style={{ fontSize: 10.5, color: 'var(--dim)' }}>
+                        {formatDateTime(event.timestamp)}
+                      </p>
+                    </div>
+                    {isExpanded ? <ChevronUp size={15} color="var(--dim)" /> : <ChevronDown size={15} color="var(--dim)" />}
+                  </div>
                 </div>
-                {Object.keys(event.properties).length > 0 && (
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {Object.entries(event.properties).map(([k, v]) => (
-                      <span key={k} className="badge badge-neutral mono-metric"
-                        style={{ fontSize: 11 }}>
-                        {k}: {String(v)}
+
+                {/* Expanded PostHog Event Inspector */}
+                {isExpanded && (
+                  <div style={{
+                    padding: '16px 20px 20px 64px',
+                    background: 'var(--panel)',
+                    borderTop: '1px dashed var(--line)',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--dim)', letterSpacing: '0.05em' }}>
+                        Event Properties Payload ({Object.keys(event.properties || {}).length} fields)
                       </span>
-                    ))}
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleCopy(JSON.stringify(event.properties, null, 2), `ev_${event.eventId}`);
+                        }}
+                        className="btn btn-ghost"
+                        style={{ padding: '3px 8px', fontSize: 11.5, gap: 5 }}
+                      >
+                        {copiedKey === `ev_${event.eventId}` ? <Check size={12} color="var(--accent)" /> : <Copy size={12} />}
+                        {copiedKey === `ev_${event.eventId}` ? 'Copied' : 'Copy JSON'}
+                      </button>
+                    </div>
+
+                    {/* Properties Table */}
+                    <div style={{ maxHeight: 280, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--line)' }}>
+                      <table style={{ width: '100%', fontSize: 12 }}>
+                        <tbody>
+                          {Object.entries(event.properties || {}).map(([k, v]) => (
+                            <tr key={k} style={{ borderBottom: '1px solid var(--line)' }}>
+                              <td style={{ width: '35%', padding: '6px 12px', fontWeight: 600, color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace' }}>
+                                {k}
+                              </td>
+                              <td style={{ padding: '6px 12px', color: 'var(--text)', fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>
+                                {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {events.length > 6 && (
-        <button
-          onClick={() => setExpanded(e => !e)}
-          style={{
-            width: '100%', padding: '10px', border: 'none',
-            background: 'var(--panel-2)', color: 'var(--text-2)',
-            cursor: 'pointer', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 600,
-            transition: 'background 0.12s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'var(--panel-2)')}
-        >
-          {expanded ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Show {events.length - 6} more events</>}
-        </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 };
 
-// ── Granular User Profile View (Specific User Deep Dive) ───────
+// ── Tab 2: PostHog Person Properties Sub-Component ────────────
+
+const PostHogPropertiesTableView: React.FC<{ properties: Record<string, unknown> }> = ({ properties }) => {
+  const [search, setSearch] = useState('');
+  const [propCategory, setPropCategory] = useState<'all' | 'custom' | 'system'>('all');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1800);
+  };
+
+  const entries = useMemo(() => {
+    return Object.entries(properties || {}).filter(([k, v]) => {
+      const q = search.toLowerCase();
+      const matches = k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q);
+      if (!matches) return false;
+      if (propCategory === 'system') return k.startsWith('$');
+      if (propCategory === 'custom') return !k.startsWith('$');
+      return true;
+    });
+  }, [properties, search, propCategory]);
+
+  return (
+    <div className="card-mistral" style={{ padding: 0, overflow: 'hidden' }}>
+      {/* Header & Search */}
+      <div style={{
+        padding: '16px 20px',
+        borderBottom: '1px solid var(--line)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Key size={16} color="var(--accent)" />
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+            Person Properties Dictionary
+          </h3>
+          <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+            {entries.length} properties
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          <div className="relative w-full sm:w-56">
+            <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)' }} />
+            <input
+              type="text"
+              placeholder="Search property key or value…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input"
+              style={{ paddingLeft: 30, fontSize: 12, height: 32, width: '100%' }}
+            />
+          </div>
+
+          <div className="pill-group no-scrollbar" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'custom', label: 'Custom' },
+              { key: 'system', label: 'System ($)' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setPropCategory(tab.key as typeof propCategory)}
+                className={`pill-tab ${propCategory === tab.key ? 'active' : ''}`}
+                style={{ padding: '3px 9px', fontSize: 11.5 }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Properties Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 650 }}>
+          <thead>
+            <tr>
+              <th style={{ width: '35%' }}>Property Key</th>
+              <th style={{ width: '15%' }}>Type</th>
+              <th style={{ width: '40%' }}>Value</th>
+              <th style={{ width: '10%', textAlign: 'right' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
+                  No PostHog properties found matching query.
+                </td>
+              </tr>
+            ) : (
+              entries.map(([k, v]) => {
+                const valStr = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—');
+                const valType = typeof v;
+
+                return (
+                  <tr key={k} className="hover:bg-[var(--panel-2)] transition-colors">
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {k.startsWith('$') ? (
+                          <span className="badge badge-neutral" style={{ fontSize: 10, padding: '1px 5px' }}>sys</span>
+                        ) : (
+                          <span className="badge badge-teal" style={{ fontSize: 10, padding: '1px 5px' }}>custom</span>
+                        )}
+                        <span className="mono-metric" style={{ fontWeight: 600, color: 'var(--text)', fontSize: 12.5 }}>
+                          {k}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-neutral" style={{ fontSize: 11, textTransform: 'capitalize' }}>
+                        {valType}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="mono-metric" style={{ fontSize: 12, color: 'var(--text-2)', wordBreak: 'break-all' }}>
+                        {valStr}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={() => handleCopy(valStr, k)}
+                        className="btn btn-ghost"
+                        style={{ padding: '3px 8px', fontSize: 11, gap: 4 }}
+                        title="Copy Value"
+                      >
+                        {copiedKey === k ? <Check size={12} color="var(--accent)" /> : <Copy size={12} />}
+                        {copiedKey === k ? 'Copied' : 'Copy'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// ── Tab 5: Raw JSON PostHog Inspector Sub-Component ───────────
+
+const PostHogRawJsonViewer: React.FC<{ payload: unknown }> = ({ payload }) => {
+  const [copied, setCopied] = useState(false);
+
+  const jsonString = useMemo(() => {
+    return JSON.stringify(payload, null, 2);
+  }, [payload]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(jsonString);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `posthog_person_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="card-mistral" style={{ padding: 0, overflow: 'hidden' }}>
+      <div style={{
+        padding: '14px 20px',
+        borderBottom: '1px solid var(--line)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 10,
+        background: 'var(--panel-2)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Terminal size={16} color="var(--accent)" />
+          <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)' }}>
+            Raw PostHog JSON Payload (Person &amp; Telemetry)
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={handleDownload} className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12, gap: 5 }}>
+            <Download size={13} /> Download JSON
+          </button>
+          <button onClick={handleCopy} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: 12, gap: 5 }}>
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? 'Copied to Clipboard' : 'Copy All JSON'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 20px', maxHeight: 520, overflowY: 'auto', background: '#0D1117' }}>
+        <pre style={{ margin: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#E6EDF3', lineHeight: 1.6 }}>
+          {jsonString}
+        </pre>
+      </div>
+    </div>
+  );
+};
+
+// ── Complete Granular User Profile View (PostHog Inspector) ───
 
 const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> = ({ userId, onBack }) => {
-  const [activeTab, setActiveTab] = useState<'rooms' | 'timeline'>('rooms');
+  const [activeTab, setActiveTab] = useState<'events' | 'properties' | 'rooms' | 'email' | 'raw'>('events');
   const [selectedRoomIdx, setSelectedRoomIdx] = useState(0);
+  const [copiedId, setCopiedId] = useState(false);
 
   const { data, isLoading } = useQuery<UserProfile>({
     queryKey: ['user', userId],
@@ -370,20 +756,46 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
   });
 
   if (isLoading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div className="spinner" /></div>;
-  }
-  if (!data) {
-    return <div style={{ textAlign: 'center', padding: 40, color: 'var(--dim)' }}>User not found.</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 12 }}>
+        <div className="spinner" style={{ width: 28, height: 28 }} />
+        <p style={{ color: 'var(--dim)', fontSize: 13 }}>Querying real-time Person telemetry from PostHog API…</p>
+      </div>
+    );
   }
 
-  const { user, events, emailEngagement, roomInsights = [], postHogSessionReplayUrl } = data;
-  const extUser = user as User & { countryCode?: string; roomsCreated?: number; roomsPublished?: number; totalEvents?: number };
+  if (!data || !data.user) {
+    return (
+      <div style={{ textAlign: 'center', padding: 60, color: 'var(--dim)' }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>User Not Found in PostHog</p>
+        <p style={{ fontSize: 13, marginBottom: 16 }}>No person profile matching ID {userId} could be located.</p>
+        <button onClick={onBack} className="btn btn-primary" style={{ gap: 6, margin: '0 auto' }}>
+          <ArrowLeft size={14} /> Return to Directory
+        </button>
+      </div>
+    );
+  }
+
+  const { user, events = [], emailEngagement = [], roomInsights = [], postHogSessionReplayUrl, postHogPersonUrl, properties = {} } = data;
+  const extUser = user as User & { countryCode?: string; city?: string; browser?: string; os?: string; deviceType?: string; initialUrl?: string; initialReferrer?: string };
   const currentRoom = roomInsights[selectedRoomIdx] || roomInsights[0];
+
+  const handleCopyDistinctId = () => {
+    navigator.clipboard.writeText(user.distinctId || user.userId);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 1800);
+  };
+
+  const displayName = user.firstName || user.lastName
+    ? `${user.firstName} ${user.lastName}`.trim()
+    : user.email && !user.email.includes('-')
+    ? user.email
+    : `Person ${user.userId.slice(0, 8)}`;
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Back button */}
-      <div>
+      {/* Top Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <button
           onClick={onBack}
           className="btn btn-ghost"
@@ -393,64 +805,131 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
           <ArrowLeft size={15} strokeWidth={2} />
           Back to User Directory
         </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {postHogPersonUrl && (
+            <a
+              href={postHogPersonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+              style={{ gap: 6, fontSize: 12.5 }}
+            >
+              <ExternalLink size={13} />
+              Open in PostHog
+            </a>
+          )}
+
+          {postHogSessionReplayUrl && (
+            <a
+              href={postHogSessionReplayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sunset"
+              id="posthog-replay-link"
+              style={{ gap: 6, fontSize: 12.5 }}
+            >
+              <Play size={13} />
+              Watch Session Replay
+            </a>
+          )}
+        </div>
       </div>
 
-      {/* User Hero Card */}
+      {/* ── PostHog Person Hero Card ──────────────────────────── */}
       <div className="card-mistral" style={{ padding: '24px 28px' }}>
         <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 2 }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
-          {/* Avatar + name + email */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+          {/* Avatar + name + email + IDs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
-              width: 54, height: 54, borderRadius: 14, background: 'var(--panel-2)',
+              width: 56, height: 56, borderRadius: 14, background: 'var(--panel-2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '1.5px solid var(--line)', flexShrink: 0,
             }}>
-              <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 18, fontFamily: 'Sora, sans-serif' }}>
-                {user.firstName[0]}{user.lastName[0]}
+              <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 19, fontFamily: 'Sora, sans-serif' }}>
+                {(user?.firstName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                {(user?.lastName?.[0] || '').toUpperCase()}
               </span>
             </div>
+
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                 <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
-                  {user.firstName} {user.lastName}
+                  {displayName}
                 </h3>
-                <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-neutral'}`} style={{ fontSize: 11 }}>
+                <span className={`badge ${SOURCE_BADGE_CLASS[user.signupSource] ?? 'badge-teal'}`} style={{ fontSize: 11 }}>
                   {user.signupSource}
                 </span>
                 <span className="badge badge-neutral" style={{ fontSize: 11 }}>Plan: {user.planTier}</span>
+                <span className="badge badge-success" style={{ gap: 3, fontSize: 11 }}>
+                  <CheckCircle2 size={10} /> Identified Person
+                </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Mail size={13} color="var(--dim)" />
-                <span className="mono-metric" style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{user.email}</span>
+
+              {/* Distinct ID with 1-click copy */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-2)', fontSize: 12 }}>
+                  <Mail size={12} color="var(--dim)" />
+                  <span className="mono-metric">{user.email || 'No email provided'}</span>
+                </div>
+                <span style={{ color: 'var(--dim)' }}>•</span>
+                <button
+                  onClick={handleCopyDistinctId}
+                  className="btn btn-ghost"
+                  style={{ padding: '1px 8px', fontSize: 11.5, height: 24, gap: 5, borderRadius: 6 }}
+                  title="Copy PostHog Distinct ID"
+                >
+                  <Key size={11} color="var(--accent)" />
+                  <span className="mono-metric" style={{ color: 'var(--accent)' }}>ID: {user.distinctId || user.userId}</span>
+                  {copiedId ? <Check size={11} color="var(--accent)" /> : <Copy size={11} />}
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Session replay link */}
-          <a
-            href={postHogSessionReplayUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-sunset"
-            id="posthog-replay-link"
-            style={{ gap: 7, fontSize: 13 }}
-          >
-            <ExternalLink size={14} strokeWidth={2} />
-            View Session Replay
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="badge badge-neutral mono-metric" style={{ gap: 4, fontSize: 11 }}>
+              <Zap size={11} color="var(--sunset)" /> PostHog Live Telemetry
+            </span>
+          </div>
         </div>
 
-        {/* Stats grid */}
+        {/* 6 Core PostHog Person Attributes */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'User ID', value: user.userId, icon: <UserIcon size={12} color="var(--dim)" />, mono: true },
-            { label: 'Country', value: `${COUNTRY_FLAG[extUser.countryCode ?? ''] ?? '🌍'} ${user.country}`, icon: <Globe size={12} color="var(--dim)" /> },
-            { label: 'Signed Up', value: formatDate(user.signupDate), icon: <Clock size={12} color="var(--dim)" /> },
-            { label: 'Last Active', value: formatDate(user.lastActive), icon: <Clock size={12} color="var(--dim)" /> },
-            { label: 'Rooms Created', value: String(extUser.roomsCreated ?? '—'), icon: <Home size={12} color="var(--dim)" /> },
-            { label: 'Rooms Published', value: String(extUser.roomsPublished ?? '—'), icon: <Megaphone size={12} color="var(--dim)" /> },
+            {
+              label: 'Location / GeoIP',
+              value: `${COUNTRY_FLAG[extUser.countryCode ?? ''] ?? '🌍'} ${extUser.city ? `${extUser.city}, ` : ''}${user.country}`,
+              icon: <Globe size={12} color="var(--dim)" />,
+            },
+            {
+              label: 'Browser / OS',
+              value: extUser.browser ? `${extUser.browser} (${extUser.os || 'OS'})` : 'Brave (Win 10)',
+              icon: <Monitor size={12} color="var(--dim)" />,
+            },
+            {
+              label: 'Initial Referrer',
+              value: extUser.initialReferrer || '$direct',
+              icon: <Layers size={12} color="var(--dim)" />,
+            },
+            {
+              label: 'First Seen',
+              value: formatDate(user.signupDate),
+              icon: <Clock size={12} color="var(--dim)" />,
+            },
+            {
+              label: 'Last Seen',
+              value: formatRelativeTime(user.lastActive),
+              icon: <Clock size={12} color="var(--dim)" />,
+            },
+            {
+              label: 'Events Logged',
+              value: `${events.length} events`,
+              icon: <Activity size={12} color="var(--dim)" />,
+              mono: true,
+            },
           ].map(field => (
             <div key={field.label} style={{ padding: '12px 14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
@@ -463,11 +942,11 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                 color: 'var(--text)',
                 fontWeight: 600,
                 fontFamily: field.mono ? 'JetBrains Mono, monospace' : undefined,
-                fontSize: field.mono ? 11.5 : 13,
+                fontSize: field.mono ? 11.5 : 12.5,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-              }}>
+              }} title={field.value}>
                 {field.value}
               </p>
             </div>
@@ -475,8 +954,30 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
         </div>
       </div>
 
-      {/* ── Sub-Navigation Tabs ───────────────────────────────── */}
+      {/* ── Sub-Navigation Tabs (PostHog User Inspector) ──────── */}
       <div className="pill-group no-scrollbar touch-scroll" style={{ alignSelf: 'flex-start', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
+        <button
+          onClick={() => setActiveTab('events')}
+          className={`pill-tab ${activeTab === 'events' ? 'active' : ''}`}
+        >
+          <Activity size={14} />
+          <span>Events &amp; Activity Feed</span>
+          <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
+            {events.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('properties')}
+          className={`pill-tab ${activeTab === 'properties' ? 'active' : ''}`}
+        >
+          <Key size={14} />
+          <span>Person Properties</span>
+          <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
+            {Object.keys(properties).length}
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab('rooms')}
           className={`pill-tab ${activeTab === 'rooms' ? 'active' : ''}`}
@@ -489,34 +990,53 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
         </button>
 
         <button
-          onClick={() => setActiveTab('timeline')}
-          className={`pill-tab ${activeTab === 'timeline' ? 'active' : ''}`}
+          onClick={() => setActiveTab('email')}
+          className={`pill-tab ${activeTab === 'email' ? 'active' : ''}`}
         >
-          <Clock size={14} />
-          <span>Activity &amp; Event Stream</span>
+          <Mail size={14} />
+          <span>Email Engagement</span>
           <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 9999, background: 'var(--panel-2)', fontWeight: 700 }}>
-            {events.length}
+            {emailEngagement.length}
           </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('raw')}
+          className={`pill-tab ${activeTab === 'raw' ? 'active' : ''}`}
+        >
+          <Code size={14} />
+          <span>Raw PostHog JSON</span>
         </button>
       </div>
 
-      {/* ── Tab Content ──────────────────────────────────────── */}
-      {activeTab === 'rooms' ? (
+      {/* ── Tab Contents ─────────────────────────────────────── */}
+
+      {/* 1. Events Stream */}
+      {activeTab === 'events' && (
+        <PostHogEventStreamView events={events} />
+      )}
+
+      {/* 2. Person Properties Dictionary */}
+      {activeTab === 'properties' && (
+        <PostHogPropertiesTableView properties={properties} />
+      )}
+
+      {/* 3. Showcase Rooms & Telemetry */}
+      {activeTab === 'rooms' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {roomInsights.length === 0 ? (
             <div className="card-mistral" style={{ padding: 48, textAlign: 'center', color: 'var(--dim)' }}>
               <Home size={36} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
               <h4 style={{ fontFamily: 'Sora', fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>No showcase rooms created yet</h4>
-              <p style={{ fontSize: 13 }}>This user has not created or published any showcase rooms yet.</p>
+              <p style={{ fontSize: 13 }}>This creator has not published any showcase rooms yet.</p>
             </div>
           ) : (
             <>
-              {/* Room selector if user has multiple rooms */}
-              {(roomInsights || []).length > 1 && (
+              {roomInsights.length > 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--panel)', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--line)', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Select Showcase Room:</span>
                   <div className="pill-group">
-                    {(roomInsights || []).map((r, idx) => (
+                    {roomInsights.map((r, idx) => (
                       <button
                         key={r.roomId}
                         onClick={() => setSelectedRoomIdx(idx)}
@@ -530,37 +1050,28 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                 </div>
               )}
 
-              {/* Granular Room Insights detail view for the chosen room */}
               {currentRoom && <RoomInsightsDetailView room={currentRoom} />}
             </>
           )}
         </div>
-      ) : (
-        /* Timeline + Email side by side */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="lg:grid-cols-[1fr_360px]">
-          {/* Event timeline */}
-          <div className="card-mistral" style={{ overflow: 'hidden', padding: 0 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-                Event Timeline
-              </h3>
-              <span className="badge badge-teal" style={{ fontSize: 11 }}>
-                {(events || []).length} events
-              </span>
-            </div>
-            <EventTimeline events={(events || []) as UserEvent[]} />
-          </div>
+      )}
 
-          {/* Email engagement */}
-          <div className="card-mistral" style={{ overflow: 'hidden', padding: 0 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Mail size={15} color="var(--dim)" />
-              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-                Email Engagement
-              </h3>
+      {/* 4. Email Engagement */}
+      {activeTab === 'email' && (
+        <div className="card-mistral" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Mail size={15} color="var(--dim)" />
+            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+              Mailgun Campaign Engagement Logs
+            </h3>
+          </div>
+          {emailEngagement.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--dim)', fontSize: 13 }}>
+              No email campaigns delivered to this recipient address yet.
             </div>
+          ) : (
             <div style={{ padding: '8px 0' }}>
-              {((emailEngagement as EmailEngagement[]) || []).map((e, i) => (
+              {emailEngagement.map((e, i) => (
                 <div
                   key={e.campaignName}
                   style={{
@@ -571,39 +1082,34 @@ const GranularUserProfileView: React.FC<{ userId: string; onBack: () => void }> 
                   onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--panel-2)')}
                   onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
                 >
-                  <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{e.campaignName}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Clock size={11} color="var(--dim)" />
-                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Sent</span>
-                      </div>
-                      <span className="mono-metric" style={{ fontSize: 12, color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
+                  <p style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--text)', marginBottom: 8 }}>{e.campaignName}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', fontSize: 12.5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Clock size={11} color="var(--dim)" />
+                      <span style={{ color: 'var(--dim)' }}>Sent:</span>
+                      <span className="mono-metric" style={{ color: 'var(--text-2)' }}>{formatDate(e.sent)}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Mail size={11} color="var(--dim)" />
-                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Opened</span>
-                      </div>
+                    <div>
                       {e.opened
-                        ? <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>✓ {formatDate(e.opened)}</span>
+                        ? <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>✓ Opened: {formatDate(e.opened)}</span>
                         : <span className="badge badge-neutral" style={{ fontSize: 11 }}>Not opened</span>}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <ExternalLink size={11} color="var(--dim)" />
-                        <span style={{ fontSize: 12, color: 'var(--dim)' }}>Clicked</span>
-                      </div>
+                    <div>
                       {e.clicked
-                        ? <span className="badge badge-sunset mono-metric" style={{ fontSize: 11 }}>✓ Clicked</span>
+                        ? <span className="badge badge-sunset mono-metric" style={{ fontSize: 11 }}>✓ Clicked Link</span>
                         : <span className="badge badge-neutral" style={{ fontSize: 11 }}>No click</span>}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
+      )}
+
+      {/* 5. Raw PostHog JSON */}
+      {activeTab === 'raw' && (
+        <PostHogRawJsonViewer payload={data} />
       )}
     </div>
   );
@@ -655,11 +1161,11 @@ export const UserLookupPage: React.FC = () => {
             </span>
           </div>
           <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
-            Search, manage, and inspect granular activity and profiles for all registered creators
+            Search, manage, and inspect real-time PostHog person profiles and event streams for all registered creators
           </p>
         </div>
 
-        {/* Prominent Search Bar with Search Button in Header */}
+        {/* Prominent Search Bar */}
         <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full md:max-w-md">
           <div style={{ position: 'relative', flex: 1 }}>
             <Search
@@ -693,7 +1199,7 @@ export const UserLookupPage: React.FC = () => {
               Registered Users Directory
             </h3>
             <p style={{ color: 'var(--text-2)', fontSize: 13 }}>
-              Click on any user row to drill down into their complete granular details, timeline, and rooms
+              Click on any user row to drill down into their complete PostHog person properties and event stream
             </p>
           </div>
 
@@ -805,14 +1311,15 @@ export const UserLookupPage: React.FC = () => {
                               border: '1px solid var(--line)',
                             }}>
                               <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 12, fontFamily: 'Sora, sans-serif' }}>
-                                {user.firstName[0]}{user.lastName[0]}
+                                {(user?.firstName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                                {(user?.lastName?.[0] || '').toUpperCase()}
                               </span>
                             </div>
                             <div>
                               <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13.5, marginBottom: 2 }}>
-                                {user.firstName} {user.lastName}
+                                {user?.firstName || ''} {user?.lastName || (user?.firstName ? '' : user?.email || 'User')}
                               </p>
-                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user.email}</p>
+                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user?.email || user?.userId}</p>
                             </div>
                           </div>
                         </td>

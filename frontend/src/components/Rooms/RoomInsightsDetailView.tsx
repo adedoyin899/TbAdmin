@@ -36,18 +36,57 @@ export const RoomInsightsDetailView: React.FC<{
   const [locationMetric, setLocationMetric] = useState<'unique' | 'clicks' | 'views' | 'engagement' | 'ctr'>('unique');
   const [page, setPage] = useState(1);
 
-  // Filter viewers
-  const viewers = room.viewers || [];
-  const filteredViewers = viewers.filter(v => {
+  // Normalize summary metrics with safe fallbacks
+  const anyRoom = (room || {}) as any;
+  const totalViews = room?.totalViews || anyRoom?.summary?.totalViews || { count: 0, change: 0 };
+  const uniqueViews = room?.uniqueViews || anyRoom?.summary?.uniqueViews || { count: 0, change: 0 };
+  const avgTimeSpent = room?.avgTimeSpent || anyRoom?.summary?.avgTimeSpent || { value: '—', change: '—' };
+  const engagementQuality = room?.engagementQuality || anyRoom?.summary?.engagementQuality || { percentage: 0, change: 0 };
+
+  // Normalize viewers
+  const rawViewers = room?.viewers || anyRoom?.recentLeads || [];
+  const viewers = rawViewers.map((v: any) => ({
+    id: v.id || `v_${Math.random()}`,
+    name: v.name || 'Anonymous Viewer',
+    role: v.role || 'Visitor',
+    company: v.company || 'Enterprise',
+    location: v.location || 'Unknown',
+    timeSpent: v.timeSpent || '1m',
+    views: v.views || 1,
+    status: v.status || 'new',
+    lastVisit: v.lastVisit || 'Recently',
+    avatarBg: v.avatarBg || 'var(--panel-2)',
+  }));
+
+  const filteredViewers = viewers.filter((v: any) => {
     const matchesSearch =
-      v.name.toLowerCase().includes(viewerSearch.toLowerCase()) ||
-      v.role.toLowerCase().includes(viewerSearch.toLowerCase()) ||
-      v.company.toLowerCase().includes(viewerSearch.toLowerCase()) ||
-      v.location.toLowerCase().includes(viewerSearch.toLowerCase());
+      (v.name || '').toLowerCase().includes(viewerSearch.toLowerCase()) ||
+      (v.role || '').toLowerCase().includes(viewerSearch.toLowerCase()) ||
+      (v.company || '').toLowerCase().includes(viewerSearch.toLowerCase()) ||
+      (v.location || '').toLowerCase().includes(viewerSearch.toLowerCase());
     const matchesStatus =
       viewerFilter === 'all' || v.status === viewerFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const viewsTrend = (room?.viewsTrend || []).map((v: any) => ({
+    month: v.month,
+    totalViews: v.totalViews ?? ((v.desktop || 0) + (v.mobile || 0) + (v.tablet || 0)),
+    uniqueViews: v.uniqueViews ?? (v.desktop || 0),
+  }));
+
+  const trafficSources = room?.trafficSources || [];
+  const devices = room?.devices || [];
+  const heatmap = room?.heatmap || [];
+  const geoTraffic = room?.geoTraffic || [];
+  const recommendations = room?.recommendations || anyRoom?.smartRecommendations?.map((r: any) => ({
+    id: r.id || `rec_${Math.random()}`,
+    title: r.title || 'Optimization Suggestion',
+    description: r.description || '',
+    priority: r.priority || (r.impact === 'high' ? 'Urgent' : 'Medium'),
+    actionText: r.actionText || 'Optimize Now',
+    iconType: r.iconType || 'sparkles',
+  })) || [];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -63,9 +102,9 @@ export const RoomInsightsDetailView: React.FC<{
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-              Insights for <span style={{ color: 'var(--accent)' }}>{room.roomName}</span>
+              Insights for <span style={{ color: 'var(--accent)' }}>{room?.roomName || 'Showcase Room'}</span>
             </h2>
-            {room.isPublished ? (
+            {room?.isPublished ? (
               <span className="badge badge-success" style={{ gap: 4 }}>
                 <CheckCircle2 size={11} /> Published
               </span>
@@ -82,9 +121,9 @@ export const RoomInsightsDetailView: React.FC<{
           <DateRangeSelector
             value={dateRange}
             onChange={setDateRange}
-            idPrefix={`room-${room.roomId}-date`}
+            idPrefix={`room-${room?.roomId || 'default'}-date`}
           />
-          {room.publishedUrl && (
+          {room?.publishedUrl && (
             <a
               href={room.publishedUrl}
               target="_blank"
@@ -114,11 +153,11 @@ export const RoomInsightsDetailView: React.FC<{
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Total views</span>
             <span className="badge badge-success" style={{ gap: 2, fontSize: 11 }}>
-              <ArrowUpRight size={11} /> +{room.totalViews.change}%
+              <ArrowUpRight size={11} /> +{totalViews?.change ?? 0}%
             </span>
           </div>
           <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
-            {formatNumber(room.totalViews.count)}
+            {formatNumber(totalViews?.count ?? 0)}
           </p>
         </div>
 
@@ -126,12 +165,13 @@ export const RoomInsightsDetailView: React.FC<{
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Unique views</span>
-            <span className="badge badge-error" style={{ gap: 2, fontSize: 11 }}>
-              <ArrowDownRight size={11} /> {room.uniqueViews.change}%
+            <span className={`badge ${(uniqueViews?.change ?? 0) >= 0 ? 'badge-teal' : 'badge-error'}`} style={{ gap: 2, fontSize: 11 }}>
+              {(uniqueViews?.change ?? 0) >= 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+              {(uniqueViews?.change ?? 0) >= 0 ? `+${uniqueViews?.change ?? 0}%` : `${uniqueViews?.change ?? 0}%`}
             </span>
           </div>
           <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
-            {formatNumber(room.uniqueViews.count)}
+            {formatNumber(uniqueViews?.count ?? 0)}
           </p>
         </div>
 
@@ -140,11 +180,11 @@ export const RoomInsightsDetailView: React.FC<{
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Avg Time Spent</span>
             <span className="badge badge-neutral mono-metric" style={{ fontSize: 11 }}>
-              {room.avgTimeSpent.change}
+              {avgTimeSpent?.change ?? '—'}
             </span>
           </div>
           <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
-            {room.avgTimeSpent.value}
+            {avgTimeSpent?.value ?? '—'}
           </p>
         </div>
 
@@ -153,11 +193,11 @@ export const RoomInsightsDetailView: React.FC<{
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>Engagement Quality</span>
             <span className="badge badge-sunset" style={{ gap: 2, fontSize: 11 }}>
-              <ArrowUpRight size={11} /> +{room.engagementQuality.change}%
+              <ArrowUpRight size={11} /> +{engagementQuality?.change ?? 0}%
             </span>
           </div>
           <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
-            {room.engagementQuality.percentage}%
+            {engagementQuality?.percentage ?? 0}%
           </p>
         </div>
       </div>
@@ -184,7 +224,7 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
 
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={room.viewsTrend || []} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <AreaChart data={viewsTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <defs>
               <linearGradient id="totalViewsGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#FA520F" stopOpacity={0.3} />
@@ -218,7 +258,7 @@ export const RoomInsightsDetailView: React.FC<{
           <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>How people discover this showcase room</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {(room.trafficSources || []).map(s => (
+            {trafficSources.map((s: any) => (
               <div key={s.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
                   <span style={{ color: 'var(--text)', fontWeight: 500 }}>{s.name}</span>
@@ -248,7 +288,7 @@ export const RoomInsightsDetailView: React.FC<{
           <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>Form-factors and browsers used to render room</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {(room.devices || []).map(d => (
+            {devices.map((d: any) => (
               <div key={d.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
                   <span style={{ color: 'var(--text)', fontWeight: 500 }}>{d.name}</span>
@@ -368,7 +408,12 @@ export const RoomInsightsDetailView: React.FC<{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontWeight: 700, fontSize: 12, fontFamily: 'Sora',
                         }}>
-                          {v.name.split(' ').map(n => n[0]).join('')}
+                          {(v.name || 'Viewer')
+                            .split(' ')
+                            .map((n: string) => n[0] || '')
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </div>
                         <span style={{ fontWeight: 600, color: 'var(--text)' }}>{v.name}</span>
                       </div>
@@ -471,7 +516,7 @@ export const RoomInsightsDetailView: React.FC<{
                   {slot}
                 </div>
                 {DAYS.map(day => {
-                  const cell = (room.heatmap || []).find(h => h.day === day && h.timeSlot === slot);
+                  const cell = heatmap.find((h: any) => h.day === day && h.timeSlot === slot);
                   const intensity = cell ? cell.intensity : 1;
                   const val = cell ? (cell.views > 1000 ? `${(cell.views / 1000).toFixed(1)}k` : `${cell.views}`) : '100';
 
@@ -560,7 +605,7 @@ export const RoomInsightsDetailView: React.FC<{
               Top 6 Countries
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(room.geoTraffic || []).map(g => (
+              {geoTraffic.map((g: any) => (
                 <div key={g.code}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -598,7 +643,7 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-          {(room.recommendations || []).map(rec => (
+          {recommendations.map((rec: any) => (
             <div
               key={rec.id}
               className="card-mistral"

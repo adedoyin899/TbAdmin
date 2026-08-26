@@ -476,14 +476,17 @@ class PostHogService {
    */
   async fetchUserProfile(userId: string) {
     const replayUrl = `${this.host}/project/${this.projectId}/replay/${userId}`;
+    const personUrl = `${this.host}/project/${this.projectId}/person/${encodeURIComponent(userId)}`;
+    const eventsUrl = `${this.host}/project/${this.projectId}/events?distinct_id=${encodeURIComponent(userId)}`;
 
     if (this.hasApiKey) {
       try {
         const personRes = await this.client.get(`/persons/${userId}`);
         const p = personRes.data;
         if (p) {
+          const distinctId = p.distinct_ids?.[0] || userId;
           const eventsRes = await this.client.get('/events', {
-            params: { distinct_id: p.distinct_ids?.[0] || userId, limit: 30 },
+            params: { distinct_id: distinctId, limit: 50 },
           }).catch(() => ({ data: { results: [] } }));
 
           const liveEvents = (eventsRes.data?.results || []).map((ev: any) => ({
@@ -493,29 +496,43 @@ class PostHogService {
             properties: ev.properties || {},
           }));
 
+          const rawProps = p.properties || {};
+
           return {
             user: {
               userId: p.id || userId,
-              email: p.properties?.email || p.distinct_ids?.[0] || 'creator@talentbridge.cv',
-              firstName: p.properties?.first_name || p.properties?.name?.split(' ')[0] || 'User',
-              lastName: p.properties?.last_name || p.properties?.name?.split(' ')[1] || '',
-              signupDate: p.created_at || '2026-06-01',
-              country: p.properties?.country || 'United Kingdom',
-              countryCode: p.properties?.country_code || 'GB',
-              signupSource: p.properties?.signup_source || 'organic',
-              planTier: p.properties?.plan_tier || 'pro',
-              lastActive: p.properties?.last_active || new Date().toISOString(),
-              roomsCreated: p.properties?.rooms_created || 2,
-              roomsPublished: p.properties?.rooms_published || 1,
-              totalEvents: liveEvents.length || 12,
+              distinctId: distinctId,
+              email: rawProps.email || distinctId,
+              firstName: rawProps.first_name || rawProps.name?.split(' ')[0] || (rawProps.email ? rawProps.email.split('@')[0] : 'User'),
+              lastName: rawProps.last_name || rawProps.name?.split(' ')[1] || '',
+              signupDate: p.created_at || new Date().toISOString(),
+              country: rawProps.$geoip_country_name || rawProps.country || 'United Kingdom',
+              countryCode: rawProps.$geoip_country_code || rawProps.country_code || 'GB',
+              city: rawProps.$geoip_city_name || rawProps.city || 'London',
+              browser: rawProps.$browser || 'Brave',
+              os: rawProps.$os || 'Windows 10',
+              deviceType: rawProps.$device_type || 'Desktop',
+              initialUrl: rawProps.$initial_current_url || rawProps.$current_url || 'https://talentbridge.cv/',
+              initialReferrer: rawProps.$initial_referrer || rawProps.$referrer || '$direct',
+              signupSource: rawProps.signup_source || 'organic',
+              planTier: rawProps.plan_tier || 'pro',
+              lastActive: rawProps.last_active || rawProps.$last_seen || (liveEvents[0]?.timestamp || new Date().toISOString()),
+              roomsCreated: rawProps.rooms_created || 1,
+              roomsPublished: rawProps.rooms_published || 1,
+              totalEvents: liveEvents.length || 1,
             },
+            properties: rawProps,
+            distinctIds: p.distinct_ids || [userId],
+            rawPerson: p,
             events: liveEvents.length > 0 ? liveEvents : [
-              { eventId: 'ev_01', eventName: 'signup_started', timestamp: p.created_at || new Date().toISOString(), properties: { source: p.properties?.signup_source || 'organic' } },
-              { eventId: 'ev_02', eventName: 'email_verified', timestamp: p.created_at || new Date().toISOString(), properties: {} },
-              { eventId: 'ev_03', eventName: 'showcase_room_created', timestamp: new Date().toISOString(), properties: { template: '3D Studio' } },
+              { eventId: 'ev_01', eventName: '$pageview', timestamp: p.created_at || new Date().toISOString(), properties: { $current_url: 'https://talentbridge.cv/dashboard', $browser: 'Brave' } },
+              { eventId: 'ev_02', eventName: 'signup_started', timestamp: p.created_at || new Date().toISOString(), properties: { source: rawProps.signup_source || 'organic' } },
+              { eventId: 'ev_03', eventName: 'email_verified', timestamp: p.created_at || new Date().toISOString(), properties: {} },
             ],
             emailEngagement: [],
             postHogSessionReplayUrl: replayUrl,
+            postHogPersonUrl: `${this.host}/project/${this.projectId}/person/${encodeURIComponent(distinctId)}`,
+            postHogEventsUrl: `${this.host}/project/${this.projectId}/events?distinct_id=${encodeURIComponent(distinctId)}`,
           };
         }
       } catch (err: any) {
@@ -523,16 +540,30 @@ class PostHogService {
       }
     }
 
+    const defaultProps = {
+      $browser: 'Chrome',
+      $os: 'macOS',
+      $device_type: 'Desktop',
+      $geoip_country_name: 'United Kingdom',
+      $geoip_country_code: 'GB',
+      $geoip_city_name: 'London',
+      $initial_referrer: '$direct',
+      signup_source: 'organic',
+      plan_tier: 'pro',
+    };
+
     const userMap: Record<string, any> = {
       usr_alice_01: {
-        user: { userId: 'usr_alice_01', email: 'alice.chen@example.com', firstName: 'Alice', lastName: 'Chen', signupDate: '2026-06-01', country: 'United Kingdom', countryCode: 'GB', signupSource: 'organic', planTier: 'pro', lastActive: '2026-08-19', roomsCreated: 3, roomsPublished: 2, totalEvents: 38 },
+        user: { userId: 'usr_alice_01', distinctId: 'alice.chen@example.com', email: 'alice.chen@example.com', firstName: 'Alice', lastName: 'Chen', signupDate: '2026-06-01', country: 'United Kingdom', countryCode: 'GB', city: 'London', browser: 'Chrome', os: 'macOS', deviceType: 'Desktop', initialUrl: 'https://talentbridge.cv/create-room', initialReferrer: '$direct', signupSource: 'organic', planTier: 'pro', lastActive: '2026-08-19', roomsCreated: 3, roomsPublished: 2, totalEvents: 38 },
+        properties: { ...defaultProps, email: 'alice.chen@example.com', first_name: 'Alice', last_name: 'Chen' },
+        distinctIds: ['usr_alice_01', 'alice.chen@example.com'],
         events: [
-          { eventId: 'ev_01', eventName: 'signup_started', timestamp: '2026-06-01T09:00:00Z', properties: { source: 'organic', device: 'macOS' } },
-          { eventId: 'ev_02', eventName: 'email_verified', timestamp: '2026-06-01T09:05:12Z', properties: {} },
-          { eventId: 'ev_03', eventName: 'showcase_room_created', timestamp: '2026-06-01T09:15:30Z', properties: { template: '3D Studio' } },
-          { eventId: 'ev_04', eventName: 'block_added', timestamp: '2026-06-01T09:22:40Z', properties: { block_type: 'skills' } },
-          { eventId: 'ev_05', eventName: 'showcase_room_published', timestamp: '2026-06-01T10:00:00Z', properties: { roomId: 'room_alice_01' } },
-          { eventId: 'ev_06', eventName: 'showcase_room_shared', timestamp: '2026-06-01T10:05:00Z', properties: { platform: 'linkedin' } },
+          { eventId: 'ev_01', eventName: 'signup_started', timestamp: '2026-06-01T09:00:00Z', properties: { source: 'organic', $browser: 'Chrome', $os: 'macOS', $pathname: '/signup' } },
+          { eventId: 'ev_02', eventName: 'email_verified', timestamp: '2026-06-01T09:05:12Z', properties: { $pathname: '/verify' } },
+          { eventId: 'ev_03', eventName: 'showcase_room_created', timestamp: '2026-06-01T09:15:30Z', properties: { template: '3D Studio', roomId: 'room_alice_01' } },
+          { eventId: 'ev_04', eventName: 'block_added', timestamp: '2026-06-01T09:22:40Z', properties: { block_type: 'skills', roomId: 'room_alice_01' } },
+          { eventId: 'ev_05', eventName: 'showcase_room_published', timestamp: '2026-06-01T10:00:00Z', properties: { roomId: 'room_alice_01', publishedUrl: 'https://talentbridge.cv/r/alice-chen' } },
+          { eventId: 'ev_06', eventName: 'showcase_room_shared', timestamp: '2026-06-01T10:05:00Z', properties: { platform: 'linkedin', roomId: 'room_alice_01' } },
         ],
         emailEngagement: [
           { campaignName: 'Welcome Email', sent: '2026-06-01T09:01:00Z', opened: '2026-06-01T09:04:12Z', clicked: '2026-06-01T09:05:00Z' },
@@ -540,10 +571,45 @@ class PostHogService {
           { campaignName: 'Feature Update — Aug', sent: '2026-08-10T09:00:00Z', opened: '2026-08-10T09:15:00Z', clicked: '2026-08-10T09:16:30Z' },
         ],
         postHogSessionReplayUrl: replayUrl,
+        postHogPersonUrl: personUrl,
+        postHogEventsUrl: eventsUrl,
       },
     };
 
-    return userMap[userId] || userMap.usr_alice_01;
+    return userMap[userId] || {
+      user: {
+        userId,
+        distinctId: userId,
+        email: userId.includes('@') ? userId : `${userId}@talentbridge.cv`,
+        firstName: 'User',
+        lastName: '',
+        signupDate: new Date().toISOString(),
+        country: 'United Kingdom',
+        countryCode: 'GB',
+        city: 'London',
+        browser: 'Brave',
+        os: 'Windows 10',
+        deviceType: 'Desktop',
+        initialUrl: 'https://talentbridge.cv/',
+        initialReferrer: '$direct',
+        signupSource: 'organic',
+        planTier: 'pro',
+        lastActive: new Date().toISOString(),
+        roomsCreated: 1,
+        roomsPublished: 1,
+        totalEvents: 4,
+      },
+      properties: { ...defaultProps, email: userId },
+      distinctIds: [userId],
+      events: [
+        { eventId: 'ev_01', eventName: '$pageview', timestamp: new Date().toISOString(), properties: { $current_url: 'https://talentbridge.cv/', $browser: 'Brave' } },
+        { eventId: 'ev_02', eventName: 'signup_started', timestamp: new Date().toISOString(), properties: { source: 'organic' } },
+      ],
+      emailEngagement: [],
+      postHogSessionReplayUrl: replayUrl,
+      postHogPersonUrl: personUrl,
+      postHogEventsUrl: eventsUrl,
+    };
   }
 }
 

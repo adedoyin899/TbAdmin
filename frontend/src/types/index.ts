@@ -215,12 +215,19 @@ export interface RoomsDashboardResponse {
 
 export interface User {
   userId: string;
+  distinctId?: string;
   email: string;
   firstName: string;
   lastName: string;
   signupDate: string;
   country: string;
   countryCode?: string;
+  city?: string;
+  browser?: string;
+  os?: string;
+  deviceType?: string;
+  initialUrl?: string;
+  initialReferrer?: string;
   signupSource: string;
   planTier: string;
   lastActive: string;
@@ -246,9 +253,14 @@ export interface EmailEngagement {
 export interface UserProfile {
   user: User;
   events: UserEvent[];
+  properties?: Record<string, unknown>;
+  distinctIds?: string[];
+  rawPerson?: Record<string, unknown>;
   emailEngagement: EmailEngagement[];
   roomInsights?: RoomInsight[];
   postHogSessionReplayUrl: string;
+  postHogPersonUrl?: string;
+  postHogEventsUrl?: string;
 }
 
 // ── Auth Types ───────────────────────────────────────────────
