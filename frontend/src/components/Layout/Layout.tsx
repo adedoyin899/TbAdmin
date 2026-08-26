@@ -545,8 +545,16 @@ export const Header: React.FC<{
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const [isDark, setIsDark] = useState(
-    document.documentElement.getAttribute('data-mode') === 'dark'
+    document.documentElement.getAttribute('data-mode') !== 'light'
   );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-mode') !== 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-mode'] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -559,10 +567,11 @@ export const Header: React.FC<{
   }, []);
 
   const toggleMode = () => {
-    const next = isDark ? 'light' : 'dark';
+    const currentIsDark = document.documentElement.getAttribute('data-mode') !== 'light';
+    const next = currentIsDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-mode', next);
     localStorage.setItem('theme-mode', next);
-    setIsDark(!isDark);
+    setIsDark(!currentIsDark);
   };
 
   const handleLogout = async () => {
