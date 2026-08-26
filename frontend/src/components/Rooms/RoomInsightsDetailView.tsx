@@ -44,7 +44,11 @@ export const RoomInsightsDetailView: React.FC<{
   const engagementQuality = room?.engagementQuality || anyRoom?.summary?.engagementQuality || { percentage: 0, change: 0 };
 
   // Normalize viewers
-  const rawViewers = room?.viewers || anyRoom?.recentLeads || [];
+  const rawViewers = Array.isArray(room?.viewers)
+    ? room.viewers
+    : Array.isArray(anyRoom?.recentLeads)
+    ? anyRoom.recentLeads
+    : [];
   const viewers = rawViewers.map((v: any) => ({
     id: v.id || `v_${Math.random()}`,
     name: v.name || 'Anonymous Viewer',
@@ -69,24 +73,29 @@ export const RoomInsightsDetailView: React.FC<{
     return matchesSearch && matchesStatus;
   });
 
-  const viewsTrend = (room?.viewsTrend || []).map((v: any) => ({
+  const viewsTrend = (Array.isArray(room?.viewsTrend) ? room.viewsTrend : []).map((v: any) => ({
     month: v.month,
     totalViews: v.totalViews ?? ((v.desktop || 0) + (v.mobile || 0) + (v.tablet || 0)),
     uniqueViews: v.uniqueViews ?? (v.desktop || 0),
   }));
 
-  const trafficSources = room?.trafficSources || [];
-  const devices = room?.devices || [];
-  const heatmap = room?.heatmap || [];
-  const geoTraffic = room?.geoTraffic || [];
-  const recommendations = room?.recommendations || anyRoom?.smartRecommendations?.map((r: any) => ({
+  const trafficSources = Array.isArray(room?.trafficSources) ? room.trafficSources : [];
+  const devices = Array.isArray(room?.devices) ? room.devices : [];
+  const heatmap = Array.isArray(room?.heatmap) ? room.heatmap : [];
+  const geoTraffic = Array.isArray(room?.geoTraffic) ? room.geoTraffic : [];
+  const rawRecs = Array.isArray(room?.recommendations)
+    ? room.recommendations
+    : Array.isArray(anyRoom?.smartRecommendations)
+    ? anyRoom.smartRecommendations
+    : [];
+  const recommendations = rawRecs.map((r: any) => ({
     id: r.id || `rec_${Math.random()}`,
     title: r.title || 'Optimization Suggestion',
     description: r.description || '',
     priority: r.priority || (r.impact === 'high' ? 'Urgent' : 'Medium'),
     actionText: r.actionText || 'Optimize Now',
     iconType: r.iconType || 'sparkles',
-  })) || [];
+  }));
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -396,7 +405,7 @@ export const RoomInsightsDetailView: React.FC<{
                   </td>
                 </tr>
               ) : (
-                filteredViewers.map(v => (
+                filteredViewers.map((v: any) => (
                   <tr key={v.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

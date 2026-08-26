@@ -886,7 +886,13 @@ const GranularUserProfileView: React.FC<{
     );
   }
 
-  const { user, events = [], emailEngagement = [], roomInsights = [], postHogSessionReplayUrl, postHogPersonUrl, properties = {} } = data;
+  const user = data.user || {} as User;
+  const events = Array.isArray(data.events) ? data.events : [];
+  const emailEngagement = Array.isArray(data.emailEngagement) ? data.emailEngagement : [];
+  const roomInsights = Array.isArray(data.roomInsights) ? data.roomInsights : [];
+  const properties = (data.properties && typeof data.properties === 'object') ? data.properties : {};
+  const postHogSessionReplayUrl = data.postHogSessionReplayUrl;
+  const postHogPersonUrl = data.postHogPersonUrl;
   const extUser = user as User & { countryCode?: string; city?: string; browser?: string; os?: string; deviceType?: string; initialUrl?: string; initialReferrer?: string };
   const currentRoom = roomInsights[selectedRoomIdx] || roomInsights[0];
 

@@ -339,7 +339,7 @@ export const FunnelDashboard: React.FC = () => {
               <YAxis tick={{ fill: 'var(--dim)', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(20,184,166,0.06)' }} />
               <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                {data.funnel.map((_, i) => <Cell key={i} fill={STAGE_COLORS[i % STAGE_COLORS.length]} />)}
+                {(data.funnel || []).map((_, i) => <Cell key={i} fill={STAGE_COLORS[i % STAGE_COLORS.length]} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -374,7 +374,7 @@ export const FunnelDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.funnel.map((stage, i) => (
+                {(data.funnel || []).map((stage, i) => (
                   <tr
                     key={stage.stage || i}
                     onClick={() => setSelectedStage(stage)}
@@ -564,7 +564,7 @@ export const FunnelDashboard: React.FC = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <h4 style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, fontFamily: 'Sora, sans-serif' }}>
-                  Recent Cohort Creators at this Milestone ({stageMeta.sampleUsers.length})
+                  Recent Cohort Creators at this Milestone ({(stageMeta?.sampleUsers || []).length})
                 </h4>
                 <span style={{ fontSize: 11, color: 'var(--dim)' }}>
                   Live PostHog Profile Stream
@@ -572,7 +572,7 @@ export const FunnelDashboard: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {stageMeta.sampleUsers.map(u => (
+                {(stageMeta?.sampleUsers || []).map(u => (
                   <div
                     key={u.userId}
                     style={{
