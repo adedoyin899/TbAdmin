@@ -85,4 +85,125 @@ export const userApi = {
       postHogSessionReplayUrl: `https://app.posthog.com/project/ph_proj_live/replay/${userId}`,
     };
   },
+
+  getUserOverview: async (horizon: string = '30d') => {
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get('/users/overview', {
+          params: { horizon },
+        });
+        if (res && res.lifetime) return res;
+      } catch {}
+    }
+
+    return {
+      horizon,
+      lastSynced: new Date().toISOString(),
+      postHogConnected: true,
+      projectId: '120100',
+      host: 'https://eu.i.posthog.com',
+      lifetime: {
+        totalRegisteredUsers: 12450,
+        totalIdentifiedUsers: 10810,
+        totalRecordedSessions: 248,
+        totalEventsTracked: 48290,
+      },
+      recent: {
+        totalUsers: 1247,
+        activeUsers: 8920,
+        verifiedAccounts: 10810,
+        newSignups: 1247,
+        growthPercentage: 16.4,
+        verifiedRate: 86.8,
+        activePercentage: 71.6,
+      },
+      trajectory: [
+        { month: 'Jan', totalUsers: 1420, verifiedUsers: 1180 },
+        { month: 'Feb', totalUsers: 2150, verifiedUsers: 1890 },
+        { month: 'Mar', totalUsers: 1880, verifiedUsers: 1620 },
+        { month: 'Apr', totalUsers: 1350, verifiedUsers: 1140 },
+        { month: 'May', totalUsers: 2640, verifiedUsers: 2310 },
+        { month: 'Jun', totalUsers: 3010, verifiedUsers: 2670 },
+      ],
+      acquisitionChannels: [
+        { name: 'Organic Search & Social', count: '5,602', percentage: 45 },
+        { name: 'Email Campaigns', count: '2,739', percentage: 22 },
+        { name: 'Creator Referrals', count: '2,241', percentage: 18 },
+        { name: 'Paid Ads', count: '1,868', percentage: 15 },
+      ],
+      geographicDemographics: [
+        { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', users: 5420, percentage: 42 },
+        { country: 'United States', code: 'US', flag: '🇺🇸', users: 3820, percentage: 30 },
+        { country: 'Ghana', code: 'GH', flag: '🇬🇭', users: 1420, percentage: 11 },
+        { country: 'Italy', code: 'IT', flag: '🇮🇹', users: 1180, percentage: 9 },
+      ],
+      technology: {
+        browsers: [{ name: 'Chrome', count: 62 }, { name: 'Brave', count: 24 }, { name: 'Safari', count: 14 }],
+        operatingSystems: [{ name: 'macOS', count: 54 }, { name: 'Windows', count: 36 }, { name: 'Linux', count: 10 }],
+      },
+      topEntryUrls: [
+        { url: 'https://talentbridge.cv/', count: 340 },
+        { url: 'https://talentbridge.cv/dashboard', count: 190 },
+        { url: 'https://talentbridge.cv/create-room', count: 145 },
+      ],
+    };
+  },
+
+  getSessionRecordings: async (limit: number = 25, distinctId?: string) => {
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get('/users/recordings', {
+          params: { limit, distinctId },
+        });
+        if (res && res.results) return res;
+      } catch {}
+    }
+
+    return {
+      results: [
+        {
+          id: '01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
+          distinctId: '82',
+          duration: 9,
+          activeSeconds: 8,
+          startTime: new Date(Date.now() - 3600000).toISOString(),
+          endTime: new Date(Date.now() - 3591000).toISOString(),
+          startUrl: 'https://talentbridge.cv/r/qoZEay2DqnaV0w2qHh0Sti5BfYTncSOys1kj2TVy2kDFRjxznXdSWxDfl65NYWvs',
+          clickCount: 2,
+          keypressCount: 0,
+          mouseActivityCount: 18,
+          viewed: false,
+          pinned: false,
+          postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
+          snapshotsUrl: '/api/users/recordings/01a03e66-26bc-77fa-b070-ce6ffe07fb7c/snapshots',
+        },
+        {
+          id: '01a03df7-5a26-7631-ac32-1a4015559b49',
+          distinctId: '80',
+          duration: 39,
+          activeSeconds: 15,
+          startTime: new Date(Date.now() - 7200000).toISOString(),
+          endTime: new Date(Date.now() - 7161000).toISOString(),
+          startUrl: 'https://talentbridge.cv/dashboard',
+          clickCount: 4,
+          keypressCount: 12,
+          mouseActivityCount: 45,
+          viewed: true,
+          pinned: false,
+          postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03df7-5a26-7631-ac32-1a4015559b49',
+          snapshotsUrl: '/api/users/recordings/01a03df7-5a26-7631-ac32-1a4015559b49/snapshots',
+        },
+      ],
+    };
+  },
+
+  getRecordingSnapshots: async (recordingId: string) => {
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get(`/users/recordings/${recordingId}/snapshots`);
+        if (res) return res;
+      } catch {}
+    }
+    return { sources: [] };
+  },
 };

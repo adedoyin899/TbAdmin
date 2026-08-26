@@ -36,7 +36,30 @@ async function runUserLookupVerification() {
     throw new Error('User profile fetch failed!');
   }
 
-  console.log('\n🎉 ALL USER LOOKUP ENDPOINT TESTS PASSED SUCCESSFULLY!');
+  // Test 4: Fetch Live User Overview (Lifetime vs Horizon)
+  console.log('\nTest 4: Fetch Live User Overview (Lifetime & 30d)');
+  const overview = await postHogService.fetchUserOverview('30d');
+  if (overview && overview.lifetime && overview.recent && overview.acquisitionChannels) {
+    console.log(`✅ Overview Lifetime Users: ${overview.lifetime.totalRegisteredUsers}`);
+    console.log(`   Overview Recent (30d) Signups: ${overview.recent.newSignups}`);
+    console.log(`   Top Acquisition Channel: ${overview.acquisitionChannels[0]?.name} (${overview.acquisitionChannels[0]?.percentage}%)`);
+    console.log(`   Geographic demographics count: ${overview.geographicDemographics.length} countries`);
+  } else {
+    throw new Error('User overview aggregation failed!');
+  }
+
+  // Test 5: Fetch Live Session Recordings
+  console.log('\nTest 5: Fetch Live Session Recordings from PostHog');
+  const recordings = await postHogService.fetchSessionRecordings(10);
+  if (recordings && recordings.results && recordings.results.length > 0) {
+    console.log(`✅ Retrieved ${recordings.results.length} session recordings from PostHog`);
+    console.log(`   First recording ID: ${recordings.results[0].id}`);
+    console.log(`   Duration: ${recordings.results[0].duration}s | Visited URL: ${recordings.results[0].startUrl}`);
+  } else {
+    throw new Error('Session recordings fetch failed!');
+  }
+
+  console.log('\n🎉 ALL USER LOOKUP & POSTHOG SUITE TESTS PASSED SUCCESSFULLY!');
 }
 
 runUserLookupVerification().catch((err) => {

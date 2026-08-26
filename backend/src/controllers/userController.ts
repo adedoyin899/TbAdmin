@@ -188,3 +188,55 @@ export async function getUserProfile(req: AuthenticatedRequest, res: Response) {
     return sendError(res, error.message || 'Failed to fetch user profile.', 500);
   }
 }
+
+/**
+ * GET /api/users/overview
+ * Query Params: ?horizon=30d | 24h | 7d | 90d | lifetime
+ * Behavior: Aggregates lifetime vs horizon metrics from real PostHog data
+ */
+export async function getUserOverview(req: AuthenticatedRequest, res: Response) {
+  try {
+    const horizon = (req.query.horizon as string) || '30d';
+    const overview = await postHogService.fetchUserOverview(horizon);
+    return sendSuccess(res, overview, 200);
+  } catch (error: any) {
+    logger.error('Error in getUserOverview:', error);
+    return sendError(res, error.message || 'Failed to fetch user overview.', 500);
+  }
+}
+
+/**
+ * GET /api/users/recordings
+ * Query Params: ?limit=25&distinctId=82
+ * Behavior: Retrieves live session recordings list from PostHog
+ */
+export async function getSessionRecordings(req: AuthenticatedRequest, res: Response) {
+  try {
+    const limit = parseInt(req.query.limit as string) || 25;
+    const distinctId = (req.query.distinctId as string) || undefined;
+    const recordings = await postHogService.fetchSessionRecordings(limit, distinctId);
+    return sendSuccess(res, recordings, 200);
+  } catch (error: any) {
+    logger.error('Error in getSessionRecordings:', error);
+    return sendError(res, error.message || 'Failed to fetch session recordings.', 500);
+  }
+}
+
+/**
+ * GET /api/users/recordings/:recordingId/snapshots
+ * Params: :recordingId
+ * Behavior: Retrieves recording snapshot sources for in-app player
+ */
+export async function getRecordingSnapshots(req: AuthenticatedRequest, res: Response) {
+  try {
+    const recordingId = req.params.recordingId as string;
+    if (!recordingId) {
+      return sendError(res, 'Recording ID is required.', 400);
+    }
+    const snapshots = await postHogService.fetchRecordingSnapshots(recordingId);
+    return sendSuccess(res, snapshots, 200);
+  } catch (error: any) {
+    logger.error('Error in getRecordingSnapshots:', error);
+    return sendError(res, error.message || 'Failed to fetch recording snapshots.', 500);
+  }
+}

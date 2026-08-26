@@ -263,6 +263,54 @@ export interface UserProfile {
   postHogEventsUrl?: string;
 }
 
+export interface UserOverviewStats {
+  horizon: string;
+  lastSynced: string;
+  postHogConnected: boolean;
+  projectId: string;
+  host: string;
+  lifetime: {
+    totalRegisteredUsers: number;
+    totalIdentifiedUsers: number;
+    totalRecordedSessions: number;
+    totalEventsTracked: number;
+  };
+  recent: {
+    totalUsers: number;
+    activeUsers: number;
+    verifiedAccounts: number;
+    newSignups: number;
+    growthPercentage: number;
+    verifiedRate: number;
+    activePercentage: number;
+  };
+  trajectory: { month: string; totalUsers: number; verifiedUsers: number }[];
+  acquisitionChannels: { name: string; count: string | number; percentage: number }[];
+  geographicDemographics: { country: string; code: string; flag: string; users: number; percentage: number }[];
+  technology: {
+    browsers: { name: string; count: number }[];
+    operatingSystems: { name: string; count: number }[];
+  };
+  topEntryUrls: { url: string; count: number }[];
+}
+
+export interface SessionRecording {
+  id: string;
+  distinctId: string;
+  duration: number;
+  activeSeconds: number;
+  startTime: string;
+  endTime: string;
+  startUrl: string;
+  clickCount: number;
+  keypressCount: number;
+  mouseActivityCount: number;
+  viewed: boolean;
+  pinned: boolean;
+  postHogReplayUrl: string;
+  snapshotsUrl: string;
+}
+
 // ── Auth Types ───────────────────────────────────────────────
 
 export type UserRole = 'Super Admin' | 'Admin' | 'Data Analyst' | 'Viewer' | 'admin' | 'product' | 'marketing' | 'operations' | 'intern' | string;
