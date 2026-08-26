@@ -430,9 +430,9 @@ class PostHogService {
     if (this.hasApiKey) {
       try {
         const res = await this.client.get('/persons', {
-          params: { search: q, limit: 50 },
+          params: { search: q || undefined, limit: 100 },
         });
-        if (res.data?.results && Array.isArray(res.data.results) && res.data.results.length > 0) {
+        if (res.data?.results && Array.isArray(res.data.results)) {
           return {
             results: res.data.results.map((p: any) => {
               const props = p.properties || {};
@@ -464,7 +464,7 @@ class PostHogService {
                 initialUrl: props.$initial_current_url || props.$current_url || 'https://talentbridge.cv/',
                 initialReferrer: props.$initial_referrer || props.$referrer || '$direct',
                 initialPath: initialPath,
-                signupSource: props.signup_source || 'organic',
+                signupSource: props.signup_source || (props.$initial_referrer === '$direct' ? 'direct' : 'organic'),
                 planTier: props.plan_tier || 'pro',
                 lastActive: props.last_active || props.$last_seen || p.created_at || new Date().toISOString(),
                 totalEvents: p.properties?.total_events || p.distinct_ids?.length || 1,
@@ -473,27 +473,15 @@ class PostHogService {
           };
         }
       } catch (err: any) {
-        logger.warn('Live PostHog persons query error, falling back to local directory:', err.message);
+        logger.warn('Live PostHog persons query error:', err.message);
       }
     }
 
-    // Comprehensive fallback directory
-    const SEEDED_USERS = [
-      { userId: 'usr_alice_01', distinctId: 'alice.chen@example.com', email: 'alice.chen@example.com', firstName: 'Alice', lastName: 'Chen', signupDate: '2026-06-01', country: 'United Kingdom', countryCode: 'GB', city: 'London', browser: 'Chrome', os: 'macOS', deviceType: 'Desktop', signupSource: 'organic', planTier: 'pro', lastActive: '2026-08-19', totalEvents: 38 },
-      { userId: 'usr_kwame_02', distinctId: 'kwame.asante@example.com', email: 'kwame.asante@example.com', firstName: 'Kwame', lastName: 'Asante', signupDate: '2026-06-05', country: 'Ghana', countryCode: 'GH', city: 'Accra', browser: 'Safari', os: 'iOS', deviceType: 'Mobile', signupSource: 'email', planTier: 'studio', lastActive: '2026-08-20', totalEvents: 52 },
-      { userId: 'usr_chiara_03', distinctId: 'chiara.romano@example.com', email: 'chiara.romano@example.com', firstName: 'Chiara', lastName: 'Romano', signupDate: '2026-06-12', country: 'Italy', countryCode: 'IT', city: 'Milan', browser: 'Brave', os: 'Windows 10', deviceType: 'Desktop', signupSource: 'referral', planTier: 'starter', lastActive: '2026-08-18', totalEvents: 19 },
-      { userId: 'usr_bob_04', distinctId: 'bob.smith@example.com', email: 'bob.smith@example.com', firstName: 'Bob', lastName: 'Smith', signupDate: '2026-06-15', country: 'United States', countryCode: 'US', city: 'New York', browser: 'Chrome', os: 'Windows 11', deviceType: 'Desktop', signupSource: 'paid_ad', planTier: 'starter', lastActive: '2026-08-14', totalEvents: 14 },
-    ];
-
-    const results = q
-      ? SEEDED_USERS.filter(u => u.email.toLowerCase().includes(q) || u.firstName.toLowerCase().includes(q) || u.lastName.toLowerCase().includes(q) || u.userId.toLowerCase().includes(q))
-      : SEEDED_USERS;
-
-    return { results };
+    return { results: [] };
   }
 
   /**
-   * 5. Fetch Full User Profile + Event Timeline (Real-time, uncached)
+   * 5. Fetch Full User Profile + Event Timeline (100% Real-time directly from PostHog)
    */
   async fetchUserProfile(userId: string) {
     const replayUrl = `${this.host}/project/${this.projectId}/replay/${userId}`;
@@ -502,12 +490,24 @@ class PostHogService {
 
     if (this.hasApiKey) {
       try {
-        const personRes = await this.client.get(`/persons/${userId}`);
-        const p = personRes.data;
+        let p: any = null;
+
+        // Try direct lookup by UUID or query by distinct_id
+        try {
+          const personRes = await this.client.get(`/persons/${userId}`);
+          p = personRes.data;
+        } catch {
+          // If userId is distinct_id (e.g. "82"), query /persons?distinct_id=userId
+          const searchRes = await this.client.get('/persons', {
+            params: { distinct_id: userId, limit: 1 },
+          });
+          p = searchRes.data?.results?.[0] || null;
+        }
+
         if (p) {
           const distinctId = p.distinct_ids?.[0] || userId;
           const eventsRes = await this.client.get('/events', {
-            params: { distinct_id: distinctId, limit: 50 },
+            params: { distinct_id: distinctId, limit: 100 },
           }).catch(() => ({ data: { results: [] } }));
 
           const liveEvents = (eventsRes.data?.results || []).map((ev: any) => ({
@@ -544,9 +544,9 @@ class PostHogService {
               deviceType: rawProps.$device_type || 'Desktop',
               initialUrl: rawProps.$initial_current_url || rawProps.$current_url || 'https://talentbridge.cv/',
               initialReferrer: rawProps.$initial_referrer || rawProps.$referrer || '$direct',
-              signupSource: rawProps.signup_source || 'organic',
+              signupSource: rawProps.signup_source || (rawProps.$initial_referrer === '$direct' ? 'direct' : 'organic'),
               planTier: rawProps.plan_tier || 'pro',
-              lastActive: rawProps.last_active || rawProps.$last_seen || (liveEvents[0]?.timestamp || new Date().toISOString()),
+              lastActive: rawProps.last_active || rawProps.$last_seen || (liveEvents[0]?.timestamp || p.created_at || new Date().toISOString()),
               roomsCreated: rawProps.rooms_created || 1,
               roomsPublished: rawProps.rooms_published || 1,
               totalEvents: liveEvents.length || 1,
@@ -554,11 +554,7 @@ class PostHogService {
             properties: rawProps,
             distinctIds: p.distinct_ids || [userId],
             rawPerson: p,
-            events: liveEvents.length > 0 ? liveEvents : [
-              { eventId: 'ev_01', eventName: '$pageview', timestamp: p.created_at || new Date().toISOString(), properties: { $current_url: 'https://talentbridge.cv/dashboard', $browser: 'Chrome' } },
-              { eventId: 'ev_02', eventName: 'signup_started', timestamp: p.created_at || new Date().toISOString(), properties: { source: rawProps.signup_source || 'organic' } },
-              { eventId: 'ev_03', eventName: 'email_verified', timestamp: p.created_at || new Date().toISOString(), properties: {} },
-            ],
+            events: liveEvents,
             emailEngagement: [],
             postHogSessionReplayUrl: replayUrl,
             postHogPersonUrl: `${this.host}/project/${this.projectId}/person/${encodeURIComponent(distinctId)}`,
@@ -566,80 +562,11 @@ class PostHogService {
           };
         }
       } catch (err: any) {
-        logger.warn('Live PostHog user profile lookup error, using enriched profile fallback:', err.message);
+        logger.warn('Live PostHog user profile lookup error:', err.message);
       }
     }
 
-    const defaultProps = {
-      $browser: 'Chrome',
-      $os: 'macOS',
-      $device_type: 'Desktop',
-      $geoip_country_name: 'United Kingdom',
-      $geoip_country_code: 'GB',
-      $geoip_city_name: 'London',
-      $initial_referrer: '$direct',
-      signup_source: 'organic',
-      plan_tier: 'pro',
-    };
-
-    const userMap: Record<string, any> = {
-      usr_alice_01: {
-        user: { userId: 'usr_alice_01', distinctId: 'alice.chen@example.com', email: 'alice.chen@example.com', firstName: 'Alice', lastName: 'Chen', signupDate: '2026-06-01', country: 'United Kingdom', countryCode: 'GB', city: 'London', browser: 'Chrome', os: 'macOS', deviceType: 'Desktop', initialUrl: 'https://talentbridge.cv/create-room', initialReferrer: '$direct', signupSource: 'organic', planTier: 'pro', lastActive: '2026-08-19', roomsCreated: 3, roomsPublished: 2, totalEvents: 38 },
-        properties: { ...defaultProps, email: 'alice.chen@example.com', first_name: 'Alice', last_name: 'Chen' },
-        distinctIds: ['usr_alice_01', 'alice.chen@example.com'],
-        events: [
-          { eventId: 'ev_01', eventName: 'signup_started', timestamp: '2026-06-01T09:00:00Z', properties: { source: 'organic', $browser: 'Chrome', $os: 'macOS', $pathname: '/signup' } },
-          { eventId: 'ev_02', eventName: 'email_verified', timestamp: '2026-06-01T09:05:12Z', properties: { $pathname: '/verify' } },
-          { eventId: 'ev_03', eventName: 'showcase_room_created', timestamp: '2026-06-01T09:15:30Z', properties: { template: '3D Studio', roomId: 'room_alice_01' } },
-          { eventId: 'ev_04', eventName: 'block_added', timestamp: '2026-06-01T09:22:40Z', properties: { block_type: 'skills', roomId: 'room_alice_01' } },
-          { eventId: 'ev_05', eventName: 'showcase_room_published', timestamp: '2026-06-01T10:00:00Z', properties: { roomId: 'room_alice_01', publishedUrl: 'https://talentbridge.cv/r/alice-chen' } },
-          { eventId: 'ev_06', eventName: 'showcase_room_shared', timestamp: '2026-06-01T10:05:00Z', properties: { platform: 'linkedin', roomId: 'room_alice_01' } },
-        ],
-        emailEngagement: [
-          { campaignName: 'Welcome Email', sent: '2026-06-01T09:01:00Z', opened: '2026-06-01T09:04:12Z', clicked: '2026-06-01T09:05:00Z' },
-          { campaignName: 'Showcase Tips', sent: '2026-06-04T10:00:00Z', opened: '2026-06-04T11:20:00Z', clicked: '2026-06-04T11:22:00Z' },
-          { campaignName: 'Feature Update — Aug', sent: '2026-08-10T09:00:00Z', opened: '2026-08-10T09:15:00Z', clicked: '2026-08-10T09:16:30Z' },
-        ],
-        postHogSessionReplayUrl: replayUrl,
-        postHogPersonUrl: personUrl,
-        postHogEventsUrl: eventsUrl,
-      },
-    };
-
-    return userMap[userId] || {
-      user: {
-        userId,
-        distinctId: userId,
-        email: userId.includes('@') ? userId : `creator_${userId}@talentbridge.cv`,
-        firstName: `Creator ${userId.slice(0, 6)}`,
-        lastName: '',
-        signupDate: new Date().toISOString(),
-        country: 'United Kingdom',
-        countryCode: 'GB',
-        city: 'London',
-        browser: 'Chrome',
-        os: 'Windows 10',
-        deviceType: 'Desktop',
-        initialUrl: 'https://talentbridge.cv/',
-        initialReferrer: '$direct',
-        signupSource: 'organic',
-        planTier: 'pro',
-        lastActive: new Date().toISOString(),
-        roomsCreated: 1,
-        roomsPublished: 1,
-        totalEvents: 4,
-      },
-      properties: { ...defaultProps, email: userId },
-      distinctIds: [userId],
-      events: [
-        { eventId: 'ev_01', eventName: '$pageview', timestamp: new Date().toISOString(), properties: { $current_url: 'https://talentbridge.cv/', $browser: 'Chrome' } },
-        { eventId: 'ev_02', eventName: 'signup_started', timestamp: new Date().toISOString(), properties: { source: 'organic' } },
-      ],
-      emailEngagement: [],
-      postHogSessionReplayUrl: replayUrl,
-      postHogPersonUrl: personUrl,
-      postHogEventsUrl: eventsUrl,
-    };
+    return null;
   }
 
   /**

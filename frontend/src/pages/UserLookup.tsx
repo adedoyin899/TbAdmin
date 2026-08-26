@@ -96,43 +96,25 @@ const LiveExecutiveOverview: React.FC<LiveOverviewProps> = ({
   onAutoRefreshChange,
 }) => {
   const lifetime = overview?.lifetime || {
-    totalRegisteredUsers: 12450,
-    totalIdentifiedUsers: 10810,
-    totalRecordedSessions: 248,
-    totalEventsTracked: 48290,
+    totalRegisteredUsers: 0,
+    totalIdentifiedUsers: 0,
+    totalRecordedSessions: 0,
+    totalEventsTracked: 0,
   };
 
   const recent = overview?.recent || {
-    totalUsers: 1247,
-    activeUsers: 8920,
-    verifiedAccounts: 10810,
-    newSignups: 1247,
-    growthPercentage: 16.4,
-    verifiedRate: 86.8,
-    activePercentage: 71.6,
+    totalUsers: 0,
+    activeUsers: 0,
+    verifiedAccounts: 0,
+    newSignups: 0,
+    growthPercentage: 0,
+    verifiedRate: 0,
+    activePercentage: 0,
   };
 
-  const trajectory = overview?.trajectory || [
-    { month: 'Jan', totalUsers: 1420, verifiedUsers: 1180 },
-    { month: 'Feb', totalUsers: 2150, verifiedUsers: 1890 },
-    { month: 'Mar', totalUsers: 1880, verifiedUsers: 1620 },
-    { month: 'Apr', totalUsers: 1350, verifiedUsers: 1140 },
-    { month: 'May', totalUsers: 2640, verifiedUsers: 2310 },
-    { month: 'Jun', totalUsers: 3010, verifiedUsers: 2670 },
-  ];
-
-  const channels = overview?.acquisitionChannels || [
-    { name: 'Organic Search & Social', count: '5,602', percentage: 45 },
-    { name: 'Email Campaigns', count: '2,739', percentage: 22 },
-    { name: 'Creator Referrals', count: '2,241', percentage: 18 },
-    { name: 'Paid Ads', count: '1,868', percentage: 15 },
-  ];
-
-  const geos = overview?.geographicDemographics || [
-    { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', users: 5420, percentage: 42 },
-    { country: 'Nigeria', code: 'NG', flag: '🇳🇬', users: 3820, percentage: 30 },
-    { country: 'United States', code: 'US', flag: '🇺🇸', users: 1420, percentage: 11 },
-  ];
+  const trajectory = overview?.trajectory || [];
+  const channels = overview?.acquisitionChannels || [];
+  const geos = overview?.geographicDemographics || [];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -152,19 +134,19 @@ const LiveExecutiveOverview: React.FC<LiveOverviewProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(20, 184, 166, 0.1)',
-            padding: '4px 10px',
+            background: 'rgba(20, 184, 166, 0.12)',
+            padding: '4px 12px',
             borderRadius: 20,
-            border: '1px solid rgba(20, 184, 166, 0.25)',
+            border: '1px solid rgba(20, 184, 166, 0.3)',
           }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#14B8A6', animation: 'pulse 2s infinite' }} />
             <span style={{ fontSize: 12, fontWeight: 700, color: '#14B8A6', fontFamily: 'Sora' }}>
-              PostHog Live Telemetry
+              100% Live PostHog Telemetry (EU #120100)
             </span>
           </div>
 
           <span style={{ fontSize: 12, color: 'var(--dim)' }}>
-            Updated: {formatRelativeTime(overview?.lastSynced)}
+            Direct Sync: {formatRelativeTime(overview?.lastSynced)}
           </span>
         </div>
 

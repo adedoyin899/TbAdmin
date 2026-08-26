@@ -41,8 +41,12 @@ export async function getUserProfile(req: AuthenticatedRequest, res: Response) {
     // 1. Fetch raw user profile and events from PostHog
     const profile = await postHogService.fetchUserProfile(userId);
 
+    if (!profile) {
+      return sendError(res, `User profile '${userId}' was not found in PostHog.`, 404);
+    }
+
     // 2. Query real-time email engagement from PostgreSQL mailgun_events table
-    let emailEngagement = profile.emailEngagement || [];
+    let emailEngagement: any[] = profile.emailEngagement || [];
     if (profile.user && profile.user.email) {
       try {
         const mailEvents = await pool.query<MailgunEventRow>(
