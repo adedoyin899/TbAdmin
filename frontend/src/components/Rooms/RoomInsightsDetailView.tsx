@@ -516,7 +516,7 @@ export const RoomInsightsDetailView: React.FC<{
                   {slot}
                 </div>
                 {DAYS.map(day => {
-                  const cell = heatmap.find((h: any) => h.day === day && h.timeSlot === slot);
+                  const cell = (heatmap || []).find((h: any) => h.day === day && h.timeSlot === slot);
                   const intensity = cell ? cell.intensity : 1;
                   const val = cell ? (cell.views > 1000 ? `${(cell.views / 1000).toFixed(1)}k` : `${cell.views}`) : '100';
 
