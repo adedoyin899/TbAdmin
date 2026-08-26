@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, AlertCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
+import tbLogolight from '../../assets/tbLogolight.svg';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/formatters';
 
@@ -10,6 +11,18 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isDark, setIsDark] = useState(
+    document.documentElement.getAttribute('data-mode') !== 'light'
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-mode') !== 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-mode'] });
+    return () => observer.disconnect();
+  }, []);
+
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -63,7 +76,7 @@ export const LoginPage: React.FC = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-3">
             <img
-              src={tblogo}
+              src={isDark ? tblogo : tbLogolight}
               alt="TalentBridge"
               style={{ height: 36, width: 'auto' }}
             />

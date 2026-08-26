@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronUp, BookOpen, HelpCircle, Bot,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
+import tbLogolight from '../../assets/tbLogolight.svg';
 import tbicon from '../../assets/tbicon.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -148,6 +149,17 @@ export const Sidebar: React.FC<{
   const navigate = useNavigate();
   const location = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.getAttribute('data-mode') !== 'light'
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-mode') !== 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-mode'] });
+    return () => observer.disconnect();
+  }, []);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -226,7 +238,7 @@ export const Sidebar: React.FC<{
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <img
-                  src={tblogo}
+                  src={isDark ? tblogo : tbLogolight}
                   alt="TalentBridge"
                   style={{ height: 23, width: 'auto' }}
                 />
