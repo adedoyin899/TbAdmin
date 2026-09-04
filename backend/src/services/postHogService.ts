@@ -166,6 +166,111 @@ class PostHogService {
   }
 
   /**
+   * Fetch events after `dateFrom`, following PostHog's pagination cursor so a date range like
+   * "30d" isn't silently truncated to whatever fits in the first 250-event page.
+   */
+  private async fetchEventsInRange(dateFrom: string, opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
+    if (!this.hasApiKey) return [];
+    const maxPages = opts?.maxPages ?? 6;
+    const pageSize = opts?.pageSize ?? 250;
+    const allEvents: any[] = [];
+    let nextUrl: string | null = null;
+
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const res: any = nextUrl
+          ? await axios.get(nextUrl, { headers: { Authorization: `Bearer ${this.apiKey}` }, timeout: 15000 })
+          : await this.client.get('/events', { params: { after: dateFrom, limit: pageSize } });
+
+        const results = res.data?.results || [];
+        allEvents.push(...results);
+        nextUrl = res.data?.next || null;
+        if (!nextUrl || results.length === 0) break;
+      }
+    } catch (err: any) {
+      logger.warn('Error paginating PostHog events:', err.message);
+    }
+
+    return allEvents;
+  }
+
+  /**
+   * Fetch all persons, following pagination rather than capping at a single 100-record page.
+   */
+  private async fetchAllPersons(opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
+    if (!this.hasApiKey) return [];
+    const maxPages = opts?.maxPages ?? 4;
+    const pageSize = opts?.pageSize ?? 100;
+    const allPersons: any[] = [];
+    let nextUrl: string | null = null;
+
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const res: any = nextUrl
+          ? await axios.get(nextUrl, { headers: { Authorization: `Bearer ${this.apiKey}` }, timeout: 15000 })
+          : await this.client.get('/persons', { params: { limit: pageSize } });
+
+        const results = res.data?.results || [];
+        allPersons.push(...results);
+        nextUrl = res.data?.next || null;
+        if (!nextUrl || results.length === 0) break;
+      }
+    } catch (err: any) {
+      logger.warn('Error paginating PostHog persons:', err.message);
+    }
+
+    return allPersons;
+  }
+
+  /**
+   * Fetch session recordings, following pagination.
+   */
+  private async fetchRecordingsList(opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
+    if (!this.hasApiKey) return [];
+    const maxPages = opts?.maxPages ?? 3;
+    const pageSize = opts?.pageSize ?? 100;
+    const allRecordings: any[] = [];
+    let nextUrl: string | null = null;
+
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const res: any = nextUrl
+          ? await axios.get(nextUrl, { headers: { Authorization: `Bearer ${this.apiKey}` }, timeout: 15000 })
+          : await this.client.get('/session_recordings', { params: { limit: pageSize } });
+
+        const results = res.data?.results || [];
+        allRecordings.push(...results);
+        nextUrl = res.data?.next || null;
+        if (!nextUrl || results.length === 0) break;
+      }
+    } catch (err: any) {
+      logger.warn('Error paginating PostHog session recordings:', err.message);
+    }
+
+    return allRecordings;
+  }
+
+  /**
+   * Real week-over-week style growth: compares matching-event counts in the first vs second
+   * half of the queried range, instead of a fixed placeholder percentage.
+   */
+  private computeGrowthPercent(matches: (e: any) => boolean, events: any[], dateFromMs: number, nowMs: number): number | null {
+    const midpointMs = (dateFromMs + nowMs) / 2;
+    let earlier = 0;
+    let later = 0;
+    for (const e of events) {
+      if (!matches(e)) continue;
+      const t = new Date(e.timestamp).getTime();
+      if (!Number.isFinite(t)) continue;
+      if (t < midpointMs) earlier++;
+      else later++;
+    }
+    if (earlier === 0 && later === 0) return null;
+    if (earlier === 0) return 100;
+    return Math.round(((later - earlier) / earlier) * 1000) / 10;
+  }
+
+  /**
    * 1. Funnel Conversion Data (100% Live PostHog Telemetry)
    */
   async fetchFunnelData(dateRange = '30d', signupSource = 'all', ttl = 900) {
@@ -174,38 +279,40 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(dateRange);
-    let events: any[] = [];
-    let persons: any[] = [];
-
-    if (this.hasApiKey) {
-      try {
-        const [eventsRes, personsRes] = await Promise.allSettled([
-          this.client.get('/events', { params: { limit: 250 } }),
-          this.client.get('/persons', { params: { limit: 100 } }),
-        ]);
-
-        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
-          events = eventsRes.value.data.results;
-        }
-        if (personsRes.status === 'fulfilled' && personsRes.value.data?.results) {
-          persons = personsRes.value.data.results;
-        }
-      } catch (err: any) {
-        logger.warn('Live PostHog funnel query error:', err.message);
-      }
-    }
+    const [events, persons] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchAllPersons(),
+    ]);
 
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
       ? events
       : events.filter(e => (e.properties?.signup_source || e.properties?.$initial_referrer) === signupSource);
 
-    // Compute live funnel progression counts from real events
-    const step1Landing = filteredEvents.filter(e => e.event === '$pageview').length || Math.max(1, events.length);
-    const step2Discovery = filteredEvents.filter(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard')).length || Math.round(step1Landing * 0.85);
-    const step3Showcase = filteredEvents.filter(e => (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/')).length || Math.round(step1Landing * 0.65);
-    const step4Interactive = filteredEvents.filter(e => e.event === '$autocapture' || e.event === '$rageclick').length || Math.round(step1Landing * 0.50);
-    const step5Identified = persons.length > 0 ? persons.length : Math.max(1, Math.round(step1Landing * 0.35));
+    // Compute live funnel progression counts from real events — no synthetic fallback numbers
+    // A real funnel gates each stage on distinct users who completed the previous one — counting
+    // raw event occurrences (as this used to) lets a single user's many $autocapture events push
+    // a later stage's count past an earlier one, producing >100% "conversion".
+    const idsOf = (predicate: (e: any) => boolean) => new Set(filteredEvents.filter(predicate).map(e => e.distinct_id).filter(Boolean));
+    const intersect = (a: Set<string>, b: Set<string>) => new Set([...a].filter(x => b.has(x)));
+
+    const pageviewIds = idsOf(e => e.event === '$pageview');
+    const discoveryIds = idsOf(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard'));
+    const showcaseIds = idsOf(e => (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
+    const interactiveIds = idsOf(e => e.event === '$autocapture' || e.event === '$rageclick');
+    const identifiedIds = new Set(persons.map(p => String(p.distinct_ids?.[0] || p.id || '')).filter(Boolean));
+
+    const step1Set = pageviewIds;
+    const step2Set = intersect(step1Set, discoveryIds);
+    const step3Set = intersect(step2Set, showcaseIds);
+    const step4Set = intersect(step3Set, interactiveIds);
+    const step5Set = intersect(step4Set, identifiedIds);
+
+    const step1Landing = step1Set.size;
+    const step2Discovery = step2Set.size;
+    const step3Showcase = step3Set.size;
+    const step4Interactive = step4Set.size;
+    const step5Identified = step5Set.size;
 
     const total = Math.max(1, step1Landing);
     const stages = [
@@ -236,63 +343,77 @@ class PostHogService {
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
-    let events: any[] = [];
-    let persons: any[] = [];
+    const { dateFrom } = parseDateRange(dateRange);
+    const dateFromMs = new Date(dateFrom).getTime();
+    const nowMs = Date.now();
 
-    if (this.hasApiKey) {
-      try {
-        const [eventsRes, personsRes] = await Promise.allSettled([
-          this.client.get('/events', { params: { limit: 250 } }),
-          this.client.get('/persons', { params: { limit: 100 } }),
-        ]);
+    const [events, persons] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchAllPersons(),
+    ]);
 
-        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
-          events = eventsRes.value.data.results;
-        }
-        if (personsRes.status === 'fulfilled' && personsRes.value.data?.results) {
-          persons = personsRes.value.data.results;
-        }
-      } catch (err: any) {
-        logger.warn('Live PostHog feature query error:', err.message);
-      }
-    }
-
-    const totalRooms = Math.max(1, persons.length);
+    const totalRooms = persons.length;
     const roomEvents = events.filter((e: any) => {
       const p = e.properties?.$pathname || e.properties?.$current_url || '';
       return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory');
     });
 
-    const blockCounts: Record<string, { count: number; category: string }> = {
-      '3D Showcase Studio': { count: roomEvents.filter(e => (e.properties?.$pathname || '').includes('/r/')).length || 18, category: 'Show work' },
-      'Asset Rooms & Media': { count: roomEvents.filter(e => (e.properties?.$pathname || '').includes('/assets-room/')).length || 14, category: 'Show work' },
-      'Talent Search & Directory': { count: roomEvents.filter(e => (e.properties?.$pathname || '').includes('/directory')).length || 24, category: 'Make contact' },
-      'Interactive Clicks & Capture': { count: events.filter(e => e.event === '$autocapture').length || 42, category: 'Show proof' },
-      'Creator Profiles & Bio': { count: persons.length || 4, category: 'Tell your story' },
-    };
+    const isShowcase = (e: any) => (e.properties?.$pathname || '').includes('/r/');
+    const isAssetRoom = (e: any) => (e.properties?.$pathname || '').includes('/assets-room/');
+    const isDirectory = (e: any) => (e.properties?.$pathname || '').includes('/directory');
+    const isInteractive = (e: any) => e.event === '$autocapture';
 
-    const topBlocks = Object.entries(blockCounts).map(([blockType, info]) => ({
+    const formatGrowth = (pct: number | null) => (pct === null ? 'N/A' : `${pct >= 0 ? '+' : ''}${pct}%`);
+
+    const blockDefs: { blockType: string; category: string; count: number; matcher: (e: any) => boolean }[] = [
+      { blockType: '3D Showcase Studio', category: 'Show work', count: roomEvents.filter(isShowcase).length, matcher: isShowcase },
+      { blockType: 'Asset Rooms & Media', category: 'Show work', count: roomEvents.filter(isAssetRoom).length, matcher: isAssetRoom },
+      { blockType: 'Talent Search & Directory', category: 'Make contact', count: roomEvents.filter(isDirectory).length, matcher: isDirectory },
+      { blockType: 'Interactive Clicks & Capture', category: 'Show proof', count: events.filter(isInteractive).length, matcher: isInteractive },
+    ];
+
+    // No recruiterClickRate/dwellTimeBoost fields — PostHog isn't tracking per-block dwell time
+    // or recruiter attribution, so those were pure fabrication. Only report what's measurable.
+    const topBlocks = blockDefs.map(({ blockType, category, count, matcher }) => ({
       blockType,
-      category: info.category,
-      count: info.count,
-      percentage: Math.min(100, Math.round((info.count / Math.max(1, events.length)) * 100)) || 50,
-      growth: '+12.5%',
-      recruiterClickRate: '88%',
-      dwellTimeBoost: '+45%',
-    }));
+      category,
+      count,
+      percentage: events.length > 0 ? Math.round((count / events.length) * 100) : 0,
+      growth: formatGrowth(this.computeGrowthPercent(matcher, events, dateFromMs, nowMs)),
+    })).concat([{
+      blockType: 'Creator Profiles & Bio',
+      category: 'Tell your story',
+      count: persons.length,
+      percentage: totalRooms > 0 ? 100 : 0,
+      growth: 'N/A',
+    }]);
+
+    const buildTemplate = (templateName: string, category: string, description: string, includedBlocks: string[]) => {
+      const includedCounts = includedBlocks.map(name => topBlocks.find(b => b.blockType === name)?.count ?? 0);
+      const count = includedCounts.length > 0 ? Math.min(...includedCounts) : 0;
+      const percentage = totalRooms > 0 ? Math.round((count / totalRooms) * 100) : 0;
+      const matchesAnyIncludedBlock = (e: any) => includedBlocks.some(name => blockDefs.find(d => d.blockType === name)?.matcher(e) ?? false);
+      return {
+        templateName,
+        category,
+        description,
+        count,
+        percentage,
+        growth: count > 0 ? formatGrowth(this.computeGrowthPercent(matchesAnyIncludedBlock, events, dateFromMs, nowMs)) : 'N/A',
+        includedBlocks,
+      };
+    };
 
     const result = {
       totalRoomsCreated: totalRooms,
       topBlocks,
       blockAdoption: topBlocks,
       templateAdoption: [
-        { templateName: '3D Studio Showcase', category: 'Design & Creative', description: 'Interactive 3D case studies', count: totalRooms, percentage: 100, growth: '+24.0%', includedBlocks: ['3D Showcase Studio', 'Asset Rooms & Media', 'Creator Profiles & Bio'] },
-        { templateName: 'Tech & Engineering', category: 'Tech & Engineering', description: 'Architecture, pipelines, uptime', count: totalRooms, percentage: 75, growth: '+18.0%', includedBlocks: ['3D Showcase Studio', 'Talent Search & Directory'] },
+        buildTemplate('3D Studio Showcase', 'Design & Creative', 'Interactive 3D case studies', ['3D Showcase Studio', 'Asset Rooms & Media', 'Creator Profiles & Bio']),
+        buildTemplate('Tech & Engineering', 'Tech & Engineering', 'Architecture, pipelines, uptime', ['3D Showcase Studio', 'Talent Search & Directory']),
       ],
-      themeDistribution: [
-        { theme: 'Dark Mode', count: Math.round(totalRooms * 0.75) || 3, percentage: 75 },
-        { theme: 'Light Mode', count: Math.round(totalRooms * 0.25) || 1, percentage: 25 },
-      ],
+      // Not derivable: PostHog isn't tracking a theme/dark-mode property for talentbridge.cv visitors.
+      themeDistribution: [],
     };
 
     await cacheService.set(cacheKey, result, ttl);
@@ -307,187 +428,153 @@ class PostHogService {
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
-    let persons: any[] = [];
-    let events: any[] = [];
-    let recordings: any[] = [];
+    const now = new Date();
+    const nowMs = now.getTime();
+    // Look back 90 days so cohorts up to 4 weeks old have real events to check for 7d/30d retention.
+    const lookbackDateFrom = new Date(nowMs - 90 * 86400000).toISOString();
 
-    if (this.hasApiKey) {
-      try {
-        const [personsRes, eventsRes, recordingsRes] = await Promise.allSettled([
-          this.client.get('/persons', { params: { limit: 100 } }),
-          this.client.get('/events', { params: { limit: 250 } }),
-          this.client.get('/session_recordings', { params: { limit: 50 } }),
-        ]);
-
-        if (personsRes.status === 'fulfilled' && personsRes.value.data?.results) {
-          persons = personsRes.value.data.results;
-        }
-        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
-          events = eventsRes.value.data.results;
-        }
-        if (recordingsRes.status === 'fulfilled' && recordingsRes.value.data?.results) {
-          recordings = recordingsRes.value.data.results;
-        }
-      } catch (err: any) {
-        logger.warn('Live PostHog retention query error:', err.message);
-      }
-    }
+    const [persons, events, recordings] = await Promise.all([
+      this.fetchAllPersons(),
+      this.fetchEventsInRange(lookbackDateFrom),
+      this.fetchRecordingsList(),
+    ]);
 
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
       ? events
       : events.filter(e => (e.properties?.signup_source || e.properties?.$initial_referrer) === signupSource);
 
-    // Group events and recordings by user distinct_id
-    const userMap = new Map<string, {
-      distinctId: string;
-      email: string;
-      name: string;
-      country: string;
-      flag: string;
-      eventsCount: number;
-      sessionsCount: number;
-      firstSeen: string;
-      lastActive: string;
-      topAction: string;
-    }>();
-
-    for (const p of persons) {
-      const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
-      const country = p.properties?.$geoip_country_name || 'United Kingdom';
-      const code = p.properties?.$geoip_country_code || 'GB';
-      const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
-      const email = p.properties?.email || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
-      const name = p.properties?.name || `Creator #${distinctId}`;
-
-      userMap.set(distinctId, {
-        distinctId,
-        email,
-        name,
-        country,
-        flag,
-        eventsCount: 0,
-        sessionsCount: 0,
-        firstSeen: p.created_at || new Date().toISOString(),
-        lastActive: 'Recently',
-        topAction: 'Page Navigation',
-      });
-    }
-
+    const eventsByPerson = new Map<string, any[]>();
     for (const ev of filteredEvents) {
       const id = String(ev.distinct_id || '');
-      if (!userMap.has(id)) {
-        const country = ev.properties?.$geoip_country_name || 'United Kingdom';
-        const code = ev.properties?.$geoip_country_code || 'GB';
-        const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
-        userMap.set(id, {
-          distinctId: id,
-          email: id.includes('@') ? id : `creator_${id}@talentbridge.cv`,
-          name: `Creator #${id}`,
-          country,
-          flag,
-          eventsCount: 0,
-          sessionsCount: 0,
-          firstSeen: ev.timestamp,
-          lastActive: 'Recently',
-          topAction: ev.event || 'Telemetry Event',
-        });
-      }
-
-      const item = userMap.get(id)!;
-      item.eventsCount++;
-      if (ev.event) item.topAction = ev.event;
+      if (!eventsByPerson.has(id)) eventsByPerson.set(id, []);
+      eventsByPerson.get(id)!.push(ev);
     }
 
+    const recordingsByPerson = new Map<string, number>();
     for (const rec of recordings) {
       const id = String(rec.distinct_id || '');
-      if (userMap.has(id)) {
-        userMap.get(id)!.sessionsCount++;
-      }
+      recordingsByPerson.set(id, (recordingsByPerson.get(id) || 0) + 1);
     }
 
-    const allActiveUsers = Array.from(userMap.values()).map(u => ({
-      userId: u.distinctId,
-      name: u.name,
-      email: u.email,
-      country: u.country,
-      flag: u.flag,
-      sessions: Math.max(1, u.sessionsCount || Math.round(u.eventsCount / 5)),
-      lastActive: u.lastActive,
-      topAction: u.topAction,
-    }));
+    const countryFlag = (code: string) => (code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍');
 
-    const totalUsers = Math.max(1, persons.length || 4);
-    const ret7dPct = 50;
-    const ret30dPct = 25;
+    const buildActiveUser = (p: any) => {
+      const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
+      const props = p.properties || {};
+      const country = props.$geoip_country_name || 'Unknown';
+      const code = props.$geoip_country_code || '';
+      const email = props.email || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
+      const name = props.name || `Creator #${distinctId}`;
+      const personEvents = eventsByPerson.get(distinctId) || [];
+      const lastEvent = personEvents.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      return {
+        userId: distinctId,
+        name,
+        email,
+        country,
+        flag: countryFlag(code),
+        sessions: recordingsByPerson.get(distinctId) || 0,
+        lastActive: lastEvent ? lastEvent.timestamp : (p.created_at || null),
+        topAction: lastEvent ? lastEvent.event : 'No activity recorded',
+      };
+    };
 
-    const trend = [
-      {
-        week: 'Week 1',
-        period: 'Week 1 (Aug 1 - Aug 7)',
-        retention7d: 50,
-        retention30d: 25,
-        '7d': 50,
-        '30d': 25,
-        day1: 75,
-        day7: 50,
-        day14: 25,
-        day30: 25,
-        newUsers: totalUsers,
-        topReturningAction: 'Interactive 3D showcase canvas editor and profile setup ($autocapture)',
-        activeUsers: allActiveUsers.slice(0, 3),
-      },
-      {
-        week: 'Week 2',
-        period: 'Week 2 (Aug 8 - Aug 14)',
-        retention7d: 60,
-        retention30d: 30,
-        '7d': 60,
-        '30d': 30,
-        day1: 75,
-        day7: 60,
-        day14: 30,
-        day30: 30,
-        newUsers: totalUsers,
-        topReturningAction: 'Sharing room links to recruiters on LinkedIn/X and social channels',
-        activeUsers: allActiveUsers.slice(0, 2),
-      },
-      {
-        week: 'Week 3',
-        period: 'Week 3 (Aug 15 - Aug 21)',
-        retention7d: 75,
-        retention30d: 50,
-        '7d': 75,
-        '30d': 50,
-        day1: 80,
-        day7: 75,
-        day14: 50,
-        day30: 50,
-        newUsers: totalUsers,
-        topReturningAction: 'Reviewing 3D room recruiter dwell-time heatmaps & viewer engagement ($pageview)',
-        activeUsers: allActiveUsers,
-      },
-      {
-        week: 'Week 4',
-        period: 'Week 4 (Current Cohort)',
-        retention7d: ret7dPct,
-        retention30d: ret30dPct,
-        '7d': ret7dPct,
-        '30d': ret30dPct,
-        day1: 100,
-        day7: ret7dPct,
-        day14: 25,
-        day30: ret30dPct,
-        newUsers: totalUsers,
-        topReturningAction: 'Asset room media uploads and verified credential matrix updates',
-        activeUsers: allActiveUsers,
-      },
-    ];
+    // Assign each person to a weekly signup cohort — index 0 is the oldest of the last 4 weeks,
+    // index 3 is the most recent (this week).
+    const WEEK_MS = 7 * 86400000;
+    const cohortBuckets: { persons: any[] }[] = [{ persons: [] }, { persons: [] }, { persons: [] }, { persons: [] }];
+    for (const p of persons) {
+      const createdAt = new Date(p.created_at || now);
+      const ageMs = nowMs - createdAt.getTime();
+      if (ageMs < 0) continue;
+      const weeksAgo = Math.floor(ageMs / WEEK_MS);
+      const bucketIdx = 3 - Math.min(3, weeksAgo);
+      cohortBuckets[bucketIdx].persons.push(p);
+    }
+
+    const retentionAt = (p: any, days: number): { eligible: boolean; retained: boolean } => {
+      const createdAt = new Date(p.created_at || now).getTime();
+      const thresholdMs = createdAt + days * 86400000;
+      if (nowMs < thresholdMs) return { eligible: false, retained: false };
+      const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
+      const personEvents = eventsByPerson.get(distinctId) || [];
+      const retained = personEvents.some(e => new Date(e.timestamp).getTime() >= thresholdMs);
+      return { eligible: true, retained };
+    };
+
+    const cohortRetentionPct = (bucketPersons: any[], days: number): number => {
+      let eligible = 0;
+      let retained = 0;
+      for (const p of bucketPersons) {
+        const r = retentionAt(p, days);
+        if (r.eligible) {
+          eligible++;
+          if (r.retained) retained++;
+        }
+      }
+      return eligible > 0 ? Math.round((retained / eligible) * 100) : 0;
+    };
+
+    const topActionFor = (bucketPersons: any[]): string => {
+      const counts = new Map<string, number>();
+      for (const p of bucketPersons) {
+        const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
+        for (const ev of eventsByPerson.get(distinctId) || []) {
+          counts.set(ev.event, (counts.get(ev.event) || 0) + 1);
+        }
+      }
+      let best = '';
+      let bestCount = 0;
+      for (const [name, count] of counts) {
+        if (count > bestCount) {
+          best = name;
+          bestCount = count;
+        }
+      }
+      return best || 'No activity recorded';
+    };
+
+    const trend = cohortBuckets.map((bucket, idx) => {
+      const weekLabel = `Week ${idx + 1}`;
+      const weeksAgo = 3 - idx;
+      const day1 = cohortRetentionPct(bucket.persons, 1);
+      const day7 = cohortRetentionPct(bucket.persons, 7);
+      const day14 = cohortRetentionPct(bucket.persons, 14);
+      const day30 = cohortRetentionPct(bucket.persons, 30);
+      return {
+        week: weekLabel,
+        period: `${weekLabel} (${weeksAgo === 0 ? 'Most Recent Cohort' : `${weeksAgo} week${weeksAgo === 1 ? '' : 's'} ago`})`,
+        retention7d: day7,
+        retention30d: day30,
+        '7d': day7,
+        '30d': day30,
+        day1,
+        day7,
+        day14,
+        day30,
+        newUsers: bucket.persons.length,
+        topReturningAction: topActionFor(bucket.persons),
+        activeUsers: bucket.persons.map(buildActiveUser),
+      };
+    });
+
+    const overallEligible7d = persons.filter(p => retentionAt(p, 7).eligible);
+    const overallRetained7d = overallEligible7d.filter(p => retentionAt(p, 7).retained);
+    const overallEligible30d = persons.filter(p => retentionAt(p, 30).eligible);
+    const overallRetained30d = overallEligible30d.filter(p => retentionAt(p, 30).retained);
+
+    const ret7dPct = overallEligible7d.length > 0 ? Math.round((overallRetained7d.length / overallEligible7d.length) * 100) : 0;
+    const ret30dPct = overallEligible30d.length > 0 ? Math.round((overallRetained30d.length / overallEligible30d.length) * 100) : 0;
+
+    // Real change: the two most recent cohorts' retention, not a fixed placeholder.
+    const change7d = Math.round((trend[3].retention7d - trend[2].retention7d) * 10) / 10;
+    const change30d = Math.round((trend[3].retention30d - trend[2].retention30d) * 10) / 10;
 
     const result = {
       signupSource,
-      retention7d: { percentage: ret7dPct, change: 4.2 },
-      retention30d: { percentage: ret30dPct, change: 2.1 },
+      retention7d: { percentage: ret7dPct, change: change7d },
+      retention30d: { percentage: ret30dPct, change: change30d },
       trend,
     };
 
@@ -503,26 +590,15 @@ class PostHogService {
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
-    let events: any[] = [];
-    let recordings: any[] = [];
+    const { dateFrom } = parseDateRange(dateRange);
+    const dateFromMs = new Date(dateFrom).getTime();
+    const nowMs = Date.now();
+    const midpointMs = (dateFromMs + nowMs) / 2;
 
-    if (this.hasApiKey) {
-      try {
-        const [eventsRes, recordingsRes] = await Promise.allSettled([
-          this.client.get('/events', { params: { limit: 250 } }),
-          this.client.get('/session_recordings', { params: { limit: 50 } }),
-        ]);
-
-        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
-          events = eventsRes.value.data.results;
-        }
-        if (recordingsRes.status === 'fulfilled' && recordingsRes.value.data?.results) {
-          recordings = recordingsRes.value.data.results;
-        }
-      } catch (err: any) {
-        logger.warn('Error querying PostHog rooms telemetry:', err.message);
-      }
-    }
+    const [events, recordings] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchRecordingsList(),
+    ]);
 
     // Filter room & showcase discovery events
     const roomEvents = events.filter((e: any) => {
@@ -531,14 +607,22 @@ class PostHogService {
     });
 
     const pageviews = roomEvents.filter((e: any) => e.event === '$pageview');
-    const totalViewsCount = pageviews.length > 0 ? pageviews.length : Math.max(1, events.length);
+    const totalViewsCount = pageviews.length;
     const uniqueDistinctIds = new Set(roomEvents.map((e: any) => e.distinct_id).filter(Boolean));
-    const uniqueViewsCount = Math.max(1, uniqueDistinctIds.size);
+    const uniqueViewsCount = uniqueDistinctIds.size;
 
-    // Compute average time spent from recordings
-    const totalSeconds = recordings.reduce((acc: number, r: any) => acc + (r.recording_duration || 10), 0);
-    const avgSeconds = recordings.length > 0 ? Math.round(totalSeconds / recordings.length) : 45;
+    // Compute average time spent from recordings of these same visitors
+    const roomRecordings = recordings.filter((r: any) => uniqueDistinctIds.has(r.distinct_id));
+    const totalSeconds = roomRecordings.reduce((acc: number, r: any) => acc + (r.recording_duration || 0), 0);
+    const avgSeconds = roomRecordings.length > 0 ? Math.round(totalSeconds / roomRecordings.length) : 0;
     const avgTimeSpentStr = avgSeconds >= 60 ? `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s` : `${avgSeconds}s`;
+
+    // Real change vs a fixed placeholder: avg duration in the earlier vs later half of the range
+    const avgDurationOf = (recs: any[]) => (recs.length > 0 ? recs.reduce((a, r) => a + (r.recording_duration || 0), 0) / recs.length : 0);
+    const earlierRoomRecordings = roomRecordings.filter(r => new Date(r.start_time).getTime() < midpointMs);
+    const laterRoomRecordings = roomRecordings.filter(r => new Date(r.start_time).getTime() >= midpointMs);
+    const avgTimeSpentDelta = Math.round(avgDurationOf(laterRoomRecordings) - avgDurationOf(earlierRoomRecordings));
+    const avgTimeSpentChange = roomRecordings.length > 0 ? `${avgTimeSpentDelta >= 0 ? '+' : ''}${avgTimeSpentDelta}s` : 'N/A';
 
     // Group by room path / URL
     const roomMap = new Map<string, {
@@ -596,7 +680,7 @@ class PostHogService {
         friendlyName = 'Creator Studio Dashboard';
       }
 
-      const engagementPct = Math.min(100, Math.round((data.clicks / Math.max(1, data.views)) * 100)) || 75;
+      const engagementPct = data.views > 0 ? Math.min(100, Math.round((data.clicks / data.views) * 100)) : 0;
 
       return {
         roomId: `room_${idx + 1}`,
@@ -625,13 +709,15 @@ class PostHogService {
     }
 
     const totalGeoEvents = Math.max(1, roomEvents.length);
-    const geoTraffic = Object.entries(geoCounts).map(([country, data]) => ({
-      country,
-      code: data.code,
-      flag: data.flag,
-      views: data.count,
-      percentage: Math.round((data.count / totalGeoEvents) * 100),
-    }));
+    const geoTraffic = Object.entries(geoCounts)
+      .map(([country, data]) => ({
+        country,
+        code: data.code,
+        flag: data.flag,
+        views: data.count,
+        percentage: Math.round((data.count / totalGeoEvents) * 100),
+      }))
+      .sort((a, b) => b.views - a.views);
 
     // Compute Devices
     const deviceCounts: Record<string, number> = { Desktop: 0, Mobile: 0, Tablet: 0 };
@@ -643,9 +729,9 @@ class PostHogService {
     }
 
     const devices = [
-      { name: 'Desktop (macOS / Win)', value: Math.round((deviceCounts.Desktop / totalGeoEvents) * 100) || 75, color: '#0D1F1E' },
-      { name: 'Mobile (iOS / Android)', value: Math.round((deviceCounts.Mobile / totalGeoEvents) * 100) || 20, color: '#2DD4BF' },
-      { name: 'Tablet (iPad)', value: Math.round((deviceCounts.Tablet / totalGeoEvents) * 100) || 5, color: '#0F766E' },
+      { name: 'Desktop (macOS / Win)', value: Math.round((deviceCounts.Desktop / totalGeoEvents) * 100), color: '#0D1F1E' },
+      { name: 'Mobile (iOS / Android)', value: Math.round((deviceCounts.Mobile / totalGeoEvents) * 100), color: '#2DD4BF' },
+      { name: 'Tablet (iPad)', value: Math.round((deviceCounts.Tablet / totalGeoEvents) * 100), color: '#0F766E' },
     ];
 
     // Compute Traffic Sources
@@ -660,64 +746,114 @@ class PostHogService {
     const trafficSources = Object.entries(sourceCounts).map(([name, count]) => ({
       name,
       count,
-      percentage: Math.round((count / totalGeoEvents) * 100) || 33,
+      percentage: Math.round((count / totalGeoEvents) * 100),
     }));
 
-    // Compute Live Engagement Heatmap (7 Days x 7 Time Slots)
+    // Real engagement heatmap: bucket actual pageview timestamps by weekday + hour range,
+    // instead of a formula that fabricated a plausible-looking pattern.
     const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const TIME_SLOTS = ['9 - 11 AM', '11 - 1 PM', '2 - 4 PM', '4 - 6 PM', '6 - 8 PM', '8 - 10 PM', '10 - 12 AM'];
-    
+    const TIME_SLOTS: { label: string; startHour: number; endHour: number }[] = [
+      { label: '9 - 11 AM', startHour: 9, endHour: 11 },
+      { label: '11 - 1 PM', startHour: 11, endHour: 13 },
+      { label: '2 - 4 PM', startHour: 14, endHour: 16 },
+      { label: '4 - 6 PM', startHour: 16, endHour: 18 },
+      { label: '6 - 8 PM', startHour: 18, endHour: 20 },
+      { label: '8 - 10 PM', startHour: 20, endHour: 22 },
+      { label: '10 - 12 AM', startHour: 22, endHour: 24 },
+    ];
+
+    const heatmapCounts = new Map<string, number>();
+    for (const ev of pageviews) {
+      const d = new Date(ev.timestamp);
+      if (Number.isNaN(d.getTime())) continue;
+      const dayLabel = DAYS[(d.getUTCDay() + 6) % 7]; // JS Sunday=0 -> Monday-first index
+      const hour = d.getUTCHours();
+      const slot = TIME_SLOTS.find(s => hour >= s.startHour && hour < s.endHour);
+      if (!slot) continue;
+      const key = `${dayLabel}|${slot.label}`;
+      heatmapCounts.set(key, (heatmapCounts.get(key) || 0) + 1);
+    }
+
+    const maxHeatmapCount = Math.max(1, ...Array.from(heatmapCounts.values()));
     const heatmap: any[] = [];
-    DAYS.forEach((day, dIdx) => {
-      TIME_SLOTS.forEach((slot, sIdx) => {
-        // Find matching live events in sample or calculate realistic intensity
-        const slotBase = (dIdx === 1 || dIdx === 3) && (sIdx === 2 || sIdx === 3) ? 4 : (dIdx >= 0 && dIdx <= 4) ? 2 : 1;
-        const count = Math.max(1, Math.round(totalViewsCount * (slotBase / 10))) * (sIdx + 1);
-        heatmap.push({
-          day,
-          timeSlot: slot,
-          views: count,
-          intensity: (slotBase > 3 ? 4 : slotBase > 1 ? 3 : 2) as 1 | 2 | 3 | 4,
-        });
+    DAYS.forEach((day) => {
+      TIME_SLOTS.forEach((slot) => {
+        const views = heatmapCounts.get(`${day}|${slot.label}`) || 0;
+        const ratio = views / maxHeatmapCount;
+        const intensity = (views === 0 ? 1 : ratio > 0.66 ? 4 : ratio > 0.33 ? 3 : 2) as 1 | 2 | 3 | 4;
+        heatmap.push({ day, timeSlot: slot.label, views, intensity });
       });
     });
+
+    // Real daily views trend from actual pageview timestamps, split by device.
+    const dayTrendMap = new Map<string, { total: number; unique: Set<string>; desktop: number; mobile: number; tablet: number }>();
+    for (const ev of pageviews) {
+      const d = new Date(ev.timestamp);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = d.toISOString().slice(0, 10);
+      if (!dayTrendMap.has(key)) dayTrendMap.set(key, { total: 0, unique: new Set(), desktop: 0, mobile: 0, tablet: 0 });
+      const entry = dayTrendMap.get(key)!;
+      entry.total++;
+      if (ev.distinct_id) entry.unique.add(ev.distinct_id);
+      const dev = ev.properties?.$device_type || 'Desktop';
+      if (dev === 'Mobile') entry.mobile++;
+      else if (dev === 'Tablet') entry.tablet++;
+      else entry.desktop++;
+    }
+    const viewsTrend = Array.from(dayTrendMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, data]) => ({ month: date, totalViews: data.total, uniqueViews: data.unique.size, desktop: data.desktop, mobile: data.mobile, tablet: data.tablet }));
+
+    // Real recommendation derived from the top geo + actual peak day/slot — omitted when there's
+    // not enough signal to say anything meaningful, rather than always showing a fixed one.
+    let topRecommendations: any[] = [];
+    if (geoTraffic.length > 0 && totalViewsCount > 0) {
+      const topGeo = geoTraffic[0];
+      let peakKey = '';
+      let peakCount = -1;
+      for (const [key, count] of heatmapCounts) {
+        if (count > peakCount) {
+          peakCount = count;
+          peakKey = key;
+        }
+      }
+      const [peakDay, peakSlot] = peakKey ? peakKey.split('|') : ['', ''];
+      topRecommendations = [{
+        id: 'rec-01',
+        type: 'peak_time',
+        title: peakDay && peakSlot
+          ? `Peak Traffic from ${topGeo.country} on ${peakDay} (${peakSlot})`
+          : `Most Traffic Comes From ${topGeo.country}`,
+        description: `${topGeo.percentage}% of showcase room views in this period came from ${topGeo.country}.`,
+        impact: topGeo.percentage >= 50 ? 'high' : 'medium',
+      }];
+    }
+
+    const totalViewsChange = this.computeGrowthPercent(() => true, pageviews, dateFromMs, nowMs) ?? 0;
+    const earlierUniqueIds = new Set(pageviews.filter(e => new Date(e.timestamp).getTime() < midpointMs).map((e: any) => e.distinct_id).filter(Boolean));
+    const laterUniqueIds = new Set(pageviews.filter(e => new Date(e.timestamp).getTime() >= midpointMs).map((e: any) => e.distinct_id).filter(Boolean));
+    const uniqueViewsChange = earlierUniqueIds.size === 0
+      ? (laterUniqueIds.size > 0 ? 100 : 0)
+      : Math.round(((laterUniqueIds.size - earlierUniqueIds.size) / earlierUniqueIds.size) * 1000) / 10;
+    const engagementQualityChange = this.computeGrowthPercent(e => e.event === '$autocapture', roomEvents, dateFromMs, nowMs) ?? 0;
 
     const result = {
       dateRange,
       summary: {
         totalRooms: topPerformingRooms.length,
         publishedRooms: topPerformingRooms.length,
-        totalViews: { count: totalViewsCount, change: 12.5 },
-        uniqueViews: { count: uniqueViewsCount, change: 8.4 },
-        avgTimeSpent: { value: avgTimeSpentStr, change: '+18s' },
-        engagementQuality: { percentage: Math.round((roomEvents.filter(e => e.event === '$autocapture').length / Math.max(1, roomEvents.length)) * 100) || 82, change: 4.1 },
+        totalViews: { count: totalViewsCount, change: totalViewsChange },
+        uniqueViews: { count: uniqueViewsCount, change: uniqueViewsChange },
+        avgTimeSpent: { value: avgTimeSpentStr, change: avgTimeSpentChange },
+        engagementQuality: { percentage: roomEvents.length > 0 ? Math.round((roomEvents.filter(e => e.event === '$autocapture').length / roomEvents.length) * 100) : 0, change: engagementQualityChange },
       },
-      viewsTrend: [
-        { month: 'Aug 20', totalViews: 12, uniqueViews: 8, desktop: 12, mobile: 4, tablet: 1 },
-        { month: 'Aug 21', totalViews: 15, uniqueViews: 10, desktop: 15, mobile: 6, tablet: 2 },
-        { month: 'Aug 22', totalViews: 18, uniqueViews: 12, desktop: 18, mobile: 8, tablet: 2 },
-        { month: 'Aug 23', totalViews: 22, uniqueViews: 15, desktop: 22, mobile: 10, tablet: 3 },
-        { month: 'Aug 24', totalViews: 28, uniqueViews: 20, desktop: 28, mobile: 14, tablet: 4 },
-        { month: 'Aug 25', totalViews: 34, uniqueViews: 24, desktop: 34, mobile: 16, tablet: 5 },
-        { month: 'Aug 26 (Live)', totalViews: totalViewsCount, uniqueViews: uniqueViewsCount, desktop: totalViewsCount, mobile: Math.round(totalViewsCount * 0.3), tablet: Math.round(totalViewsCount * 0.1) },
-      ],
+      viewsTrend,
       trafficSources,
       devices,
-      geoTraffic: geoTraffic.length > 0 ? geoTraffic : [
-        { country: 'United Kingdom', code: 'GB', flag: '🇬🇧', views: 1, percentage: 50 },
-        { country: 'Nigeria', code: 'NG', flag: '🇳🇬', views: 1, percentage: 50 },
-      ],
+      geoTraffic,
       topPerformingRooms,
       heatmap,
-      topRecommendations: [
-        {
-          id: 'rec-01',
-          type: 'peak_time',
-          title: 'Peak Recruiter Traffic from UK & Nigeria on Tuesdays & Thursdays',
-          description: 'Recruiter impressions on showcase rooms peak between 09:00–18:00 UTC.',
-          impact: 'high',
-        },
-      ],
+      topRecommendations,
       cachedAt: new Date().toISOString(),
     };
 
@@ -736,34 +872,11 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(dateRange);
-    const dateFromMs = new Date(dateFrom).getTime();
 
-    let events: any[] = [];
-    let recordings: any[] = [];
-
-    if (this.hasApiKey) {
-      try {
-        const [eventsRes, recordingsRes] = await Promise.allSettled([
-          this.client.get('/events', { params: { limit: 250 } }),
-          this.client.get('/session_recordings', { params: { limit: 100 } }),
-        ]);
-
-        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
-          events = eventsRes.value.data.results;
-        }
-        if (recordingsRes.status === 'fulfilled' && recordingsRes.value.data?.results) {
-          recordings = recordingsRes.value.data.results;
-        }
-      } catch (err: any) {
-        logger.warn('Live PostHog website analytics query error:', err.message);
-      }
-    }
-
-    const withinRange = events.filter((e: any) => {
-      const t = new Date(e.timestamp).getTime();
-      return Number.isFinite(t) ? t >= dateFromMs : true;
-    });
-    const scopedEvents = withinRange.length > 0 ? withinRange : events;
+    const [scopedEvents, recordings] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchRecordingsList(),
+    ]);
     const pageviews = scopedEvents.filter((e: any) => e.event === '$pageview');
 
     const totalPageviews = pageviews.length || scopedEvents.length;
@@ -990,103 +1103,10 @@ class PostHogService {
           return { results: filtered };
         }
 
-        // Live fallback creator records matching verified PostHog distinct IDs
-        const fallbackCreators = [
-          {
-            userId: '82',
-            distinctId: '82',
-            email: 'creator_82@talentbridge.cv',
-            firstName: 'Creator 82',
-            lastName: '',
-            signupDate: new Date(Date.now() - 86400000 * 2).toISOString(),
-            country: 'United Kingdom',
-            countryCode: 'GB',
-            city: 'City of London',
-            browser: 'Brave',
-            os: 'macOS',
-            deviceType: 'Desktop',
-            initialUrl: 'https://talentbridge.cv/',
-            initialReferrer: '$direct',
-            initialPath: '/',
-            signupSource: 'direct',
-            planTier: 'pro',
-            lastActive: new Date().toISOString(),
-            totalEvents: 84,
-          },
-          {
-            userId: '80',
-            distinctId: '80',
-            email: 'creator_80@talentbridge.cv',
-            firstName: 'Creator 80',
-            lastName: '',
-            signupDate: new Date(Date.now() - 86400000 * 5).toISOString(),
-            country: 'Nigeria',
-            countryCode: 'NG',
-            city: 'Lagos',
-            browser: 'Chrome',
-            os: 'macOS',
-            deviceType: 'Desktop',
-            initialUrl: 'https://talentbridge.cv/',
-            initialReferrer: '$direct',
-            initialPath: '/',
-            signupSource: 'direct',
-            planTier: 'pro',
-            lastActive: new Date().toISOString(),
-            totalEvents: 42,
-          },
-          {
-            userId: '66',
-            distinctId: '66',
-            email: 'creator_66@talentbridge.cv',
-            firstName: 'Creator 66',
-            lastName: '',
-            signupDate: new Date(Date.now() - 86400000 * 8).toISOString(),
-            country: 'Nigeria',
-            countryCode: 'NG',
-            city: 'Abuja',
-            browser: 'Chrome',
-            os: 'macOS',
-            deviceType: 'Desktop',
-            initialUrl: 'https://talentbridge.cv/',
-            initialReferrer: 'https://google.com',
-            initialPath: '/',
-            signupSource: 'organic',
-            planTier: 'enterprise',
-            lastActive: new Date().toISOString(),
-            totalEvents: 68,
-          },
-          {
-            userId: '71',
-            distinctId: '71',
-            email: 'creator_71@talentbridge.cv',
-            firstName: 'Creator 71',
-            lastName: '',
-            signupDate: new Date(Date.now() - 86400000 * 12).toISOString(),
-            country: 'Nigeria',
-            countryCode: 'NG',
-            city: 'Lagos',
-            browser: 'Chrome',
-            os: 'macOS',
-            deviceType: 'Desktop',
-            initialUrl: 'https://talentbridge.cv/',
-            initialReferrer: '$direct',
-            initialPath: '/',
-            signupSource: 'direct',
-            planTier: 'starter',
-            lastActive: new Date().toISOString(),
-            totalEvents: 25,
-          },
-        ];
-
-        const filtered = q
-          ? fallbackCreators.filter(
-              (u) =>
-                u.firstName.toLowerCase().includes(q) ||
-                u.email.toLowerCase().includes(q) ||
-                u.distinctId.toLowerCase().includes(q)
-            )
-          : fallbackCreators;
-        return { results: filtered };
+        // Live fetch failed and no cache exists — return an honest empty result rather than
+        // fabricated creator records (previously hardcoded here with made-up but plausible-
+        // looking distinct IDs/emails).
+        return { results: [] };
       }
     }
 
