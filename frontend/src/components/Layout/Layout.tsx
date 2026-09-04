@@ -5,7 +5,7 @@ import {
   TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
-  ChevronsUpDown, Share2, Target,
+  ChevronsUpDown, Share2, Target, Globe,
   ChevronDown, ChevronUp, BookOpen, HelpCircle, Bot,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
@@ -28,6 +28,7 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   Settings,
   Share2,
   Target,
+  Globe,
   BookOpen,
   HelpCircle,
   Bot,
@@ -58,6 +59,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Executive Analytics',
     items: [
+      { path: '/dashboard/website', label: 'Website Analytics', icon: 'Globe', badge: 'Live', badgeType: 'teal' },
       { path: '/dashboard/funnel', label: 'Funnel Conversion', icon: 'TrendingDown' },
       { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle' },
       { path: '/dashboard/retention', label: 'Cohort Retention', icon: 'RefreshCcw' },

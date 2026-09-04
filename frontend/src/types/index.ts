@@ -213,6 +213,25 @@ export interface RoomsDashboardResponse {
   }[];
 }
 
+export interface WebsiteDashboardResponse {
+  dateRange: string;
+  postHogConnected: boolean;
+  summary: {
+    totalPageviews: number;
+    uniqueVisitors: number;
+    totalSessions: number;
+    avgSessionDuration: string;
+    bounceRate: number;
+  };
+  pageviewsTrend: { date: string; pageviews: number; uniqueVisitors: number }[];
+  topPages: { path: string; views: number; uniqueVisitors: number; percentage: number }[];
+  trafficSources: { name: string; count: number; percentage: number }[];
+  devices: { name: string; count: number; percentage: number }[];
+  browsers: { name: string; count: number; percentage: number }[];
+  operatingSystems: { name: string; count: number; percentage: number }[];
+  geoTraffic: { country: string; code: string; flag: string; views: number; percentage: number }[];
+}
+
 export interface User {
   userId: string;
   distinctId?: string;

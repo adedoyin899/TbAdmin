@@ -155,3 +155,29 @@ export async function getRoomsDashboard(req: AuthenticatedRequest, res: Response
     return sendError(res, error.message || 'Failed to fetch rooms metrics.', 500);
   }
 }
+
+/**
+ * 6. GET /api/dashboard/website
+ * Query Params: ?dateRange=30d
+ */
+export async function getWebsiteDashboard(req: AuthenticatedRequest, res: Response) {
+  try {
+    const dateRange = (req.query.dateRange as string) || '30d';
+    const websiteData: any = await postHogService.fetchWebsiteAnalytics(dateRange);
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+
+    const responsePayload = {
+      ...websiteData,
+      dateRange,
+      cachedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    };
+
+    return sendSuccess(res, responsePayload, 200);
+  } catch (error: any) {
+    logger.error('Error in getWebsiteDashboard:', error);
+    return sendError(res, error.message || 'Failed to fetch website analytics.', 500);
+  }
+}

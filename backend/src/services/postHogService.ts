@@ -726,6 +726,192 @@ class PostHogService {
   }
 
   /**
+   * 3b. Sitewide Website Analytics (100% Live PostHog Telemetry)
+   * Unlike fetchRoomsAnalytics (scoped to /r/, /assets-room/, /directory, /dashboard),
+   * this covers every page on the site — the general "how are visitors using the website" view.
+   */
+  async fetchWebsiteAnalytics(dateRange = '30d', ttl = 900) {
+    const cacheKey = `website_analytics:${dateRange}`;
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+
+    const { dateFrom } = parseDateRange(dateRange);
+    const dateFromMs = new Date(dateFrom).getTime();
+
+    let events: any[] = [];
+    let recordings: any[] = [];
+
+    if (this.hasApiKey) {
+      try {
+        const [eventsRes, recordingsRes] = await Promise.allSettled([
+          this.client.get('/events', { params: { limit: 250 } }),
+          this.client.get('/session_recordings', { params: { limit: 100 } }),
+        ]);
+
+        if (eventsRes.status === 'fulfilled' && eventsRes.value.data?.results) {
+          events = eventsRes.value.data.results;
+        }
+        if (recordingsRes.status === 'fulfilled' && recordingsRes.value.data?.results) {
+          recordings = recordingsRes.value.data.results;
+        }
+      } catch (err: any) {
+        logger.warn('Live PostHog website analytics query error:', err.message);
+      }
+    }
+
+    const withinRange = events.filter((e: any) => {
+      const t = new Date(e.timestamp).getTime();
+      return Number.isFinite(t) ? t >= dateFromMs : true;
+    });
+    const scopedEvents = withinRange.length > 0 ? withinRange : events;
+    const pageviews = scopedEvents.filter((e: any) => e.event === '$pageview');
+
+    const totalPageviews = pageviews.length || scopedEvents.length;
+    const uniqueVisitorIds = new Set(scopedEvents.map((e: any) => e.distinct_id).filter(Boolean));
+    const uniqueVisitors = uniqueVisitorIds.size;
+
+    const getPath = (e: any): string => {
+      const raw = e.properties?.$pathname || e.properties?.$current_url || '/';
+      try {
+        return raw.startsWith('http') ? new URL(raw).pathname : raw;
+      } catch {
+        return raw;
+      }
+    };
+
+    // Top pages, sitewide
+    const pageSample = pageviews.length > 0 ? pageviews : scopedEvents;
+    const pageMap = new Map<string, { views: number; visitors: Set<string> }>();
+    for (const ev of pageSample) {
+      const path = getPath(ev);
+      if (!pageMap.has(path)) pageMap.set(path, { views: 0, visitors: new Set() });
+      const entry = pageMap.get(path)!;
+      entry.views++;
+      if (ev.distinct_id) entry.visitors.add(ev.distinct_id);
+    }
+    const topPages = Array.from(pageMap.entries())
+      .map(([path, data]) => ({
+        path,
+        views: data.views,
+        uniqueVisitors: data.visitors.size,
+        percentage: Math.round((data.views / Math.max(1, totalPageviews)) * 100),
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    // Traffic sources, sitewide
+    const sourceCounts: Record<string, number> = { Direct: 0, 'Organic Search': 0, Social: 0, Referral: 0 };
+    for (const ev of scopedEvents) {
+      const ref = ev.properties?.$referrer || ev.properties?.$initial_referrer || '$direct';
+      if (ref === '$direct' || ref === 'talentbridge.cv') sourceCounts['Direct']++;
+      else if (/google|bing|duckduckgo/i.test(ref)) sourceCounts['Organic Search']++;
+      else if (/linkedin|twitter|x\.com|facebook|reddit|instagram/i.test(ref)) sourceCounts['Social']++;
+      else sourceCounts['Referral']++;
+    }
+    const totalSourceEvents = Math.max(1, scopedEvents.length);
+    const trafficSources = Object.entries(sourceCounts)
+      .filter(([, count]) => count > 0)
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalSourceEvents) * 100) }))
+      .sort((a, b) => b.count - a.count);
+
+    // Devices, browsers, OS — sitewide
+    const deviceCounts: Record<string, number> = {};
+    const browserCounts: Record<string, number> = {};
+    const osCounts: Record<string, number> = {};
+    for (const ev of scopedEvents) {
+      const dev = ev.properties?.$device_type || 'Desktop';
+      deviceCounts[dev] = (deviceCounts[dev] || 0) + 1;
+      const browser = ev.properties?.$browser || 'Unknown';
+      browserCounts[browser] = (browserCounts[browser] || 0) + 1;
+      const os = ev.properties?.$os || 'Unknown';
+      osCounts[os] = (osCounts[os] || 0) + 1;
+    }
+    const totalDeviceEvents = Math.max(1, scopedEvents.length);
+    const devices = Object.entries(deviceCounts)
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
+      .sort((a, b) => b.count - a.count);
+    const browsers = Object.entries(browserCounts)
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+    const operatingSystems = Object.entries(osCounts)
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    // Geo, sitewide
+    const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
+    for (const ev of scopedEvents) {
+      const country = ev.properties?.$geoip_country_name || 'Unknown';
+      const code = ev.properties?.$geoip_country_code || '';
+      const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : code === 'IT' ? '🇮🇹' : code === 'GH' ? '🇬🇭' : code === 'IN' ? '🇮🇳' : '🌍';
+      if (!geoCounts[country]) geoCounts[country] = { count: 0, code, flag };
+      geoCounts[country].count++;
+    }
+    const totalGeoEvents = Math.max(1, scopedEvents.length);
+    const geoTraffic = Object.entries(geoCounts)
+      .map(([country, data]) => ({ country, code: data.code, flag: data.flag, views: data.count, percentage: Math.round((data.count / totalGeoEvents) * 100) }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 8);
+
+    // Daily pageviews trend — real buckets from actual event timestamps
+    const dayMap = new Map<string, { total: number; unique: Set<string> }>();
+    for (const ev of pageSample) {
+      const d = new Date(ev.timestamp);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = d.toISOString().slice(0, 10);
+      if (!dayMap.has(key)) dayMap.set(key, { total: 0, unique: new Set() });
+      const entry = dayMap.get(key)!;
+      entry.total++;
+      if (ev.distinct_id) entry.unique.add(ev.distinct_id);
+    }
+    const pageviewsTrend = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, data]) => ({ date, pageviews: data.total, uniqueVisitors: data.unique.size }));
+
+    // Sessions & bounce rate
+    const totalSessions = recordings.length || uniqueVisitors;
+    const totalDurationSeconds = recordings.reduce((acc: number, r: any) => acc + (r.recording_duration || 0), 0);
+    const avgSessionSeconds = recordings.length > 0 ? Math.round(totalDurationSeconds / recordings.length) : 0;
+    const avgSessionDuration = avgSessionSeconds >= 60
+      ? `${Math.floor(avgSessionSeconds / 60)}m ${avgSessionSeconds % 60}s`
+      : `${avgSessionSeconds}s`;
+
+    const visitorPageviewCounts = new Map<string, number>();
+    for (const ev of pageviews) {
+      const id = ev.distinct_id || 'unknown';
+      visitorPageviewCounts.set(id, (visitorPageviewCounts.get(id) || 0) + 1);
+    }
+    const singlePageVisitors = Array.from(visitorPageviewCounts.values()).filter((c) => c === 1).length;
+    const bounceRate = visitorPageviewCounts.size > 0
+      ? Math.round((singlePageVisitors / visitorPageviewCounts.size) * 100)
+      : 0;
+
+    const result = {
+      dateRange,
+      postHogConnected: this.hasApiKey,
+      summary: {
+        totalPageviews,
+        uniqueVisitors,
+        totalSessions,
+        avgSessionDuration,
+        bounceRate,
+      },
+      pageviewsTrend,
+      topPages,
+      trafficSources,
+      devices,
+      browsers,
+      operatingSystems,
+      geoTraffic,
+      cachedAt: new Date().toISOString(),
+    };
+
+    await cacheService.set(cacheKey, result, ttl);
+    return result;
+  }
+
+  /**
    * 4. Search Users (Person API - Real-time with resilient fallback cache)
    */
   async searchUsers(searchQuery = '') {

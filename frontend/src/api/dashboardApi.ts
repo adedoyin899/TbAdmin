@@ -113,4 +113,33 @@ export const dashboardApi = {
       ],
     };
   },
+
+  getWebsiteDashboard: async (dateRange: string = '30d') => {
+    if (!USE_MOCK_ONLY) {
+      try {
+        const res: any = await apiClient.get('/dashboard/website', {
+          params: { dateRange },
+        });
+        if (res && res.summary) return res;
+      } catch {}
+    }
+    return {
+      dateRange,
+      postHogConnected: false,
+      summary: {
+        totalPageviews: 0,
+        uniqueVisitors: 0,
+        totalSessions: 0,
+        avgSessionDuration: '0s',
+        bounceRate: 0,
+      },
+      pageviewsTrend: [],
+      topPages: [],
+      trafficSources: [],
+      devices: [],
+      browsers: [],
+      operatingSystems: [],
+      geoTraffic: [],
+    };
+  },
 };

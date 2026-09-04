@@ -5,6 +5,7 @@ import {
   getRetentionDashboard,
   getEmailDashboard,
   getRoomsDashboard,
+  getWebsiteDashboard,
 } from '../controllers/dashboardController.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
 
@@ -27,3 +28,6 @@ dashboardRouter.get('/email', getEmailDashboard);
 
 // GET /api/dashboard/rooms
 dashboardRouter.get('/rooms', getRoomsDashboard);
+
+// GET /api/dashboard/website
+dashboardRouter.get('/website', getWebsiteDashboard);

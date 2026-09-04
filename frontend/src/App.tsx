@@ -10,6 +10,7 @@ import { FeatureDashboard } from './components/Dashboard/FeatureDashboard';
 import { RetentionDashboard } from './components/Dashboard/RetentionDashboard';
 import { EmailDashboard } from './components/Dashboard/EmailDashboard';
 import { RoomInsightsDashboard } from './components/Dashboard/RoomInsightsDashboard';
+import { WebsiteAnalyticsDashboard } from './components/Dashboard/WebsiteAnalyticsDashboard';
 
 import { SocialMediaOverview } from './components/SocialMedia/SocialMediaOverview';
 import { LinkedInDetailedView } from './components/SocialMedia/LinkedInDetailedView';
@@ -79,6 +80,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Layout><RetentionDashboard /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/website"
+                element={
+                  <ProtectedRoute>
+                    <Layout><WebsiteAnalyticsDashboard /></Layout>
                   </ProtectedRoute>
                 }
               />
