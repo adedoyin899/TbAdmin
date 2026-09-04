@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { LoginPage } from './components/Auth/LoginPage';
+import { LandingPage } from './components/Landing/LandingPage';
 import { Layout } from './components/Layout/Layout';
 import { FunnelDashboard } from './components/Dashboard/FunnelDashboard';
 import { FeatureDashboard } from './components/Dashboard/FeatureDashboard';
@@ -57,6 +58,7 @@ function App() {
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<LoginPage />} />
+                <Route path="/landing" element={<LandingPage />} />
 
               {/* Protected dashboard routes */}
               <Route
