@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
@@ -1248,7 +1249,11 @@ const GranularUserProfileView: React.FC<{
 
 export const UserLookupPage: React.FC = () => {
   const rbac = useRbac();
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Deep-link support: a room/campaign/cohort view can link straight to a person's profile via
+  // /lookup?userId=<distinctId or PostHog person id>, instead of always landing on the bare
+  // directory and requiring a manual re-search.
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(() => searchParams.get('userId'));
   const [activeMainTab, setActiveMainTab] = useState<'users' | 'recordings'>('users');
   const [horizon, setHorizon] = useState<string>('30d');
   const [autoRefreshSec, setAutoRefreshSec] = useState<number>(30);
@@ -1304,6 +1309,13 @@ export const UserLookupPage: React.FC = () => {
     setSearchSubmitted(searchInput.trim());
   };
 
+  // Keeps the URL in sync with the selected profile so a deep link (?userId=...) can be copied
+  // and shared, and so returning to the directory clears it rather than leaving it stale.
+  const selectUser = (id: string | null) => {
+    setSelectedUserId(id);
+    setSearchParams(id ? { userId: id } : {}, { replace: true });
+  };
+
   const filteredUsers = (usersData?.results as User[] | undefined)?.filter(u => {
     return sourceFilter === 'all' || u.signupSource === sourceFilter;
   }) || [];
@@ -1315,7 +1327,7 @@ export const UserLookupPage: React.FC = () => {
       <>
         <GranularUserProfileView
           userId={selectedUserId}
-          onBack={() => setSelectedUserId(null)}
+          onBack={() => selectUser(null)}
           onWatchReplay={rec => setActiveRecording(rec)}
         />
         <SessionReplayModal
@@ -1504,7 +1516,7 @@ export const UserLookupPage: React.FC = () => {
                     return (
                       <tr
                         key={user.userId}
-                        onClick={() => setSelectedUserId(user.userId)}
+                        onClick={() => selectUser(user.userId)}
                         style={{ cursor: 'pointer' }}
                         className="hover:bg-[var(--panel-2)] transition-colors"
                         title="Click to view granular PostHog inspector"
@@ -1602,7 +1614,7 @@ export const UserLookupPage: React.FC = () => {
                             <button
                               onClick={e => {
                                 e.stopPropagation();
-                                setSelectedUserId(user.userId);
+                                selectUser(user.userId);
                               }}
                               className="btn btn-ghost"
                               style={{ padding: '4px 10px', fontSize: 11.5, gap: 5 }}

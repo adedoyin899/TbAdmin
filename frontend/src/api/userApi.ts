@@ -63,27 +63,27 @@ export const userApi = {
   },
 
   getUserProfile: async (userId: string) => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get(`/users/${userId}`);
-        if (res && res.user) return res;
-      } catch {}
+    if (USE_MOCK_ONLY) {
+      const user = MOCK_USERS.results.find(u => u.userId === userId) || MOCK_USERS.results[0];
+      const events = (MOCK_EVENTS.byUser as Record<string, unknown[]>)[userId]
+        || (MOCK_EVENTS.byUser as Record<string, unknown[]>)['user_123abc'];
+      const emailEngagement = EMAIL_ENGAGEMENT[userId] || EMAIL_ENGAGEMENT['user_123abc'];
+      const roomInsights = (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)[userId]
+        || (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)['user_123abc'] || [];
+
+      return {
+        user,
+        events,
+        emailEngagement,
+        roomInsights,
+        postHogSessionReplayUrl: `https://app.posthog.com/project/ph_proj_live/replay/${userId}`,
+      };
     }
-
-    const user = MOCK_USERS.results.find(u => u.userId === userId) || MOCK_USERS.results[0];
-    const events = (MOCK_EVENTS.byUser as Record<string, unknown[]>)[userId]
-      || (MOCK_EVENTS.byUser as Record<string, unknown[]>)['user_123abc'];
-    const emailEngagement = EMAIL_ENGAGEMENT[userId] || EMAIL_ENGAGEMENT['user_123abc'];
-    const roomInsights = (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)[userId]
-      || (MOCK_ROOMS.roomsByUser as unknown as Record<string, RoomInsight[]>)['user_123abc'] || [];
-
-    return {
-      user,
-      events,
-      emailEngagement,
-      roomInsights,
-      postHogSessionReplayUrl: `https://app.posthog.com/project/ph_proj_live/replay/${userId}`,
-    };
+    // No mock fallback on error: silently swapping in a *different* fake person's fake room data
+    // on a genuine backend outage is actively misleading — worse than surfacing the error, since
+    // it looks like a real profile for whichever userId was requested.
+    const res: any = await apiClient.get(`/users/${userId}`);
+    return res;
   },
 
   getUserOverview: async (horizon: string = '30d') => {

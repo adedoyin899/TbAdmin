@@ -55,61 +55,29 @@ export const dashboardApi = {
   },
 
   getRoomsDashboard: async (dateRange: string = '30d') => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/dashboard/rooms', {
-          params: { dateRange },
-        });
-        if (res && res.topPerformingRooms && res.topPerformingRooms.length > 0) return res;
-      } catch {}
+    if (USE_MOCK_ONLY) {
+      return {
+        summary: MOCK_ROOMS.platformRoomsSummary,
+        viewsTrend: MOCK_ROOMS.platformViewsTrend,
+        trafficSources: MOCK_ROOMS.platformTrafficSources,
+        devices: MOCK_ROOMS.platformDevices,
+        heatmap: MOCK_ROOMS.platformHeatmap,
+        geoTraffic: MOCK_ROOMS.platformGeoTraffic,
+        topRecommendations: MOCK_ROOMS.platformRecommendations,
+        topPerformingRooms: [
+          { roomId: 'room_alice_01', roomName: "Alice's Portfolio", ownerName: 'Alice Chen', ownerEmail: 'alice@example.com', views: 1247, uniqueViews: 1092, engagement: 68.5 },
+          { roomId: 'room_kwame_01', roomName: 'Kwame Asante — Dev', ownerName: 'Kwame Asante', ownerEmail: 'kwame@example.com', views: 2840, uniqueViews: 1845, engagement: 82.4 },
+          { roomId: 'room_priya_01', roomName: 'Priya Sharma — UX', ownerName: 'Priya Sharma', ownerEmail: 'priya@example.com', views: 980, uniqueViews: 720, engagement: 74.1 },
+          { roomId: 'room_sarah_01', roomName: 'Sarah Jenkins — Creative', ownerName: 'Sarah Jenkins', ownerEmail: 'sarah.jenkins@example.com', views: 1650, uniqueViews: 1210, engagement: 79.3 },
+        ],
+      };
     }
-    return {
-      summary: MOCK_ROOMS.platformRoomsSummary,
-      viewsTrend: MOCK_ROOMS.platformViewsTrend,
-      trafficSources: MOCK_ROOMS.platformTrafficSources,
-      devices: MOCK_ROOMS.platformDevices,
-      heatmap: MOCK_ROOMS.platformHeatmap,
-      geoTraffic: MOCK_ROOMS.platformGeoTraffic,
-      topRecommendations: MOCK_ROOMS.platformRecommendations,
-      topPerformingRooms: [
-        {
-          roomId: 'room_alice_01',
-          roomName: "Alice's Portfolio",
-          ownerName: 'Alice Chen',
-          ownerEmail: 'alice@example.com',
-          views: 1247,
-          uniqueViews: 1092,
-          engagement: 68.5,
-        },
-        {
-          roomId: 'room_kwame_01',
-          roomName: 'Kwame Asante — Dev',
-          ownerName: 'Kwame Asante',
-          ownerEmail: 'kwame@example.com',
-          views: 2840,
-          uniqueViews: 1845,
-          engagement: 82.4,
-        },
-        {
-          roomId: 'room_priya_01',
-          roomName: 'Priya Sharma — UX',
-          ownerName: 'Priya Sharma',
-          ownerEmail: 'priya@example.com',
-          views: 980,
-          uniqueViews: 720,
-          engagement: 74.1,
-        },
-        {
-          roomId: 'room_sarah_01',
-          roomName: 'Sarah Jenkins — Creative',
-          ownerName: 'Sarah Jenkins',
-          ownerEmail: 'sarah.jenkins@example.com',
-          views: 1650,
-          uniqueViews: 1210,
-          engagement: 79.3,
-        },
-      ],
-    };
+    // No mock fallback on error or on a genuinely empty result: a platform with zero rooms in
+    // range is real information the "No Showcase Rooms Published Yet" empty state should show,
+    // not a cue to silently render four fake creators (Alice Chen, Kwame Asante, ...) as if they
+    // were live telemetry.
+    const res: any = await apiClient.get('/dashboard/rooms', { params: { dateRange } });
+    return res;
   },
 
   getWebsiteDashboard: async (dateRange: string = '30d') => {

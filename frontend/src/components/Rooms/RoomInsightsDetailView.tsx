@@ -7,9 +7,10 @@ import {
   Edit3, Search, Download, ExternalLink, Sparkles,
   Image as ImageIcon, MessageSquare, Share2, Globe,
   ArrowUpRight, ArrowDownRight, CheckCircle2, ChevronLeft, ChevronRight,
+  Layers,
 } from 'lucide-react';
 import type { RoomInsight } from '../../types';
-import { formatNumber } from '../../utils/formatters';
+import { formatNumber, formatDate } from '../../utils/formatters';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -124,6 +125,18 @@ export const RoomInsightsDetailView: React.FC<{
           <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>
             Detailed creator analytics, dwell-time metrics, recruiter visits, and engagement heatmaps.
           </p>
+          <p style={{ color: 'var(--dim)', fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {room?.createdAt && (
+              <span title="Earliest activity PostHog has recorded for this room — not a true creation timestamp, since no room_created event exists yet">
+                First seen {formatDate(room.createdAt)}
+              </span>
+            )}
+            {room?.ownerConfidence === 'inferred' && (
+              <span className="badge badge-neutral" style={{ fontSize: 10 }} title="Owner matched by first-visitor activity only, not a confirmed identity signal">
+                Owner inferred
+              </span>
+            )}
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -208,6 +221,26 @@ export const RoomInsightsDetailView: React.FC<{
           <p className="mono-metric" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
             {engagementQuality?.percentage ?? 0}%
           </p>
+        </div>
+      </div>
+
+      {/* ── Room Composition — honestly untracked until block/template selection is sent to
+          PostHog (see Feature & Template Adoption for the same gap) ─────────────────────── */}
+      <div className="card-mistral" style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <Layers size={16} color="var(--dim)" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: '0 0 2px 0' }}>Room Composition</h4>
+          {room?.blocksUsed && room.blocksUsed.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {room.blocksUsed.map((b) => (
+                <span key={b} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: 'var(--panel-2)', border: '1px solid var(--line)', color: 'var(--text)' }}>{b}</span>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+              Which blocks this room uses isn't tracked yet — PostHog doesn't currently record room composition as an event property.
+            </p>
+          )}
         </div>
       </div>
 
@@ -604,7 +637,7 @@ export const RoomInsightsDetailView: React.FC<{
           }}>
             <Globe size={48} color="var(--accent)" strokeWidth={1.5} style={{ opacity: 0.85 }} />
             <p style={{ fontSize: 13.5, color: 'var(--text-2)', textAlign: 'center' }}>
-              Global geographic distribution active across <strong style={{ color: 'var(--accent)' }}>6 countries</strong>
+              Geographic distribution across <strong style={{ color: 'var(--accent)' }}>{geoTraffic.length} {geoTraffic.length === 1 ? 'country' : 'countries'}</strong>
             </p>
           </div>
 

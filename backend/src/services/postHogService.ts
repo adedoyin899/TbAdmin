@@ -645,6 +645,144 @@ class PostHogService {
   }
 
   /**
+   * Resolves room identity + per-room aggregate stats from a set of room-scoped events. Shared
+   * by fetchRoomsAnalytics (platform-wide) and fetchUserRoomInsights (scoped to one person's
+   * rooms) so the two never disagree about what a "room" is. Only public_room_viewed and
+   * contact_clicked carry room_id/room_title/author — a plain $pageview or $autocapture on the
+   * same /r/{slug} page doesn't — so identity is resolved per path first, then every event
+   * (including ones that don't carry room_id themselves) is grouped under that resolved id.
+   * Falls back to path-based grouping for non-room pages (e.g. /directory, /dashboard) that have
+   * no room_id concept at all.
+   */
+  private buildRoomSummaries(roomEvents: any[]): {
+    roomId: string;
+    roomName: string;
+    ownerName: string;
+    ownerEmail: string;
+    ownerDistinctId: string;
+    views: number;
+    uniqueViews: number;
+    engagement: number;
+    publishedUrl: string;
+    country: string;
+    countryCode: string;
+    flag: string;
+    lastVisited: string;
+    firstSeenAt: string;
+    path: string;
+  }[] {
+    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string }>();
+    for (const ev of roomEvents) {
+      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked') continue;
+      const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
+      const meta = roomMetaByPath.get(p) || {};
+      if (ev.properties?.room_id !== undefined && ev.properties?.room_id !== null) {
+        meta.roomId = meta.roomId ?? String(ev.properties.room_id);
+      }
+      meta.roomTitle = meta.roomTitle || ev.properties?.room_title || ev.properties?.title;
+      meta.author = meta.author || ev.properties?.author;
+      roomMetaByPath.set(p, meta);
+    }
+
+    const roomMap = new Map<string, {
+      path: string;
+      url: string;
+      views: number;
+      uniqueVisitors: Set<string>;
+      clicks: number;
+      distinctId: string;
+      country: string;
+      code: string;
+      flag: string;
+      lastVisited: string;
+      firstSeenAt: string;
+      roomId?: string;
+      roomTitle?: string;
+      author?: string;
+    }>();
+
+    for (const ev of roomEvents) {
+      const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
+      const meta = roomMetaByPath.get(p);
+      const key = meta?.roomId ? `room:${meta.roomId}` : `path:${p}`;
+      const distinctId = ev.distinct_id || 'unknown';
+      const country = ev.properties?.$geoip_country_name || 'United Kingdom';
+      const code = ev.properties?.$geoip_country_code || 'GB';
+      const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
+
+      if (!roomMap.has(key)) {
+        roomMap.set(key, {
+          path: p,
+          url: p.startsWith('http') ? p : `https://talentbridge.cv${p}`,
+          views: 0,
+          uniqueVisitors: new Set(),
+          clicks: 0,
+          distinctId,
+          country,
+          code,
+          flag,
+          lastVisited: ev.timestamp,
+          firstSeenAt: ev.timestamp,
+          roomId: meta?.roomId,
+          roomTitle: meta?.roomTitle,
+          author: meta?.author,
+        });
+      }
+
+      const item = roomMap.get(key)!;
+      item.views++;
+      item.uniqueVisitors.add(distinctId);
+      if (ev.event === '$autocapture' || ev.event === '$rageclick') item.clicks++;
+      const evMs = new Date(ev.timestamp).getTime();
+      if (Number.isFinite(evMs)) {
+        if (evMs < new Date(item.firstSeenAt).getTime()) item.firstSeenAt = ev.timestamp;
+        if (evMs > new Date(item.lastVisited).getTime()) item.lastVisited = ev.timestamp;
+      }
+    }
+
+    return Array.from(roomMap.values()).map((data, idx) => {
+      const path = data.path;
+      let friendlyName = data.roomTitle || 'Showcase Room';
+      if (!data.roomTitle) {
+        if (path.includes('/r/')) {
+          const slug = path.split('/r/')[1]?.split('?')[0] || '';
+          friendlyName = `Showcase Room (${slug.slice(0, 10)}…)`;
+        } else if (path.includes('/assets-room/')) {
+          const id = path.split('/assets-room/')[1]?.split('?')[0] || '';
+          friendlyName = `Asset Showcase Studio #${id}`;
+        } else if (path.includes('/directory/profiles')) {
+          friendlyName = 'Talent Profiles Directory';
+        } else if (path.includes('/directory')) {
+          friendlyName = 'Talent Discovery Directory';
+        } else if (path.includes('/dashboard')) {
+          friendlyName = 'Creator Studio Dashboard';
+        }
+      }
+
+      const engagementPct = data.views > 0 ? Math.min(100, Math.round((data.clicks / data.views) * 100)) : 0;
+      const ownerName = data.author || `Creator #${data.distinctId}`;
+
+      return {
+        roomId: data.roomId || `room_${idx + 1}`,
+        roomName: friendlyName,
+        ownerName,
+        ownerEmail: data.distinctId.includes('@') ? data.distinctId : `creator_${data.distinctId}@talentbridge.cv`,
+        ownerDistinctId: data.distinctId,
+        views: data.views,
+        uniqueViews: data.uniqueVisitors.size,
+        engagement: engagementPct,
+        publishedUrl: data.url,
+        country: data.country,
+        countryCode: data.code,
+        flag: data.flag,
+        lastVisited: data.lastVisited,
+        firstSeenAt: data.firstSeenAt,
+        path,
+      };
+    });
+  }
+
+  /**
    * 3. Showcase Rooms Analytics (100% Live PostHog Telemetry)
    */
   async fetchRoomsAnalytics(dateRange = '30d', ttl = 900) {
@@ -686,113 +824,7 @@ class PostHogService {
     const avgTimeSpentDelta = Math.round(avgDurationOf(laterRoomRecordings) - avgDurationOf(earlierRoomRecordings));
     const avgTimeSpentChange = roomRecordings.length > 0 ? `${avgTimeSpentDelta >= 0 ? '+' : ''}${avgTimeSpentDelta}s` : 'N/A';
 
-    // Resolve room identity per path first. Only public_room_viewed and contact_clicked actually
-    // carry room_id/room_title/author — a plain $pageview or $autocapture on the same /r/{slug}
-    // page doesn't. Grouping keys off this resolved room_id where known (falling back to the path
-    // for non-room pages like /directory or /dashboard, which have no room_id) rather than the URL,
-    // so a room whose slug changes still rolls up as one row instead of splitting in two, and
-    // every event for a room — including ones that don't carry room_id themselves — lands in the
-    // same bucket as long as at least one public_room_viewed/contact_clicked revealed its id.
-    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string }>();
-    for (const ev of roomEvents) {
-      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked') continue;
-      const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
-      const meta = roomMetaByPath.get(p) || {};
-      if (ev.properties?.room_id !== undefined && ev.properties?.room_id !== null) {
-        meta.roomId = meta.roomId ?? String(ev.properties.room_id);
-      }
-      meta.roomTitle = meta.roomTitle || ev.properties?.room_title || ev.properties?.title;
-      meta.author = meta.author || ev.properties?.author;
-      roomMetaByPath.set(p, meta);
-    }
-
-    // Group by room path / URL
-    const roomMap = new Map<string, {
-      path: string;
-      url: string;
-      views: number;
-      uniqueVisitors: Set<string>;
-      clicks: number;
-      distinctId: string;
-      country: string;
-      code: string;
-      flag: string;
-      lastVisited: string;
-      roomId?: string;
-      roomTitle?: string;
-      author?: string;
-    }>();
-
-    for (const ev of roomEvents) {
-      const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
-      const meta = roomMetaByPath.get(p);
-      const key = meta?.roomId ? `room:${meta.roomId}` : `path:${p}`;
-      const distinctId = ev.distinct_id || 'unknown';
-      const country = ev.properties?.$geoip_country_name || 'United Kingdom';
-      const code = ev.properties?.$geoip_country_code || 'GB';
-      const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
-
-      if (!roomMap.has(key)) {
-        roomMap.set(key, {
-          path: p,
-          url: p.startsWith('http') ? p : `https://talentbridge.cv${p}`,
-          views: 0,
-          uniqueVisitors: new Set(),
-          clicks: 0,
-          distinctId,
-          country,
-          code,
-          flag,
-          lastVisited: ev.timestamp,
-          roomId: meta?.roomId,
-          roomTitle: meta?.roomTitle,
-          author: meta?.author,
-        });
-      }
-
-      const item = roomMap.get(key)!;
-      item.views++;
-      item.uniqueVisitors.add(distinctId);
-      if (ev.event === '$autocapture' || ev.event === '$rageclick') item.clicks++;
-    }
-
-    const topPerformingRooms = Array.from(roomMap.values()).map((data, idx) => {
-      const path = data.path;
-      let friendlyName = data.roomTitle || 'Showcase Room';
-      if (!data.roomTitle) {
-        if (path.includes('/r/')) {
-          const slug = path.split('/r/')[1]?.split('?')[0] || '';
-          friendlyName = `Showcase Room (${slug.slice(0, 10)}…)`;
-        } else if (path.includes('/assets-room/')) {
-          const id = path.split('/assets-room/')[1]?.split('?')[0] || '';
-          friendlyName = `Asset Showcase Studio #${id}`;
-        } else if (path.includes('/directory/profiles')) {
-          friendlyName = 'Talent Profiles Directory';
-        } else if (path.includes('/directory')) {
-          friendlyName = 'Talent Discovery Directory';
-        } else if (path.includes('/dashboard')) {
-          friendlyName = 'Creator Studio Dashboard';
-        }
-      }
-
-      const engagementPct = data.views > 0 ? Math.min(100, Math.round((data.clicks / data.views) * 100)) : 0;
-      const ownerName = data.author || `Creator #${data.distinctId}`;
-
-      return {
-        roomId: data.roomId || `room_${idx + 1}`,
-        roomName: friendlyName,
-        ownerName,
-        ownerEmail: data.distinctId.includes('@') ? data.distinctId : `creator_${data.distinctId}@talentbridge.cv`,
-        views: data.views,
-        uniqueViews: data.uniqueVisitors.size,
-        engagement: engagementPct,
-        publishedUrl: data.url,
-        country: data.country,
-        countryCode: data.code,
-        flag: data.flag,
-        lastVisited: data.lastVisited,
-      };
-    });
+    const topPerformingRooms = this.buildRoomSummaries(roomEvents);
 
     // Compute Geo Traffic
     const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
@@ -955,6 +987,236 @@ class PostHogService {
 
     await cacheService.set(cacheKey, result, ttl);
     return result;
+  }
+
+  /**
+   * 3c. Real per-user Room Insights — replaces what used to be a single hardcoded roomInsights
+   * object (fake view counts, three fake named "leads", identical for every user requested).
+   * There's no stable room_owner_id in PostHog yet (see fetchSchemaHealth), so room ownership is
+   * inferred the same way fetchRoomsAnalytics's ownerName is: a room "belongs" to this person if
+   * they were the first-ever visitor recorded for it, or if a contact_clicked event's author name
+   * matches theirs. This is the best available signal, not a guaranteed-correct mapping — callers
+   * should treat it as inferred rather than confirmed unless personName matched directly.
+   */
+  async fetchUserRoomInsights(distinctId: string, personName?: string, ttl = 900) {
+    const cacheKey = `user_room_insights:${distinctId}`;
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+
+    const nowMs = Date.now();
+    const lookbackDateFrom = new Date(nowMs - 90 * 86400000).toISOString();
+    const dateFromMs = new Date(lookbackDateFrom).getTime();
+
+    const [events, recordings, persons] = await Promise.all([
+      this.fetchEventsInRange(lookbackDateFrom),
+      this.fetchRecordingsList(),
+      this.fetchAllPersons(),
+    ]);
+
+    const roomEvents = events.filter((e: any) => {
+      const p = e.properties?.$pathname || e.properties?.$current_url || '';
+      return p.includes('/r/') || p.includes('/assets-room/');
+    });
+
+    const allRooms = this.buildRoomSummaries(roomEvents);
+    const myRooms = allRooms.filter(
+      (r) => r.ownerDistinctId === distinctId || (personName && r.ownerName === personName)
+    );
+
+    const personByDistinctId = new Map<string, any>();
+    for (const p of persons) {
+      const id = String(p.distinct_ids?.[0] || p.id || '');
+      if (id) personByDistinctId.set(id, p);
+    }
+
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const TIME_SLOTS: { label: string; startHour: number; endHour: number }[] = [
+      { label: '9 - 11 AM', startHour: 9, endHour: 11 },
+      { label: '11 - 1 PM', startHour: 11, endHour: 13 },
+      { label: '2 - 4 PM', startHour: 14, endHour: 16 },
+      { label: '4 - 6 PM', startHour: 16, endHour: 18 },
+      { label: '6 - 8 PM', startHour: 18, endHour: 20 },
+      { label: '8 - 10 PM', startHour: 20, endHour: 22 },
+      { label: '10 - 12 AM', startHour: 22, endHour: 24 },
+    ];
+
+    const results = myRooms.map((r) => {
+      const roomOwnEvents = roomEvents.filter((ev: any) => (ev.properties?.$pathname || ev.properties?.$current_url || '/') === r.path);
+      const pageviews = roomOwnEvents.filter((e: any) => e.event === '$pageview');
+      const uniqueIds = new Set(roomOwnEvents.map((e: any) => e.distinct_id).filter(Boolean));
+      const totalRoomEvents = Math.max(1, roomOwnEvents.length);
+
+      const roomRecordings = recordings.filter((rec: any) => uniqueIds.has(rec.distinct_id));
+      const totalSeconds = roomRecordings.reduce((acc: number, rec: any) => acc + (rec.recording_duration || 0), 0);
+      const avgSeconds = roomRecordings.length > 0 ? Math.round(totalSeconds / roomRecordings.length) : 0;
+      const avgTimeSpentStr = avgSeconds >= 60 ? `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s` : `${avgSeconds}s`;
+
+      const dayMap = new Map<string, { total: number; unique: Set<string> }>();
+      for (const ev of pageviews) {
+        const d = new Date(ev.timestamp);
+        if (Number.isNaN(d.getTime())) continue;
+        const key = d.toISOString().slice(0, 10);
+        if (!dayMap.has(key)) dayMap.set(key, { total: 0, unique: new Set() });
+        const entry = dayMap.get(key)!;
+        entry.total++;
+        if (ev.distinct_id) entry.unique.add(ev.distinct_id);
+      }
+      const viewsTrend = Array.from(dayMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, d]) => ({ month: date, totalViews: d.total, uniqueViews: d.unique.size }));
+
+      const sourceCounts: Record<string, number> = { 'Direct Link': 0, 'Organic Search': 0, Referral: 0 };
+      for (const ev of roomOwnEvents) {
+        const ref = ev.properties?.$referrer || ev.properties?.$initial_referrer || '$direct';
+        if (ref.includes('google')) sourceCounts['Organic Search']++;
+        else if (ref === '$direct' || ref === 'talentbridge.cv') sourceCounts['Direct Link']++;
+        else sourceCounts.Referral++;
+      }
+      const trafficSources = Object.entries(sourceCounts).map(([name, count]) => ({
+        name,
+        count,
+        percentage: Math.round((count / totalRoomEvents) * 100),
+        color: name === 'Direct Link' ? '#0D9488' : name === 'Organic Search' ? '#2DD4BF' : '#3B82F6',
+      }));
+
+      const deviceCounts: Record<string, number> = { Desktop: 0, Mobile: 0, Tablet: 0 };
+      for (const ev of roomOwnEvents) {
+        const dev = ev.properties?.$device_type || 'Desktop';
+        if (dev === 'Mobile') deviceCounts.Mobile++;
+        else if (dev === 'Tablet') deviceCounts.Tablet++;
+        else deviceCounts.Desktop++;
+      }
+      const devices = [
+        { name: 'Desktop', count: deviceCounts.Desktop, percentage: Math.round((deviceCounts.Desktop / totalRoomEvents) * 100), color: '#0D1F1E' },
+        { name: 'Mobile', count: deviceCounts.Mobile, percentage: Math.round((deviceCounts.Mobile / totalRoomEvents) * 100), color: '#2DD4BF' },
+        { name: 'Tablet', count: deviceCounts.Tablet, percentage: Math.round((deviceCounts.Tablet / totalRoomEvents) * 100), color: '#0F766E' },
+      ];
+
+      const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
+      for (const ev of roomOwnEvents) {
+        const country = ev.properties?.$geoip_country_name || 'Unknown';
+        const code = ev.properties?.$geoip_country_code || '';
+        const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
+        if (!geoCounts[country]) geoCounts[country] = { count: 0, code, flag };
+        geoCounts[country].count++;
+      }
+      const geoTraffic = Object.entries(geoCounts)
+        .map(([country, d]) => ({ country, code: d.code, flag: d.flag, views: d.count, percentage: Math.round((d.count / totalRoomEvents) * 100) }))
+        .sort((a, b) => b.views - a.views);
+
+      const heatmapCounts = new Map<string, number>();
+      for (const ev of pageviews) {
+        const d = new Date(ev.timestamp);
+        if (Number.isNaN(d.getTime())) continue;
+        const dayLabel = DAYS[(d.getUTCDay() + 6) % 7];
+        const hour = d.getUTCHours();
+        const slot = TIME_SLOTS.find((s) => hour >= s.startHour && hour < s.endHour);
+        if (!slot) continue;
+        const key = `${dayLabel}|${slot.label}`;
+        heatmapCounts.set(key, (heatmapCounts.get(key) || 0) + 1);
+      }
+      const maxHeatmapCount = Math.max(1, ...Array.from(heatmapCounts.values()));
+      const heatmap: any[] = [];
+      DAYS.forEach((day) => {
+        TIME_SLOTS.forEach((slot) => {
+          const views = heatmapCounts.get(`${day}|${slot.label}`) || 0;
+          const ratio = views / maxHeatmapCount;
+          const intensity = (views === 0 ? 1 : ratio > 0.66 ? 4 : ratio > 0.33 ? 3 : 2) as 1 | 2 | 3 | 4;
+          heatmap.push({ day, timeSlot: slot.label, views, intensity });
+        });
+      });
+
+      // Real viewers — who actually visited this room, looked up against live PostHog persons —
+      // instead of three named fake "leads" repeated for every room.
+      const viewerEventCounts = new Map<string, number>();
+      for (const ev of roomOwnEvents) {
+        const id = ev.distinct_id;
+        if (!id || id === r.ownerDistinctId) continue;
+        viewerEventCounts.set(id, (viewerEventCounts.get(id) || 0) + 1);
+      }
+      const viewers = Array.from(viewerEventCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([id, count]) => {
+          const p = personByDistinctId.get(id);
+          const props = p?.properties || {};
+          const rec = roomRecordings.find((rr: any) => rr.distinct_id === id);
+          const seconds = rec?.recording_duration || 0;
+          const timeSpent = seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
+          const lastEv = roomOwnEvents
+            .filter((e: any) => e.distinct_id === id)
+            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+          return {
+            id,
+            name: props.name || props.$name || `Visitor #${id}`,
+            role: 'Unknown',
+            company: 'Unknown',
+            location: props.$geoip_country_name || 'Unknown',
+            timeSpent,
+            views: count,
+            status: (count > 3 ? 'high_value' : count > 1 ? 'returning' : 'new') as 'high_value' | 'returning' | 'new',
+            lastVisit: lastEv ? lastEv.timestamp : r.lastVisited,
+          };
+        });
+
+      // Real recommendation derived from actual geo/peak-time signal — omitted when there's
+      // nothing meaningful to say yet, rather than always showing a fixed one.
+      let recommendations: any[] = [];
+      if (geoTraffic.length > 0 && roomOwnEvents.length > 0) {
+        const topGeo = geoTraffic[0];
+        let peakKey = '';
+        let peakCount = -1;
+        for (const [key, count] of heatmapCounts) {
+          if (count > peakCount) {
+            peakCount = count;
+            peakKey = key;
+          }
+        }
+        const [peakDay, peakSlot] = peakKey ? peakKey.split('|') : ['', ''];
+        recommendations = [{
+          id: 'rec-01',
+          title: peakDay && peakSlot
+            ? `Peak recruiter traffic from ${topGeo.country} on ${peakDay} (${peakSlot})`
+            : `Most traffic comes from ${topGeo.country}`,
+          description: `${topGeo.percentage}% of this room's views came from ${topGeo.country}.`,
+          actionText: 'Share Room Link',
+          actionType: 'share_room',
+          priority: topGeo.percentage >= 50 ? 'Urgent' : 'Medium',
+          iconType: 'share',
+        }];
+      }
+
+      const totalViewsChange = this.computeGrowthPercent(() => true, pageviews, dateFromMs, nowMs) ?? 0;
+      const engagementPct = roomOwnEvents.length > 0
+        ? Math.round((roomOwnEvents.filter((e: any) => e.event === '$autocapture').length / roomOwnEvents.length) * 100)
+        : 0;
+
+      return {
+        roomId: r.roomId,
+        roomName: r.roomName,
+        isPublished: true,
+        publishedUrl: r.publishedUrl,
+        createdAt: r.firstSeenAt,
+        totalViews: { count: pageviews.length, change: totalViewsChange },
+        uniqueViews: { count: uniqueIds.size, change: 0 },
+        avgTimeSpent: { value: avgTimeSpentStr, change: 'N/A' },
+        engagementQuality: { percentage: engagementPct, change: 0 },
+        viewsTrend,
+        trafficSources,
+        devices,
+        viewers,
+        heatmap,
+        geoTraffic,
+        recommendations,
+        // Not derivable: PostHog doesn't record which content blocks a creator placed in a room
+        // (see fetchFeatureAdoptionData) — honestly null rather than a fabricated block list.
+        blocksUsed: null as string[] | null,
+        ownerConfidence: personName && r.ownerName === personName ? 'confirmed' : 'inferred',
+      };
+    });
+
+    await cacheService.set(cacheKey, results, ttl);
+    return results;
   }
 
   /**

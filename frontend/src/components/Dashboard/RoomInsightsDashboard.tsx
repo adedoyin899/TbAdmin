@@ -325,9 +325,10 @@ export const RoomInsightsDashboard: React.FC = () => {
                       </td>
                       <td>
                         <button
-                          onClick={() => navigate('/lookup')}
+                          onClick={() => navigate(`/lookup?userId=${encodeURIComponent(room.ownerDistinctId || room.ownerEmail)}`)}
                           className="btn btn-ghost"
                           style={{ padding: '4px 10px', fontSize: 11.5, gap: 5 }}
+                          title={room.ownerDistinctId ? `Open ${room.ownerName}'s profile` : 'Owner identity is inferred from room activity, not confirmed'}
                         >
                           Inspect User <ArrowUpRight size={12} />
                         </button>

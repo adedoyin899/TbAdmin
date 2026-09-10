@@ -185,6 +185,12 @@ export interface RoomInsight {
   heatmap: HeatmapCell[];
   geoTraffic: CountryTraffic[];
   recommendations: SmartRecommendation[];
+  // Not derivable: PostHog doesn't record which content blocks a creator placed in a room.
+  blocksUsed?: string[] | null;
+  // Whether ownership was matched by an explicit author-name signal ("confirmed") or only by
+  // this person being the room's first-ever recorded visitor ("inferred") — there's no stable
+  // room_owner_id in PostHog yet, so this is a best-effort signal, not a guarantee.
+  ownerConfidence?: 'confirmed' | 'inferred';
 }
 
 export interface RoomsDashboardResponse {
@@ -207,6 +213,7 @@ export interface RoomsDashboardResponse {
     roomName: string;
     ownerName: string;
     ownerEmail: string;
+    ownerDistinctId?: string;
     views: number;
     uniqueViews: number;
     engagement: number;
