@@ -1,19 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
-  Download, X, ExternalLink, Sparkles, Layers,
-  ChevronRight, CheckCircle2, TrendingUp, Search,
+  Download, X, Sparkles, Layers,
+  ChevronRight, CheckCircle2, Search,
   LayoutTemplate, Video, AlignLeft, Tags, Type,
   User, Quote, BarChart2, GitCompare, Grid,
   GitBranch, Sliders, MessageSquare, Image, FileText,
   Briefcase, Network, Scale, Clock, Award,
   DollarSign, ShieldCheck, Calendar, Eye,
-  ArrowUpRight, Check, Flame, Star,
+  ArrowUpRight, Check, Star,
   Info, Compass, Activity, Play, Lock, CheckCircle,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
@@ -30,12 +29,7 @@ export interface BlockItemMeta {
   desc: string;
   category: string;
   previewType: 'video' | 'skills' | 'metric' | 'pipeline' | 'beforeAfter' | 'gallery' | 'availability' | 'credentials' | 'flow' | 'matrix' | 'general';
-  engagementBoost: string;
-  recruiterClickRate: string;
-  shortlistLift: string;
-  avgDuration: string;
   bestPractice: string;
-  sampleCreators: { name: string; email: string; roomTitle: string; clicks: number; theme: string }[];
 }
 
 export interface TemplateItemMeta {
@@ -43,12 +37,7 @@ export interface TemplateItemMeta {
   category: string;
   targetAudience: string;
   includedBlocks: string[];
-  engagementBoost: string;
-  recruiterClickRate: string;
-  shortlistLift: string;
-  avgDuration: string;
   bestPractice: string;
-  sampleCreators: { name: string; email: string; roomTitle: string; clicks: number; theme: string }[];
 }
 
 const BLOCK_METADATA_STORE: Record<string, BlockItemMeta> = {
@@ -56,310 +45,139 @@ const BLOCK_METADATA_STORE: Record<string, BlockItemMeta> = {
     desc: 'Embedded 60-second video elevator pitch introducing creator directly to hiring managers.',
     category: 'Tell your story',
     previewType: 'video',
-    engagementBoost: '+62% recruiter dwell time',
-    recruiterClickRate: '88% play video to completion',
-    shortlistLift: '+44% interview conversion',
-    avgDuration: '52s avg watch time',
     bestPractice: 'Keep video under 90 seconds with clear verbal summary of top wins and role readiness.',
-    sampleCreators: [
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', roomTitle: 'Full-Stack Spatial Web Studio', clicks: 184, theme: 'Dark' },
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 142, theme: 'Dark' },
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 96, theme: 'Light' },
-    ],
   },
   'Skill tags': {
     desc: 'Interactive pill tags showcasing core tools, frameworks, and domain proficiencies with level indicators.',
     category: 'Tell your story',
     previewType: 'skills',
-    engagementBoost: '+45% recruiter dwell time',
-    recruiterClickRate: '82% inspect skill pills',
-    shortlistLift: '+36% recruiter search match',
-    avgDuration: '35s inspection time',
     bestPractice: 'List 6-10 verified core tech stack competencies with explicit proficiency tiers.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 215, theme: 'Dark' },
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 178, theme: 'Dark' },
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', roomTitle: '3D Animator & Motion Portfolio', clicks: 88, theme: 'Light' },
-    ],
   },
   'Metric tile': {
     desc: 'High-impact KPI callout tiles with quantified revenue, scale, and system performance outcomes.',
     category: 'Show proof',
     previewType: 'metric',
-    engagementBoost: '+54% recruiter dwell time',
-    recruiterClickRate: '79% inspect metric source data',
-    shortlistLift: '+48% shortlist rate',
-    avgDuration: '40s inspection time',
     bestPractice: 'Anchor numbers with explicit business context (e.g. "+340% MRR", "45ms p99 SLA").',
-    sampleCreators: [
-      { name: 'Marcus Vance', email: 'marcus.vance@example.com', roomTitle: 'Principal IAM & Cloud Architect', clicks: 230, theme: 'Dark' },
-      { name: 'Chiara Romano', email: 'chiara.romano@example.com', roomTitle: 'Creative Technologist Showcase', clicks: 112, theme: 'Dark' },
-    ],
   },
   'Paragraph': {
     desc: 'Rich text narrative context covering professional background, career trajectory, and core ethos.',
     category: 'Tell your story',
     previewType: 'general',
-    engagementBoost: '+38% recruiter dwell time',
-    recruiterClickRate: '64% read full bio summary',
-    shortlistLift: '+22% candidate recall',
-    avgDuration: '48s reading time',
     bestPractice: 'Format in 2 digestible paragraphs highlighting transition story and problem-solving framework.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 120, theme: 'Dark' },
-    ],
   },
   'Work gallery': {
     desc: 'Multi-asset visual showcase grid with 3D product previews, interface shots, and design artifacts.',
     category: 'Show work',
     previewType: 'gallery',
-    engagementBoost: '+70% recruiter dwell time',
-    recruiterClickRate: '86% open at least 1 artifact',
-    shortlistLift: '+52% interview conversion',
-    avgDuration: '1m 20s gallery time',
     bestPractice: 'Feature high-res previews with brief 1-line impact captions under each asset.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 310, theme: 'Dark' },
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', roomTitle: '3D Animator & Motion Portfolio', clicks: 195, theme: 'Light' },
-    ],
   },
   'Profile': {
     desc: 'Core identity block featuring verified avatar, headline, location, and seniority tier.',
     category: 'Tell your story',
     previewType: 'general',
-    engagementBoost: '+40% recruiter dwell time',
-    recruiterClickRate: '92% initial scan rate',
-    shortlistLift: '+30% profile trust score',
-    avgDuration: '18s initial scan',
     bestPractice: 'Use a crisp high-definition headshot and concise value-proposition headline.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 140, theme: 'Dark' },
-    ],
   },
   'Availability': {
     desc: 'Real-time calendar status, notice period, and preferred contract/full-time availability toggle.',
     category: 'Make contact',
     previewType: 'availability',
-    engagementBoost: '+35% recruiter dwell time',
-    recruiterClickRate: '74% check start date & rates',
-    shortlistLift: '+58% faster recruiter contact',
-    avgDuration: '22s inspection time',
     bestPractice: 'Keep availability toggle updated weekly to stay at the top of verified talent queues.',
-    sampleCreators: [
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', roomTitle: 'Full-Stack Spatial Web Studio', clicks: 165, theme: 'Dark' },
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 92, theme: 'Light' },
-    ],
   },
   'Credentials': {
     desc: 'Cryptographically verifiable certifications, cloud architect credentials, and security badges.',
     category: 'Get vouched for',
     previewType: 'credentials',
-    engagementBoost: '+48% recruiter dwell time',
-    recruiterClickRate: '68% verify accreditation link',
-    shortlistLift: '+42% enterprise shortlist rate',
-    avgDuration: '30s verification time',
     bestPractice: 'Link official AWS, GCP, CISSP, or CISA certification credential verification URLs.',
-    sampleCreators: [
-      { name: 'Marcus Vance', email: 'marcus.vance@example.com', roomTitle: 'Principal IAM & Cloud Architect', clicks: 188, theme: 'Dark' },
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 135, theme: 'Light' },
-    ],
   },
   'Case studies': {
     desc: 'Comprehensive project breakdowns with problem framing, architecture decisions, and ROI delivered.',
     category: 'Show work',
     previewType: 'general',
-    engagementBoost: '+76% recruiter dwell time',
-    recruiterClickRate: '84% read full case study',
-    shortlistLift: '+65% tech screen pass rate',
-    avgDuration: '2m 10s deep-read time',
     bestPractice: 'Structure case studies with Challenge, Technical Solution, Architecture Diff, and Measured Impact.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 275, theme: 'Dark' },
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 240, theme: 'Dark' },
-    ],
   },
   'Call to action': {
     desc: 'Direct recruiter action button for booking screening calls, downloading resume, or sending inquiries.',
     category: 'Make contact',
     previewType: 'general',
-    engagementBoost: '+28% recruiter dwell time',
-    recruiterClickRate: '62% click CTA button',
-    shortlistLift: '+72% direct outreach volume',
-    avgDuration: '15s decision time',
     bestPractice: 'Connect Calendly or email booking link with a friendly callout message.',
-    sampleCreators: [
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', roomTitle: 'Full-Stack Spatial Web Studio', clicks: 198, theme: 'Dark' },
-    ],
   },
   'Reference': {
     desc: 'Verified quotes, peer recommendations, and leadership endorsements from former managers.',
     category: 'Get vouched for',
     previewType: 'general',
-    engagementBoost: '+44% recruiter dwell time',
-    recruiterClickRate: '58% read peer reviews',
-    shortlistLift: '+46% executive credibility',
-    avgDuration: '32s reading time',
     bestPractice: 'Include quotes from former CTOs, Engineering Leads, or Principal Designers.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 110, theme: 'Dark' },
-    ],
   },
   'Heading': {
     desc: 'Stylized section divider and emphasis banners organizing portfolio chapters cleanly.',
     category: 'Tell your story',
     previewType: 'general',
-    engagementBoost: '+18% recruiter dwell time',
-    recruiterClickRate: '48% section scan rate',
-    shortlistLift: '+15% readability score',
-    avgDuration: '12s scan time',
     bestPractice: 'Use concise 3-4 word chapter titles to structure room navigation.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 85, theme: 'Dark' },
-    ],
   },
   'Pipeline/CI-CD': {
     desc: 'Interactive deployment architecture flow visualizing staging pipelines, test suites, and uptime SLAs.',
     category: 'Show proof',
     previewType: 'pipeline',
-    engagementBoost: '+58% recruiter dwell time',
-    recruiterClickRate: '72% inspect pipeline stages',
-    shortlistLift: '+55% senior tech shortlist',
-    avgDuration: '45s pipeline inspection',
     bestPractice: 'Showcase automated test coverage %, canary rollouts, and rollback safety protocols.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 240, theme: 'Dark' },
-    ],
   },
   'Skill bars': {
     desc: 'Visual mastery indicators illustrating proficiency depth and years in production across core languages.',
     category: 'Show proof',
     previewType: 'general',
-    engagementBoost: '+32% recruiter dwell time',
-    recruiterClickRate: '56% review proficiency bars',
-    shortlistLift: '+25% skill alignment match',
-    avgDuration: '24s inspection time',
     bestPractice: 'Highlight 4-6 primary languages where you have 3+ years of production experience.',
-    sampleCreators: [
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', roomTitle: 'Full-Stack Spatial Web Studio', clicks: 95, theme: 'Dark' },
-    ],
   },
   'Document carousel': {
     desc: 'Multi-page interactive document reader for whitepapers, design tokens, and technical architecture specs.',
     category: 'Show work',
     previewType: 'general',
-    engagementBoost: '+52% recruiter dwell time',
-    recruiterClickRate: '66% flip document pages',
-    shortlistLift: '+38% technical credibility',
-    avgDuration: '1m 15s document reading',
     bestPractice: 'Embed PDF executive summaries with crisp vector diagrams and summary abstracts.',
-    sampleCreators: [
-      { name: 'Marcus Vance', email: 'marcus.vance@example.com', roomTitle: 'Principal IAM & Cloud Architect', clicks: 128, theme: 'Dark' },
-    ],
   },
   'Before/after': {
     desc: 'Side-by-side interactive comparison slider displaying refactors, system optimizations, and UI redesigns.',
     category: 'Show proof',
     previewType: 'beforeAfter',
-    engagementBoost: '+65% recruiter dwell time',
-    recruiterClickRate: '77% drag comparison slider',
-    shortlistLift: '+56% product/design hire rate',
-    avgDuration: '38s interaction time',
     bestPractice: 'Provide clear legacy vs optimized benchmark metrics alongside the visual slider.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 182, theme: 'Dark' },
-    ],
   },
   'Flow diagram': {
     desc: 'Embedded interactive flowchart highlighting distributed topologies, user journeys, or API lifecycles.',
     category: 'Show work',
     previewType: 'flow',
-    engagementBoost: '+56% recruiter dwell time',
-    recruiterClickRate: '69% inspect flow nodes',
-    shortlistLift: '+50% architect screen pass',
-    avgDuration: '50s diagram analysis',
     bestPractice: 'Color-code microservices, data lakes, and security boundary zones.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 164, theme: 'Dark' },
-    ],
   },
   'Pull quote': {
     desc: 'Standout highlighted quote spotlighting candidate philosophy, leadership principle, or thesis statement.',
     category: 'Tell your story',
     previewType: 'general',
-    engagementBoost: '+24% recruiter dwell time',
-    recruiterClickRate: '46% read pull quote',
-    shortlistLift: '+18% leadership resonance',
-    avgDuration: '16s reading time',
     bestPractice: 'Highlight 1 core operating principle that defines your engineering or design philosophy.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 72, theme: 'Dark' },
-    ],
   },
   'Coverage matrix': {
     desc: 'Comprehensive capability grid detailing test coverage, compliance standards, or domain expertise.',
     category: 'Show proof',
     previewType: 'matrix',
-    engagementBoost: '+50% recruiter dwell time',
-    recruiterClickRate: '63% inspect matrix cells',
-    shortlistLift: '+45% enterprise audit match',
-    avgDuration: '42s matrix inspection',
     bestPractice: 'Include regulatory frameworks (SOC2, HIPAA, GDPR, ISO27001) or test coverage % per module.',
-    sampleCreators: [
-      { name: 'Marcus Vance', email: 'marcus.vance@example.com', roomTitle: 'Principal IAM & Cloud Architect', clicks: 145, theme: 'Dark' },
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 110, theme: 'Light' },
-    ],
   },
   'Pricing tiers': {
     desc: 'Transparent consulting packages, fractional leadership rates, and sprint engagement deliverables.',
     category: 'Get vouched for',
     previewType: 'general',
-    engagementBoost: '+42% recruiter dwell time',
-    recruiterClickRate: '65% review package terms',
-    shortlistLift: '+60% contracting conversion',
-    avgDuration: '28s review time',
     bestPractice: 'Outline distinct Day Rate, Sprint Retainer, and Advisory package scopes.',
-    sampleCreators: [
-      { name: 'Chiara Romano', email: 'chiara.romano@example.com', roomTitle: 'Creative Technologist Showcase', clicks: 130, theme: 'Dark' },
-    ],
   },
   'Statement callout': {
     desc: 'High-contrast card summarizing key business value delivered and executive summary notes.',
     category: 'Show proof',
     previewType: 'general',
-    engagementBoost: '+30% recruiter dwell time',
-    recruiterClickRate: '51% read statement box',
-    shortlistLift: '+20% hiring team alignment',
-    avgDuration: '20s reading time',
     bestPractice: 'Summarize your unique edge in 2 bullet sentences with bold key terms.',
-    sampleCreators: [
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 68, theme: 'Light' },
-    ],
   },
   'Clause brief': {
     desc: 'Specialized legal and compliance memo summaries covering contract frameworks and regulatory policy.',
     category: 'Show work',
     previewType: 'general',
-    engagementBoost: '+36% recruiter dwell time',
-    recruiterClickRate: '44% read legal briefs',
-    shortlistLift: '+34% legal ops shortlist',
-    avgDuration: '55s analysis time',
     bestPractice: 'De-identify sensitive contracts and highlight negotiation frameworks applied.',
-    sampleCreators: [
-      { name: 'Jonathan Pierce', email: 'jonathan.pierce@example.com', roomTitle: 'Legal Ops & FinTech Compliance Suite', clicks: 82, theme: 'Light' },
-    ],
   },
   'Retro columns': {
     desc: 'Agile team retrospective boards documenting what went well, lessons learned, and continuous improvement.',
     category: 'Show work',
     previewType: 'general',
-    engagementBoost: '+41% recruiter dwell time',
-    recruiterClickRate: '53% inspect sprint retros',
-    shortlistLift: '+38% engineering management match',
-    avgDuration: '36s review time',
     bestPractice: 'Highlight 3 retros demonstrating how you turned production incidents into system hardening.',
-    sampleCreators: [
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', roomTitle: '3D Animator & Motion Portfolio', clicks: 76, theme: 'Light' },
-    ],
   },
 };
 
@@ -369,128 +187,63 @@ const TEMPLATE_METADATA_STORE: Record<string, TemplateItemMeta> = {
     category: 'Tech & Engineering',
     targetAudience: 'Senior Backend, Staff Engineers, Infrastructure & Cloud Architects',
     includedBlocks: ['Video intro', 'Pipeline/CI-CD', 'Metric tile', 'Skill tags', 'Case studies', 'Availability'],
-    engagementBoost: '+68% higher recruiter inquiry rate',
-    recruiterClickRate: '84% of recruiters inspect architecture flow',
-    shortlistLift: '+52% interview request rate',
-    avgDuration: '3m 15s avg room dwell time',
     bestPractice: 'Pair your Video Intro with a live CI/CD pipeline diagram and 3 quantifiable scale KPIs.',
-    sampleCreators: [
-      { name: 'David Kim', email: 'david.kim@example.com', roomTitle: 'Distributed Systems & Cloud Room', clicks: 388, theme: 'Dark' },
-      { name: 'Kwame Asante', email: 'kwame.asante@example.com', roomTitle: 'Full-Stack Spatial Web Studio', clicks: 295, theme: 'Dark' },
-    ],
   },
   'Designer': {
     desc: 'Product, brand, design systems — showcases high-fidelity Figma components, motion reels, and UI case studies.',
     category: 'Design & Creative',
     targetAudience: 'Product Designers, Design System Leads, 3D/Motion Artists',
     includedBlocks: ['Video intro', 'Work gallery', 'Before/after', 'Case studies', 'Skill tags', 'Call to action'],
-    engagementBoost: '+74% higher recruiter inquiry rate',
-    recruiterClickRate: '89% interact with design slider & gallery',
-    shortlistLift: '+58% interview request rate',
-    avgDuration: '3m 40s avg room dwell time',
     bestPractice: 'Lead with Before/After transformation sliders and high-res interactive 3D work cards.',
-    sampleCreators: [
-      { name: 'Alice Chen', email: 'alice.chen@example.com', roomTitle: 'Lead Product Designer 3D Suite', clicks: 324, theme: 'Dark' },
-      { name: 'Chiara Romano', email: 'chiara.romano@example.com', roomTitle: 'Creative Technologist Showcase', clicks: 210, theme: 'Dark' },
-    ],
   },
   'IAM Specialist': {
     desc: 'Identity, access & control evidence — tailor-made for enterprise security, OAuth/SAML, and RBAC architects.',
     category: 'Security & Identity',
     targetAudience: 'Identity & Access Management, Zero-Trust Leads, Security Engineers',
     includedBlocks: ['Profile', 'Coverage matrix', 'Credentials', 'Flow diagram', 'Metric tile', 'Availability'],
-    engagementBoost: '+59% higher recruiter inquiry rate',
-    recruiterClickRate: '78% verify identity security credentials',
-    shortlistLift: '+48% interview request rate',
-    avgDuration: '2m 50s avg room dwell time',
     bestPractice: 'Highlight verified CISSP/CISA badges and a coverage matrix of audited IAM policies.',
-    sampleCreators: [
-      { name: 'Marcus Vance', email: 'marcus.vance@example.com', roomTitle: 'Principal IAM & Cloud Architect', clicks: 270, theme: 'Dark' },
-    ],
   },
   'Cybersecurity': {
     desc: 'Incident response, SOC, threat work — highlights SIEM monitoring, threat hunts, and vulnerability triage outcomes.',
     category: 'Security & Identity',
     targetAudience: 'SOC Analysts, Threat Hunters, Incident Response Leads, AppSec',
     includedBlocks: ['Video intro', 'Credentials', 'Coverage matrix', 'Metric tile', 'Statement callout', 'Call to action'],
-    engagementBoost: '+63% higher recruiter inquiry rate',
-    recruiterClickRate: '81% inspect threat containment metrics',
-    shortlistLift: '+50% interview request rate',
-    avgDuration: '3m 05s avg room dwell time',
     bestPractice: 'Showcase Mean Time to Detect (MTTD) and Mean Time to Respond (MTTR) reductions.',
-    sampleCreators: [
-      { name: 'Elena Rostova', email: 'elena.rostova@example.com', roomTitle: 'Cybersecurity SOC Lead Space', clicks: 238, theme: 'Light' },
-    ],
   },
   'Project Manager': {
     desc: 'Delivery outcomes, risk, teams — highlights sprint velocity, stakeholder roadmaps, and budget stewardship.',
     category: 'Product & Delivery',
     targetAudience: 'Technical Project Managers, Scrum Masters, Agile Program Directors',
     includedBlocks: ['Profile', 'Metric tile', 'Retro columns', 'Reference', 'Document carousel', 'Availability'],
-    engagementBoost: '+51% higher recruiter inquiry rate',
-    recruiterClickRate: '71% inspect sprint retros & metrics',
-    shortlistLift: '+40% interview request rate',
-    avgDuration: '2m 30s avg room dwell time',
     bestPractice: 'Include on-time delivery rate stats and stakeholder reference quotes from VPs.',
-    sampleCreators: [
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@example.com', roomTitle: 'Agile Delivery & Program Hub', clicks: 205, theme: 'Light' },
-    ],
   },
   'Data Consultant': {
     desc: 'Analytics, models, experiments — features ML pipeline benchmarks, query throughputs, and dashboard case studies.',
     category: 'Data & AI',
     targetAudience: 'Data Scientists, BI Consultants, ML Engineers, Analytics Leads',
     includedBlocks: ['Video intro', 'Metric tile', 'Flow diagram', 'Case studies', 'Skill bars', 'Availability'],
-    engagementBoost: '+60% higher recruiter inquiry rate',
-    recruiterClickRate: '76% inspect model accuracy & ETL flow',
-    shortlistLift: '+46% interview request rate',
-    avgDuration: '2m 55s avg room dwell time',
     bestPractice: 'Highlight data model benchmarks (e.g. query optimization 4x, AUC 0.94) in Metric Tiles.',
-    sampleCreators: [
-      { name: 'Tariq Mansour', email: 'tariq.mansour@example.com', roomTitle: 'Data Science & Predictive AI Lab', clicks: 184, theme: 'Dark' },
-    ],
   },
   'Student -> BA / PM': {
     desc: 'Potential, projects, learning — curated for high-velocity grads and career switchers breaking into tech.',
     category: 'Early Career & Growth',
     targetAudience: 'Recent Graduates, Junior Business Analysts, Associate PMs',
     includedBlocks: ['Video intro', 'Paragraph', 'Skill tags', 'Work gallery', 'Credentials', 'Call to action'],
-    engagementBoost: '+46% higher recruiter inquiry rate',
-    recruiterClickRate: '68% play intro video and review projects',
-    shortlistLift: '+38% junior screening rate',
-    avgDuration: '2m 15s avg room dwell time',
     bestPractice: 'Lead with an energetic Video Intro highlighting hackathons, capstone projects, and fast learning rate.',
-    sampleCreators: [
-      { name: 'Zoe Martinez', email: 'zoe.martinez@example.com', roomTitle: 'Emerging Product & BA Showcase', clicks: 151, theme: 'Dark' },
-    ],
   },
   'Finance / Accountant': {
     desc: 'Metrics, regulatory coverage — demonstrates audit trails, financial modeling, and fiscal governance.',
     category: 'Finance & Legal',
     targetAudience: 'Financial Controllers, CPAs, FP&A Analysts, Fractional CFOs',
     includedBlocks: ['Profile', 'Metric tile', 'Coverage matrix', 'Credentials', 'Reference', 'Availability'],
-    engagementBoost: '+49% higher recruiter inquiry rate',
-    recruiterClickRate: '64% inspect audit & reporting models',
-    shortlistLift: '+41% interview request rate',
-    avgDuration: '2m 20s avg room dwell time',
     bestPractice: 'Highlight CPA credentials, financial models built, and regulatory compliance standards audited.',
-    sampleCreators: [
-      { name: 'Arthur Pendelton', email: 'arthur.p@example.com', roomTitle: 'Executive Finance & FP&A Suite', clicks: 119, theme: 'Light' },
-    ],
   },
   'Legal & Compliance': {
     desc: 'Matters, regulatory coverage — spotlights data privacy compliance (GDPR, HIPAA), contract policy, and risk briefs.',
     category: 'Finance & Legal',
     targetAudience: 'General Counsel, Privacy Officers, Compliance Managers',
     includedBlocks: ['Profile', 'Clause brief', 'Coverage matrix', 'Credentials', 'Reference', 'Call to action'],
-    engagementBoost: '+45% higher recruiter inquiry rate',
-    recruiterClickRate: '61% review regulatory briefs',
-    shortlistLift: '+37% interview request rate',
-    avgDuration: '2m 40s avg room dwell time',
     bestPractice: 'Feature jurisdiction coverage matrix (US, EU, UK) and de-identified regulatory filings.',
-    sampleCreators: [
-      { name: 'Jonathan Pierce', email: 'jonathan.pierce@example.com', roomTitle: 'Legal Ops & FinTech Compliance Suite', clicks: 97, theme: 'Light' },
-    ],
   },
 };
 
@@ -540,7 +293,6 @@ const getTemplateIcon = (templateName: string) => {
 
 export const FeatureDashboard: React.FC = () => {
   const rbac = useRbac();
-  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   
   // Tab Switcher: 'blocks' or 'templates'
@@ -576,27 +328,9 @@ export const FeatureDashboard: React.FC = () => {
     return Array.isArray(data?.templateAdoption) ? data.templateAdoption : [];
   }, [data]);
 
-  const themeList: ThemeEntry[] = useMemo(() => {
-    if (Array.isArray(data?.themeDistribution)) {
-      return data.themeDistribution;
-    }
-    if (data?.themeDistribution && typeof data.themeDistribution === 'object') {
-      return Object.entries(data.themeDistribution).map(([theme, val]) => {
-        const pct = typeof val === 'number' ? val : (val as any)?.percentage || 50;
-        const count = typeof (val as any)?.count === 'number' ? (val as any).count : Math.round((pct / 100) * (data?.totalRoomsCreated || 4));
-        const themeLabel = theme.toLowerCase().includes('dark') ? 'Dark' : theme.toLowerCase().includes('light') ? 'Light' : theme;
-        return {
-          theme: `${themeLabel} Mode`,
-          count: Math.max(1, count),
-          percentage: pct,
-        };
-      });
-    }
-    return [
-      { theme: 'Dark Mode', count: 3, percentage: 75 },
-      { theme: 'Light Mode', count: 1, percentage: 25 },
-    ];
-  }, [data]);
+  // PostHog isn't tracking a theme/dark-mode property for talentbridge.cv visitors, so the
+  // backend honestly sends an empty array here — no fabricated Dark/Light split fallback.
+  const themeList: ThemeEntry[] = useMemo(() => data?.themeDistribution ?? [], [data]);
 
   // Available categories for currently active tab
   const blockCategories = useMemo(() => {
@@ -642,7 +376,7 @@ export const FeatureDashboard: React.FC = () => {
           { header: 'Category', accessor: row => row.category || 'General' },
           { header: 'Active Rooms / Users', accessor: row => row.count },
           { header: 'Adoption Rate (%)', accessor: row => `${row.percentage}%` },
-          { header: 'Growth MoM', accessor: row => row.growth || '+0%' },
+          { header: 'Growth MoM', accessor: row => row.growth || 'N/A' },
           { header: 'Recruiter Interaction Rate', accessor: row => row.recruiterClickRate || 'N/A' },
           { header: 'Dwell Time Boost', accessor: row => row.dwellTimeBoost || 'N/A' },
         ],
@@ -659,7 +393,7 @@ export const FeatureDashboard: React.FC = () => {
           { header: 'Included Blocks Count', accessor: row => row.includedBlocks ? row.includedBlocks.length : 0 },
           { header: 'Active Rooms / Users', accessor: row => row.count },
           { header: 'Adoption Rate (%)', accessor: row => `${row.percentage}%` },
-          { header: 'Growth MoM', accessor: row => row.growth || '+0%' },
+          { header: 'Growth MoM', accessor: row => row.growth || 'N/A' },
         ],
         data: templateList,
       });
@@ -668,6 +402,11 @@ export const FeatureDashboard: React.FC = () => {
 
   const topBlock = blockList[0];
   const topTemplate = templateList[0];
+  // PostHog doesn't yet track which blocks/templates a room actually uses, so every catalog
+  // entry carries count 0 until that lands — these flags gate "top adopted" messaging so it
+  // doesn't imply a leader (or fabricate one) where there's no real signal yet.
+  const hasBlockAdoptionData = blockList.some(b => b.count > 0);
+  const hasTemplateAdoptionData = templateList.some(t => t.count > 0);
 
   // Active detail metadata lookup
   const activeBlockMeta: BlockItemMeta | null = useMemo(() => {
@@ -729,13 +468,22 @@ export const FeatureDashboard: React.FC = () => {
       </div>
 
       {/* Feature Health / Highlight Banner */}
-      {data && topBlock && (
+      {data && topBlock && hasBlockAdoptionData && (
         <MetricAlertBanner
           severity="success"
           title="High Feature Engagement"
           metricLabel="Top Adopted Feature"
           metricValue={`${topBlock.blockType} (${formatPercentage(topBlock.percentage)})`}
-          message={`Creator adoption is led by ${topBlock.blockType} (${topBlock.count} rooms). ${topTemplate ? `Top template is "${topTemplate.templateName}" with ${formatPercentage(topTemplate.percentage)} adoption.` : ''}`}
+          message={`Creator adoption is led by ${topBlock.blockType} (${topBlock.count} rooms). ${topTemplate && hasTemplateAdoptionData ? `Top template is "${topTemplate.templateName}" with ${formatPercentage(topTemplate.percentage)} adoption.` : ''}`}
+        />
+      )}
+      {data && !hasBlockAdoptionData && (
+        <MetricAlertBanner
+          severity="info"
+          title="Full Block & Template Catalog Seeded"
+          metricLabel="Adoption Tracking"
+          metricValue="Not yet live"
+          message={`Showing the real ${blockList.length}-block / ${templateList.length}-template catalog from the showcase room builder. PostHog doesn't track room composition yet, so adoption numbers below read 0% until that's wired up.`}
         />
       )}
 
@@ -750,14 +498,16 @@ export const FeatureDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
-              {blockList.length || 23}
+              {blockList.length}
             </span>
             <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
-              Across 5 Categories
+              Across {Math.max(0, blockCategories.length - 1)} Categories
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            Top block: <strong>{topBlock?.blockType || 'Video intro'}</strong> ({topBlock?.percentage || 87}%)
+            {hasBlockAdoptionData
+              ? <>Top block: <strong>{topBlock?.blockType}</strong> ({formatPercentage(topBlock?.percentage ?? 0)})</>
+              : 'Adoption not yet tracked'}
           </p>
         </div>
 
@@ -770,14 +520,16 @@ export const FeatureDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
-              {templateList.length || 9}
+              {templateList.length}
             </span>
             <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600 }}>
-              7 Target Disciplines
+              Across {Math.max(0, templateCategories.length - 1)} Disciplines
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            Top template: <strong>{topTemplate?.templateName || 'Software Eng / Architect'}</strong> ({topTemplate?.percentage || 36}%)
+            {hasTemplateAdoptionData
+              ? <>Top template: <strong>{topTemplate?.templateName}</strong> ({formatPercentage(topTemplate?.percentage ?? 0)})</>
+              : 'Adoption not yet tracked'}
           </p>
         </div>
 
@@ -789,15 +541,12 @@ export const FeatureDashboard: React.FC = () => {
             <Activity size={16} color="var(--sunshine)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
-              5.8 Blocks
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
-              +14% vs Q2
+            <span className="mono-metric" style={{ fontSize: 20, fontWeight: 800, color: 'var(--dim)' }}>
+              Not tracked
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            Creators combine multiple proof &amp; work blocks
+            PostHog doesn't record per-room block composition yet
           </p>
         </div>
 
@@ -809,15 +558,12 @@ export const FeatureDashboard: React.FC = () => {
             <Star size={16} color="#8B5CF6" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span className="mono-metric" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)' }}>
-              60% Dark
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>
-              / 40% Light
+            <span className="mono-metric" style={{ fontSize: 20, fontWeight: 800, color: 'var(--dim)' }}>
+              Not tracked
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            {data?.totalRoomsCreated || 1080} total active custom showcase rooms
+            Dark / Light split not yet tracked — {data?.totalRoomsCreated ?? 0} total registered creators
           </p>
         </div>
       </div>
@@ -1059,56 +805,67 @@ export const FeatureDashboard: React.FC = () => {
               Showcase Theme Split
             </h3>
             
-            <ResponsiveContainer width="100%" height={170}>
-              <PieChart>
-                <Pie
-                  data={themeList}
-                  dataKey="percentage"
-                  nameKey="theme"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={68}
-                  innerRadius={44}
-                  paddingAngle={3}
-                >
-                  {themeList.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend
-                  formatter={(value) => <span style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>{value} Mode</span>}
-                />
-                <Tooltip
-                  formatter={(v: unknown) => [`${v}%`, 'Distribution']}
-                  contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {themeList.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={170}>
+                  <PieChart>
+                    <Pie
+                      data={themeList}
+                      dataKey="percentage"
+                      nameKey="theme"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={68}
+                      innerRadius={44}
+                      paddingAngle={3}
+                    >
+                      {themeList.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend
+                      formatter={(value) => <span style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>{value} Mode</span>}
+                    />
+                    <Tooltip
+                      formatter={(v: unknown) => [`${v}%`, 'Distribution']}
+                      contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {themeList.map((t, i) => (
-                <div
-                  key={t.theme || i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-xs)',
-                    background: 'var(--panel-2)',
-                    border: '1px solid var(--line)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{t.theme} Theme Rooms</span>
-                  </div>
-                  <span style={{ fontWeight: 700, color: '#02ABAC', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
-                    {formatPercentage(t.percentage)} ({formatNumber(t.count)} rooms)
-                  </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {themeList.map((t, i) => (
+                    <div
+                      key={t.theme || i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-xs)',
+                        background: 'var(--panel-2)',
+                        border: '1px solid var(--line)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{t.theme} Theme Rooms</span>
+                      </div>
+                      <span style={{ fontWeight: 700, color: '#02ABAC', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
+                        {formatPercentage(t.percentage)} ({formatNumber(t.count)} rooms)
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '28px 12px', textAlign: 'center' }}>
+                <Star size={22} color="var(--dim)" />
+                <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+                  Dark / Light theme preference isn't tracked yet — PostHog doesn't record a room's theme choice as an event property.
+                </p>
+              </div>
+            )}
 
             {/* Template Notice from User Spec */}
             <div style={{ padding: '10px 12px', background: 'rgba(2,171,172,0.06)', borderRadius: 8, border: '1px solid rgba(2,171,172,0.2)' }}>
@@ -1234,19 +991,18 @@ export const FeatureDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <TrendingUp size={13} />
-                            {block.dwellTimeBoost || '+40% dwell'}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>
+                            {block.dwellTimeBoost || 'Not tracked'}
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
-                            {block.recruiterClickRate || '70% rate'}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>
+                            {block.recruiterClickRate || 'Not tracked'}
                           </span>
                         </td>
                         <td>
                           <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', fontFamily: 'Geist Mono, monospace' }}>
-                            {block.growth || '+10%'}
+                            {block.growth || 'N/A'}
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
@@ -1372,14 +1128,13 @@ export const FeatureDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <TrendingUp size={13} />
-                            {tpl.recruiterClickRate || '+45% inquiries'}
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>
+                            {tpl.recruiterClickRate || 'Not tracked'}
                           </span>
                         </td>
                         <td>
                           <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', fontFamily: 'Geist Mono, monospace' }}>
-                            {tpl.growth || '+15%'}
+                            {tpl.growth || 'N/A'}
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
@@ -1467,8 +1222,8 @@ export const FeatureDashboard: React.FC = () => {
                       <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase' }}>
                         {block.category}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#10B981' }}>
-                        {block.dwellTimeBoost || '+40% dwell'}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)' }}>
+                        {block.dwellTimeBoost || 'Not tracked'}
                       </span>
                     </div>
                   </div>
@@ -1534,7 +1289,7 @@ export const FeatureDashboard: React.FC = () => {
                         {tpl.category}
                       </span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6' }}>
-                        {tpl.growth || '+15% MoM'}
+                        {tpl.growth || 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -1831,43 +1586,15 @@ export const FeatureDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Granular KPIs Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11, marginBottom: 4 }}>
-                  <TrendingUp size={13} color="#02ABAC" /> Recruiter Dwell Impact
-                </div>
-                <p style={{ fontSize: 15, fontWeight: 800, color: '#10B981', fontFamily: 'Geist, sans-serif', margin: 0 }}>
-                  {selectedItem.type === 'block' ? activeBlockMeta?.engagementBoost : activeTemplateMeta?.engagementBoost}
-                </p>
-              </div>
-
-              <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11, marginBottom: 4 }}>
-                  <Sparkles size={13} color="#02ABAC" /> Interaction Rate
-                </div>
-                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', fontFamily: 'Geist, sans-serif', margin: 0 }}>
-                  {selectedItem.type === 'block' ? activeBlockMeta?.recruiterClickRate : activeTemplateMeta?.recruiterClickRate}
-                </p>
-              </div>
-
-              <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11, marginBottom: 4 }}>
-                  <Flame size={13} color="#F59E0B" /> Shortlist Conversion Lift
-                </div>
-                <p style={{ fontSize: 15, fontWeight: 800, color: '#F59E0B', fontFamily: 'Geist, sans-serif', margin: 0 }}>
-                  {selectedItem.type === 'block' ? activeBlockMeta?.shortlistLift : activeTemplateMeta?.shortlistLift}
-                </p>
-              </div>
-
-              <div style={{ padding: '14px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--dim)', fontSize: 11, marginBottom: 4 }}>
-                  <Clock size={13} color="#3B82F6" /> Avg Engagement Duration
-                </div>
-                <p style={{ fontSize: 15, fontWeight: 800, color: '#3B82F6', fontFamily: 'Geist, sans-serif', margin: 0 }}>
-                  {selectedItem.type === 'block' ? activeBlockMeta?.avgDuration : activeTemplateMeta?.avgDuration}
-                </p>
-              </div>
+            {/* Adoption tracking status — PostHog doesn't yet record which blocks/templates a
+                creator places in their room (public_room_viewed/contact_clicked only carry
+                room_id/room_title/author, nothing about composition), so per-item engagement
+                stats and live user examples are honestly not available rather than fabricated. */}
+            <div style={{ padding: '14px 18px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <Info size={15} color="var(--dim)" style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+                Adoption is shown as {formatPercentage(selectedItem.percentage)} / {formatNumber(selectedItem.count)} rooms — not yet tracked. PostHog doesn't currently record which blocks or templates a creator places in their room, so per-item engagement stats and usage examples aren't available. This will populate once room composition is sent as PostHog event properties.
+              </p>
             </div>
 
             {/* Recommended Best Practice Guidance */}
@@ -1878,58 +1605,6 @@ export const FeatureDashboard: React.FC = () => {
               <p style={{ fontSize: 13, color: 'var(--text)', margin: 0, lineHeight: 1.45 }}>
                 {selectedItem.type === 'block' ? activeBlockMeta?.bestPractice : activeTemplateMeta?.bestPractice}
               </p>
-            </div>
-
-            {/* Live Creator Showcases Registry */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
-                  Top Verified Talent Rooms Using {selectedItem.name}
-                </h4>
-                <span style={{ fontSize: 11, color: 'var(--dim)' }}>
-                  Live Showcase Registry
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {((selectedItem.type === 'block' ? activeBlockMeta?.sampleCreators : activeTemplateMeta?.sampleCreators) || []).map(c => (
-                  <div
-                    key={c.email}
-                    style={{
-                      padding: '10px 14px',
-                      background: 'var(--panel-2)',
-                      borderRadius: 'var(--radius-xs)',
-                      border: '1px solid var(--line)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    <div>
-                      <p style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', margin: 0 }}>
-                        {c.name} — <span style={{ color: 'var(--text-2)', fontWeight: 400 }}>"{c.roomTitle}"</span>
-                      </p>
-                      <p style={{ fontSize: 11, color: 'var(--dim)', margin: '2px 0 0 0', fontFamily: 'Geist Mono, monospace' }}>
-                        {c.email} • {c.clicks} recruiter interactions • {c.theme} Mode
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedItem(null);
-                        navigate(`/lookup?q=${encodeURIComponent(c.email)}`);
-                      }}
-                      className="btn btn-ghost"
-                      style={{ padding: '5px 12px', fontSize: 12, gap: 5, color: '#02ABAC' }}
-                    >
-                      Inspect Creator Profile <ExternalLink size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Modal Footer */}

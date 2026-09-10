@@ -380,82 +380,84 @@ class PostHogService {
   /**
    * 2. Feature & Block Adoption Data (100% Live PostHog Telemetry)
    */
-  async fetchFeatureAdoptionData(dateRange = '30d', ttl = 900) {
-    const cacheKey = `features:${dateRange}`;
+  async fetchFeatureAdoptionData(_dateRange = '30d', ttl = 900) {
+    const cacheKey = 'features:catalog';
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
-    const { dateFrom } = parseDateRange(dateRange);
-    const dateFromMs = new Date(dateFrom).getTime();
-    const nowMs = Date.now();
-
-    const [events, persons] = await Promise.all([
-      this.fetchEventsInRange(dateFrom),
-      this.fetchAllPersons(),
-    ]);
-
+    const persons = await this.fetchAllPersons();
     const totalRooms = persons.length;
-    const roomEvents = events.filter((e: any) => {
-      const p = e.properties?.$pathname || e.properties?.$current_url || '';
-      return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory');
-    });
 
-    const isShowcase = (e: any) => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/');
-    const isAssetRoom = (e: any) => (e.properties?.$pathname || '').includes('/assets-room/');
-    const isDirectory = (e: any) => (e.properties?.$pathname || '').includes('/directory');
-    const isInteractive = (e: any) => e.event === '$autocapture';
-    const isContactClick = (e: any) => e.event === 'contact_clicked';
-
-    const formatGrowth = (pct: number | null) => (pct === null ? 'N/A' : `${pct >= 0 ? '+' : ''}${pct}%`);
-
-    const blockDefs: { blockType: string; category: string; count: number; matcher: (e: any) => boolean }[] = [
-      { blockType: '3D Showcase Studio', category: 'Show work', count: roomEvents.filter(isShowcase).length, matcher: isShowcase },
-      { blockType: 'Asset Rooms & Media', category: 'Show work', count: roomEvents.filter(isAssetRoom).length, matcher: isAssetRoom },
-      { blockType: 'Talent Search & Directory', category: 'Make contact', count: roomEvents.filter(isDirectory).length, matcher: isDirectory },
-      { blockType: 'Recruiter Contact Actions', category: 'Make contact', count: events.filter(isContactClick).length, matcher: isContactClick },
-      { blockType: 'Interactive Clicks & Capture', category: 'Show proof', count: events.filter(isInteractive).length, matcher: isInteractive },
+    // The real content-block/template catalog from the showcase room builder (23 blocks, 9
+    // templates) — this used to be a mismatched set of ~5 page-navigation pseudo-blocks that
+    // didn't correspond to any real block name. PostHog has no visibility into which blocks,
+    // templates, or themes a creator actually places in their room: public_room_viewed and
+    // contact_clicked only carry room_id/room_title/author, nothing about composition. So
+    // adoption is honestly reported as untracked (0%, growth 'N/A') for every entry rather than
+    // fabricated, matching this service's no-synthetic-numbers rule elsewhere. Once the product
+    // starts sending block/template selection on room save, wire real counts in here.
+    const BLOCK_CATALOG: { blockType: string; category: string; description: string }[] = [
+      { blockType: 'Video intro', category: 'Tell your story', description: 'Embedded 60-second video elevator pitch introducing creator directly to hiring managers.' },
+      { blockType: 'Skill tags', category: 'Tell your story', description: 'Interactive pill tags showcasing core tools, frameworks, and domain proficiencies with level indicators.' },
+      { blockType: 'Metric tile', category: 'Show proof', description: 'High-impact KPI callout tiles with quantified revenue, scale, and system performance outcomes.' },
+      { blockType: 'Paragraph', category: 'Tell your story', description: 'Rich text narrative context covering professional background, career trajectory, and core ethos.' },
+      { blockType: 'Work gallery', category: 'Show work', description: 'Multi-asset visual showcase grid with 3D product previews, interface shots, and design artifacts.' },
+      { blockType: 'Profile', category: 'Tell your story', description: 'Core identity block featuring verified avatar, headline, location, and seniority tier.' },
+      { blockType: 'Availability', category: 'Make contact', description: 'Real-time calendar status, notice period, and preferred contract/full-time availability toggle.' },
+      { blockType: 'Credentials', category: 'Get vouched for', description: 'Cryptographically verifiable certifications, cloud architect credentials, and security badges.' },
+      { blockType: 'Case studies', category: 'Show work', description: 'Comprehensive project breakdowns with problem framing, architecture decisions, and ROI delivered.' },
+      { blockType: 'Call to action', category: 'Make contact', description: 'Direct recruiter action button for booking screening calls, downloading resume, or sending inquiries.' },
+      { blockType: 'Reference', category: 'Get vouched for', description: 'Verified quotes, peer recommendations, and leadership endorsements from former managers.' },
+      { blockType: 'Heading', category: 'Tell your story', description: 'Stylized section divider and emphasis banners organizing portfolio chapters cleanly.' },
+      { blockType: 'Pipeline/CI-CD', category: 'Show proof', description: 'Interactive deployment architecture flow visualizing staging pipelines, test suites, and uptime SLAs.' },
+      { blockType: 'Skill bars', category: 'Show proof', description: 'Visual mastery indicators illustrating proficiency depth and years in production across core languages.' },
+      { blockType: 'Document carousel', category: 'Show work', description: 'Multi-page interactive document reader for whitepapers, design tokens, and technical architecture specs.' },
+      { blockType: 'Before/after', category: 'Show proof', description: 'Side-by-side interactive comparison slider displaying refactors, system optimizations, and UI redesigns.' },
+      { blockType: 'Flow diagram', category: 'Show work', description: 'Embedded interactive flowchart highlighting distributed topologies, user journeys, or API lifecycles.' },
+      { blockType: 'Pull quote', category: 'Tell your story', description: 'Standout highlighted quote spotlighting candidate philosophy, leadership principle, or thesis statement.' },
+      { blockType: 'Coverage matrix', category: 'Show proof', description: 'Comprehensive capability grid detailing test coverage, compliance standards, or domain expertise.' },
+      { blockType: 'Pricing tiers', category: 'Get vouched for', description: 'Transparent consulting packages, fractional leadership rates, and sprint engagement deliverables.' },
+      { blockType: 'Statement callout', category: 'Show proof', description: 'High-contrast card summarizing key business value delivered and executive summary notes.' },
+      { blockType: 'Clause brief', category: 'Show work', description: 'Specialized legal and compliance memo summaries covering contract frameworks and regulatory policy.' },
+      { blockType: 'Retro columns', category: 'Show work', description: 'Agile team retrospective boards documenting what went well, lessons learned, and continuous improvement.' },
     ];
 
-    // No recruiterClickRate/dwellTimeBoost fields — PostHog isn't tracking per-block dwell time
-    // or recruiter attribution, so those were pure fabrication. Only report what's measurable.
-    const topBlocks = blockDefs.map(({ blockType, category, count, matcher }) => ({
+    const TEMPLATE_CATALOG: { templateName: string; category: string; description: string; includedBlocks: string[] }[] = [
+      { templateName: 'Software Eng / Architect', category: 'Tech & Engineering', description: 'Architecture, pipelines, uptime — optimized for senior backend, distributed systems, and DevOps engineers.', includedBlocks: ['Video intro', 'Pipeline/CI-CD', 'Metric tile', 'Skill tags', 'Case studies', 'Availability'] },
+      { templateName: 'Designer', category: 'Design & Creative', description: 'Product, brand, design systems — showcases high-fidelity Figma components, motion reels, and UI case studies.', includedBlocks: ['Video intro', 'Work gallery', 'Before/after', 'Case studies', 'Skill tags', 'Call to action'] },
+      { templateName: 'IAM Specialist', category: 'Security & Identity', description: 'Identity, access & control evidence — tailor-made for enterprise security, OAuth/SAML, and RBAC architects.', includedBlocks: ['Profile', 'Coverage matrix', 'Credentials', 'Flow diagram', 'Metric tile', 'Availability'] },
+      { templateName: 'Cybersecurity', category: 'Security & Identity', description: 'Incident response, SOC, threat work — highlights SIEM monitoring, threat hunts, and vulnerability triage outcomes.', includedBlocks: ['Video intro', 'Credentials', 'Coverage matrix', 'Metric tile', 'Statement callout', 'Call to action'] },
+      { templateName: 'Project Manager', category: 'Product & Delivery', description: 'Delivery outcomes, risk, teams — highlights sprint velocity, stakeholder roadmaps, and budget stewardship.', includedBlocks: ['Profile', 'Metric tile', 'Retro columns', 'Reference', 'Document carousel', 'Availability'] },
+      { templateName: 'Data Consultant', category: 'Data & AI', description: 'Analytics, models, experiments — features ML pipeline benchmarks, query throughputs, and dashboard case studies.', includedBlocks: ['Video intro', 'Metric tile', 'Flow diagram', 'Case studies', 'Skill bars', 'Availability'] },
+      { templateName: 'Student -> BA / PM', category: 'Early Career & Growth', description: 'Potential, projects, learning — curated for high-velocity grads and career switchers breaking into tech.', includedBlocks: ['Video intro', 'Paragraph', 'Skill tags', 'Work gallery', 'Credentials', 'Call to action'] },
+      { templateName: 'Finance / Accountant', category: 'Finance & Legal', description: 'Metrics, regulatory coverage — demonstrates audit trails, financial modeling, and fiscal governance.', includedBlocks: ['Profile', 'Metric tile', 'Coverage matrix', 'Credentials', 'Reference', 'Availability'] },
+      { templateName: 'Legal & Compliance', category: 'Finance & Legal', description: 'Matters, regulatory coverage — spotlights data privacy compliance (GDPR, HIPAA), contract policy, and risk briefs.', includedBlocks: ['Profile', 'Clause brief', 'Coverage matrix', 'Credentials', 'Reference', 'Call to action'] },
+    ];
+
+    const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }) => ({
       blockType,
       category,
-      count,
-      percentage: events.length > 0 ? Math.round((count / events.length) * 100) : 0,
-      growth: formatGrowth(this.computeGrowthPercent(matcher, events, dateFromMs, nowMs)),
-    })).concat([{
-      blockType: 'Creator Profiles & Bio',
-      category: 'Tell your story',
-      count: persons.length,
-      percentage: totalRooms > 0 ? 100 : 0,
+      description,
+      count: 0,
+      percentage: 0,
       growth: 'N/A',
-    }]);
+    }));
 
-    const buildTemplate = (templateName: string, category: string, description: string, includedBlocks: string[]) => {
-      const includedCounts = includedBlocks.map(name => topBlocks.find(b => b.blockType === name)?.count ?? 0);
-      const count = includedCounts.length > 0 ? Math.min(...includedCounts) : 0;
-      const percentage = totalRooms > 0 ? Math.round((count / totalRooms) * 100) : 0;
-      const matchesAnyIncludedBlock = (e: any) => includedBlocks.some(name => blockDefs.find(d => d.blockType === name)?.matcher(e) ?? false);
-      return {
-        templateName,
-        category,
-        description,
-        count,
-        percentage,
-        growth: count > 0 ? formatGrowth(this.computeGrowthPercent(matchesAnyIncludedBlock, events, dateFromMs, nowMs)) : 'N/A',
-        includedBlocks,
-      };
-    };
+    const templateAdoption = TEMPLATE_CATALOG.map(({ templateName, category, description, includedBlocks }) => ({
+      templateName,
+      category,
+      description,
+      includedBlocks,
+      count: 0,
+      percentage: 0,
+      growth: 'N/A',
+    }));
 
     const result = {
       totalRoomsCreated: totalRooms,
       topBlocks,
       blockAdoption: topBlocks,
-      templateAdoption: [
-        buildTemplate('3D Studio Showcase', 'Design & Creative', 'Interactive 3D case studies', ['3D Showcase Studio', 'Asset Rooms & Media', 'Creator Profiles & Bio']),
-        buildTemplate('Tech & Engineering', 'Tech & Engineering', 'Architecture, pipelines, uptime', ['3D Showcase Studio', 'Talent Search & Directory']),
-      ],
+      templateAdoption,
       // Not derivable: PostHog isn't tracking a theme/dark-mode property for talentbridge.cv visitors.
       themeDistribution: [],
     };
@@ -684,8 +686,29 @@ class PostHogService {
     const avgTimeSpentDelta = Math.round(avgDurationOf(laterRoomRecordings) - avgDurationOf(earlierRoomRecordings));
     const avgTimeSpentChange = roomRecordings.length > 0 ? `${avgTimeSpentDelta >= 0 ? '+' : ''}${avgTimeSpentDelta}s` : 'N/A';
 
+    // Resolve room identity per path first. Only public_room_viewed and contact_clicked actually
+    // carry room_id/room_title/author — a plain $pageview or $autocapture on the same /r/{slug}
+    // page doesn't. Grouping keys off this resolved room_id where known (falling back to the path
+    // for non-room pages like /directory or /dashboard, which have no room_id) rather than the URL,
+    // so a room whose slug changes still rolls up as one row instead of splitting in two, and
+    // every event for a room — including ones that don't carry room_id themselves — lands in the
+    // same bucket as long as at least one public_room_viewed/contact_clicked revealed its id.
+    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string }>();
+    for (const ev of roomEvents) {
+      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked') continue;
+      const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
+      const meta = roomMetaByPath.get(p) || {};
+      if (ev.properties?.room_id !== undefined && ev.properties?.room_id !== null) {
+        meta.roomId = meta.roomId ?? String(ev.properties.room_id);
+      }
+      meta.roomTitle = meta.roomTitle || ev.properties?.room_title || ev.properties?.title;
+      meta.author = meta.author || ev.properties?.author;
+      roomMetaByPath.set(p, meta);
+    }
+
     // Group by room path / URL
     const roomMap = new Map<string, {
+      path: string;
       url: string;
       views: number;
       uniqueVisitors: Set<string>;
@@ -702,13 +725,16 @@ class PostHogService {
 
     for (const ev of roomEvents) {
       const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
+      const meta = roomMetaByPath.get(p);
+      const key = meta?.roomId ? `room:${meta.roomId}` : `path:${p}`;
       const distinctId = ev.distinct_id || 'unknown';
       const country = ev.properties?.$geoip_country_name || 'United Kingdom';
       const code = ev.properties?.$geoip_country_code || 'GB';
       const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
 
-      if (!roomMap.has(p)) {
-        roomMap.set(p, {
+      if (!roomMap.has(key)) {
+        roomMap.set(key, {
+          path: p,
           url: p.startsWith('http') ? p : `https://talentbridge.cv${p}`,
           views: 0,
           uniqueVisitors: new Set(),
@@ -718,22 +744,20 @@ class PostHogService {
           code,
           flag,
           lastVisited: ev.timestamp,
+          roomId: meta?.roomId,
+          roomTitle: meta?.roomTitle,
+          author: meta?.author,
         });
       }
 
-      const item = roomMap.get(p)!;
+      const item = roomMap.get(key)!;
       item.views++;
       item.uniqueVisitors.add(distinctId);
       if (ev.event === '$autocapture' || ev.event === '$rageclick') item.clicks++;
-      // public_room_viewed carries the real room identity — prefer it over guessing from the URL.
-      if (ev.event === 'public_room_viewed') {
-        item.roomId = item.roomId || ev.properties?.room_id;
-        item.roomTitle = item.roomTitle || ev.properties?.room_title || ev.properties?.title;
-        item.author = item.author || ev.properties?.author;
-      }
     }
 
-    const topPerformingRooms = Array.from(roomMap.entries()).map(([path, data], idx) => {
+    const topPerformingRooms = Array.from(roomMap.values()).map((data, idx) => {
+      const path = data.path;
       let friendlyName = data.roomTitle || 'Showcase Room';
       if (!data.roomTitle) {
         if (path.includes('/r/')) {

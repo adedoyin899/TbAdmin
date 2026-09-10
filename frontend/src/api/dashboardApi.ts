@@ -21,15 +21,13 @@ export const dashboardApi = {
   },
 
   getFeatures: async (dateRange: string = '30d') => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/dashboard/features', {
-          params: { dateRange },
-        });
-        if (res && res.topBlocks && res.topBlocks.length > 0) return res;
-      } catch {}
-    }
-    return MOCK_FEATURES;
+    if (USE_MOCK_ONLY) return MOCK_FEATURES;
+    // No mock fallback on error: the real block/template catalog only carries honest 0%/"not yet
+    // tracked" adoption (PostHog doesn't track room composition), and silently substituting the
+    // old fabricated mock (fake creators, fake 60/40 theme split, fake growth %) on any transient
+    // failure would defeat the point of that honesty. Let the UI's own error state handle it.
+    const res: any = await apiClient.get('/dashboard/features', { params: { dateRange } });
+    return res;
   },
 
   getRetention: async (signupSource: string = 'all') => {
