@@ -19,7 +19,11 @@ import { cronRouter } from './routes/cron.js';
 
 export const app = express();
 
-
+// Vercel puts exactly one proxy hop in front of the function, so X-Forwarded-For's
+// last entry is the real client IP. Without this, express-rate-limit refuses to
+// start (it treats a present X-Forwarded-For header with trust proxy disabled as a
+// spoofing risk) and req.ip resolves to the proxy's address instead of the client's.
+app.set('trust proxy', 1);
 
 // Global middleware
 app.use(helmet());
