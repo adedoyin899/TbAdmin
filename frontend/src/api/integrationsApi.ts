@@ -76,6 +76,14 @@ export interface TestResult {
   ping?: string;
 }
 
+export interface PostHogSchemaHealth {
+  checkedAt: string;
+  connected: boolean;
+  newEvents: { name: string; lastSeenAt: string | null }[];
+  newProperties: { name: string; propertyType: string | null }[];
+  error?: string;
+}
+
 export const integrationsApi = {
   getIntegrations: async (): Promise<{ config: ProviderCredentials & { cacheTTL: CacheTTLConfig } }> => {
     try {
@@ -230,6 +238,14 @@ export const integrationsApi = {
     return { success: false, message: 'Unknown provider' };
   },
 
+
+  getPostHogSchemaHealth: async (): Promise<PostHogSchemaHealth> => {
+    try {
+      const res: any = await apiClient.get('/integrations/posthog/schema-health');
+      if (res) return res;
+    } catch {}
+    return { checkedAt: new Date().toISOString(), connected: false, newEvents: [], newProperties: [] };
+  },
 
   flushCache: async (): Promise<{ success: boolean; message: string }> => {
     try {
