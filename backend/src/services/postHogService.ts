@@ -10,6 +10,35 @@ export interface PostHogConfig {
   apiKey: string;
 }
 
+// Real ad-network click IDs PostHog auto-captures from the query string.
+const AD_CLICK_ID_PROPS = [
+  'gclid', 'gclsrc', 'gbraid', 'wbraid', 'gad_source', 'dclid', 'fbclid', 'msclkid',
+  'ttclid', 'twclid', 'li_fat_id', 'rdt_cid', 'qclid', 'sccid', 'irclid', 'epik',
+];
+// igshid is Instagram's share-link id — it tags organic social shares, not ad clicks, so it's
+// tracked separately rather than lumped into AD_CLICK_ID_PROPS.
+const SOCIAL_SHARE_ID_PROPS = ['igshid'];
+
+// Event/property names this service already reads by name somewhere above. Kept in sync
+// manually with fetchFunnelData / fetchFeatureAdoptionData / fetchRoomsAnalytics / etc. —
+// fetchSchemaHealth() diffs this against PostHog's live definitions so newly-integrated
+// tracking (new events/properties the product started sending) doesn't go unnoticed.
+const KNOWN_EVENT_NAMES = new Set([
+  '$pageview', '$pageleave', '$autocapture', '$rageclick', '$identify', '$set', '$exception',
+  'public_room_viewed', 'contact_clicked', 'user_signed_up', 'user_logged_in',
+]);
+const KNOWN_PROPERTY_NAMES = new Set([
+  '$pathname', '$current_url', '$initial_pathname', '$initial_current_url',
+  '$geoip_country_name', '$geoip_country_code', '$geoip_city_name',
+  '$device_type', '$referrer', '$initial_referrer', '$browser', '$os', '$search_engine',
+  'signup_source', 'email', '$email', 'email_address', 'name', '$name', 'first_name',
+  'plan_tier', 'last_active', '$last_seen', 'rooms_created', 'rooms_published',
+  'total_events', 'city', 'country', 'country_code',
+  'room_id', 'room_title', 'slug', 'title', 'author',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'mc_cid', '_kx',
+  ...AD_CLICK_ID_PROPS, ...SOCIAL_SHARE_ID_PROPS,
+]);
+
 class PostHogService {
   private client!: AxiosInstance;
   private host: string;
@@ -271,6 +300,19 @@ class PostHogService {
   }
 
   /**
+   * Classify a person's acquisition channel from real UTM parameters and ad click IDs when
+   * present, falling back to the coarser signup_source/$initial_referrer signal otherwise.
+   */
+  private classifyAcquisitionChannel(props: Record<string, any>): string {
+    if (props.mc_cid || props._kx || props.utm_medium === 'email' || props.signup_source === 'email') return 'Email Campaigns';
+    if (AD_CLICK_ID_PROPS.some((key) => props[key]) || props.utm_medium === 'cpc' || props.utm_medium === 'paid' || props.signup_source === 'paid_ad') return 'Paid Ads';
+    if (props.utm_medium === 'referral' || props.signup_source === 'referral') return 'Creator Referrals';
+    if (props.utm_source || props.utm_medium === 'social' || props.utm_medium === 'organic' || SOCIAL_SHARE_ID_PROPS.some((key) => props[key]) || props.$search_engine || props.signup_source === 'organic' || props.signup_source === 'google') return 'Organic Search & Social';
+    if (props.$initial_referrer === '$direct' || props.signup_source === 'direct') return 'Direct Traffic';
+    return 'Organic Search & Social';
+  }
+
+  /**
    * 1. Funnel Conversion Data (100% Live PostHog Telemetry)
    */
   async fetchFunnelData(dateRange = '30d', signupSource = 'all', ttl = 900) {
@@ -279,10 +321,7 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(dateRange);
-    const [events, persons] = await Promise.all([
-      this.fetchEventsInRange(dateFrom),
-      this.fetchAllPersons(),
-    ]);
+    const events = await this.fetchEventsInRange(dateFrom);
 
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
@@ -296,11 +335,14 @@ class PostHogService {
     const idsOf = (predicate: (e: any) => boolean) => new Set(filteredEvents.filter(predicate).map(e => e.distinct_id).filter(Boolean));
     const intersect = (a: Set<string>, b: Set<string>) => new Set([...a].filter(x => b.has(x)));
 
+    // Stages 3-5 key off named product events (public_room_viewed, contact_clicked,
+    // user_signed_up) instead of guessing intent from URL patterns / generic autocapture —
+    // those events started flowing from the product and are a direct signal of the milestone.
     const pageviewIds = idsOf(e => e.event === '$pageview');
     const discoveryIds = idsOf(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard'));
-    const showcaseIds = idsOf(e => (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
-    const interactiveIds = idsOf(e => e.event === '$autocapture' || e.event === '$rageclick');
-    const identifiedIds = new Set(persons.map(p => String(p.distinct_ids?.[0] || p.id || '')).filter(Boolean));
+    const showcaseIds = idsOf(e => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
+    const interactiveIds = idsOf(e => e.event === 'contact_clicked' || e.event === '$autocapture' || e.event === '$rageclick');
+    const identifiedIds = idsOf(e => e.event === 'user_signed_up');
 
     const step1Set = pageviewIds;
     const step2Set = intersect(step1Set, discoveryIds);
@@ -358,10 +400,11 @@ class PostHogService {
       return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory');
     });
 
-    const isShowcase = (e: any) => (e.properties?.$pathname || '').includes('/r/');
+    const isShowcase = (e: any) => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/');
     const isAssetRoom = (e: any) => (e.properties?.$pathname || '').includes('/assets-room/');
     const isDirectory = (e: any) => (e.properties?.$pathname || '').includes('/directory');
     const isInteractive = (e: any) => e.event === '$autocapture';
+    const isContactClick = (e: any) => e.event === 'contact_clicked';
 
     const formatGrowth = (pct: number | null) => (pct === null ? 'N/A' : `${pct >= 0 ? '+' : ''}${pct}%`);
 
@@ -369,6 +412,7 @@ class PostHogService {
       { blockType: '3D Showcase Studio', category: 'Show work', count: roomEvents.filter(isShowcase).length, matcher: isShowcase },
       { blockType: 'Asset Rooms & Media', category: 'Show work', count: roomEvents.filter(isAssetRoom).length, matcher: isAssetRoom },
       { blockType: 'Talent Search & Directory', category: 'Make contact', count: roomEvents.filter(isDirectory).length, matcher: isDirectory },
+      { blockType: 'Recruiter Contact Actions', category: 'Make contact', count: events.filter(isContactClick).length, matcher: isContactClick },
       { blockType: 'Interactive Clicks & Capture', category: 'Show proof', count: events.filter(isInteractive).length, matcher: isInteractive },
     ];
 
@@ -457,6 +501,23 @@ class PostHogService {
       recordingsByPerson.set(id, (recordingsByPerson.get(id) || 0) + 1);
     }
 
+    // person.created_at is PostHog's "first seen" timestamp, which can predate actual signup
+    // (e.g. an anonymous landing-page visit). Where a real user_signed_up event exists, use its
+    // timestamp instead so cohort weeks and retention windows anchor on the real signup moment.
+    const signupEventTimeByPerson = new Map<string, number>();
+    for (const ev of events) {
+      if (ev.event !== 'user_signed_up') continue;
+      const id = String(ev.distinct_id || '');
+      const t = new Date(ev.timestamp).getTime();
+      if (!id || !Number.isFinite(t)) continue;
+      const existing = signupEventTimeByPerson.get(id);
+      if (existing === undefined || t < existing) signupEventTimeByPerson.set(id, t);
+    }
+    const signupTimeOf = (p: any): number => {
+      const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
+      return signupEventTimeByPerson.get(distinctId) ?? new Date(p.created_at || now).getTime();
+    };
+
     const countryFlag = (code: string) => (code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍');
 
     const buildActiveUser = (p: any) => {
@@ -485,8 +546,7 @@ class PostHogService {
     const WEEK_MS = 7 * 86400000;
     const cohortBuckets: { persons: any[] }[] = [{ persons: [] }, { persons: [] }, { persons: [] }, { persons: [] }];
     for (const p of persons) {
-      const createdAt = new Date(p.created_at || now);
-      const ageMs = nowMs - createdAt.getTime();
+      const ageMs = nowMs - signupTimeOf(p);
       if (ageMs < 0) continue;
       const weeksAgo = Math.floor(ageMs / WEEK_MS);
       const bucketIdx = 3 - Math.min(3, weeksAgo);
@@ -494,7 +554,7 @@ class PostHogService {
     }
 
     const retentionAt = (p: any, days: number): { eligible: boolean; retained: boolean } => {
-      const createdAt = new Date(p.created_at || now).getTime();
+      const createdAt = signupTimeOf(p);
       const thresholdMs = createdAt + days * 86400000;
       if (nowMs < thresholdMs) return { eligible: false, retained: false };
       const distinctId = String(p.distinct_ids?.[0] || p.id || 'unknown');
@@ -635,6 +695,9 @@ class PostHogService {
       code: string;
       flag: string;
       lastVisited: string;
+      roomId?: string;
+      roomTitle?: string;
+      author?: string;
     }>();
 
     for (const ev of roomEvents) {
@@ -662,30 +725,39 @@ class PostHogService {
       item.views++;
       item.uniqueVisitors.add(distinctId);
       if (ev.event === '$autocapture' || ev.event === '$rageclick') item.clicks++;
+      // public_room_viewed carries the real room identity — prefer it over guessing from the URL.
+      if (ev.event === 'public_room_viewed') {
+        item.roomId = item.roomId || ev.properties?.room_id;
+        item.roomTitle = item.roomTitle || ev.properties?.room_title || ev.properties?.title;
+        item.author = item.author || ev.properties?.author;
+      }
     }
 
     const topPerformingRooms = Array.from(roomMap.entries()).map(([path, data], idx) => {
-      let friendlyName = 'Showcase Room';
-      if (path.includes('/r/')) {
-        const slug = path.split('/r/')[1]?.split('?')[0] || '';
-        friendlyName = `Showcase Room (${slug.slice(0, 10)}…)`;
-      } else if (path.includes('/assets-room/')) {
-        const id = path.split('/assets-room/')[1]?.split('?')[0] || '';
-        friendlyName = `Asset Showcase Studio #${id}`;
-      } else if (path.includes('/directory/profiles')) {
-        friendlyName = 'Talent Profiles Directory';
-      } else if (path.includes('/directory')) {
-        friendlyName = 'Talent Discovery Directory';
-      } else if (path.includes('/dashboard')) {
-        friendlyName = 'Creator Studio Dashboard';
+      let friendlyName = data.roomTitle || 'Showcase Room';
+      if (!data.roomTitle) {
+        if (path.includes('/r/')) {
+          const slug = path.split('/r/')[1]?.split('?')[0] || '';
+          friendlyName = `Showcase Room (${slug.slice(0, 10)}…)`;
+        } else if (path.includes('/assets-room/')) {
+          const id = path.split('/assets-room/')[1]?.split('?')[0] || '';
+          friendlyName = `Asset Showcase Studio #${id}`;
+        } else if (path.includes('/directory/profiles')) {
+          friendlyName = 'Talent Profiles Directory';
+        } else if (path.includes('/directory')) {
+          friendlyName = 'Talent Discovery Directory';
+        } else if (path.includes('/dashboard')) {
+          friendlyName = 'Creator Studio Dashboard';
+        }
       }
 
       const engagementPct = data.views > 0 ? Math.min(100, Math.round((data.clicks / data.views) * 100)) : 0;
+      const ownerName = data.author || `Creator #${data.distinctId}`;
 
       return {
-        roomId: `room_${idx + 1}`,
+        roomId: data.roomId || `room_${idx + 1}`,
         roomName: friendlyName,
-        ownerName: `Creator #${data.distinctId}`,
+        ownerName,
         ownerEmail: data.distinctId.includes('@') ? data.distinctId : `creator_${data.distinctId}@talentbridge.cv`,
         views: data.views,
         uniqueViews: data.uniqueVisitors.size,
@@ -1271,13 +1343,7 @@ class PostHogService {
 
     for (const p of personsToAggregate) {
       const props = p.properties || {};
-      const src = props.signup_source || props.$search_engine || (props.$initial_referrer === '$direct' ? 'direct' : 'organic');
-      if (src === 'organic' || src === 'google') channelCounts['Organic Search & Social']++;
-      else if (src === 'direct' || props.$initial_referrer === '$direct') channelCounts['Direct Traffic']++;
-      else if (src === 'referral') channelCounts['Creator Referrals']++;
-      else if (src === 'email') channelCounts['Email Campaigns']++;
-      else if (src === 'paid_ad') channelCounts['Paid Ads']++;
-      else channelCounts['Organic Search & Social']++;
+      channelCounts[this.classifyAcquisitionChannel(props)]++;
 
       const country = props.$geoip_country_name || props.country || 'United Kingdom';
       const code = props.$geoip_country_code || props.country_code || 'GB';
@@ -1514,6 +1580,58 @@ class PostHogService {
         { source: 'blob', url: `${this.host}/project/${this.projectId}/replay/${recordingId}` },
       ],
     };
+  }
+
+  /**
+   * 9. PostHog Schema Health — diffs PostHog's live event/property definitions against the
+   * names this service already knows how to read, so newly-integrated tracking (new events or
+   * properties the product started sending) surfaces in-app instead of silently going unused.
+   */
+  async fetchSchemaHealth(ttl = 3600) {
+    const cacheKey = 'posthog:schema_health';
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+
+    if (!this.hasApiKey) {
+      return { checkedAt: new Date().toISOString(), connected: false, newEvents: [], newProperties: [] };
+    }
+
+    try {
+      const [eventDefsRes, propDefsRes] = await Promise.all([
+        this.client.get('/event_definitions', { params: { limit: 100, ordering: '-last_seen_at' } }),
+        this.client.get('/property_definitions', { params: { limit: 200 } }),
+      ]);
+
+      const eventDefs = eventDefsRes.data?.results || [];
+      const propDefs = propDefsRes.data?.results || [];
+
+      const newEvents = eventDefs
+        .filter((e: any) => !KNOWN_EVENT_NAMES.has(e.name))
+        .map((e: any) => ({ name: e.name, lastSeenAt: e.last_seen_at || null }));
+
+      const newProperties = propDefs
+        .filter((p: any) => !String(p.name).startsWith('$') && !KNOWN_PROPERTY_NAMES.has(p.name))
+        .map((p: any) => ({ name: p.name, propertyType: p.property_type || null }));
+
+      const result = {
+        checkedAt: new Date().toISOString(),
+        connected: true,
+        newEvents,
+        newProperties,
+      };
+
+      await cacheService.set(cacheKey, result, ttl);
+      return result;
+    } catch (err: any) {
+      logger.warn('Error checking PostHog schema health:', err.message);
+      return {
+        checkedAt: new Date().toISOString(),
+        connected: this.hasApiKey,
+        newEvents: [],
+        newProperties: [],
+        error: err.message,
+      };
+    }
   }
 }
 

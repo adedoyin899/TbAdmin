@@ -3,6 +3,7 @@ import {
   getIntegrationsConfig,
   updateIntegrationsConfig,
   testIntegration,
+  getPostHogSchemaHealth,
   flushAllCache,
 } from '../controllers/integrationsController.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
@@ -20,6 +21,9 @@ integrationRouter.put('/', updateIntegrationsConfig);
 
 // POST /api/integrations/test - Run live API handshake test against external provider
 integrationRouter.post('/test', testIntegration);
+
+// GET /api/integrations/posthog/schema-health - New PostHog event/property types not yet integrated
+integrationRouter.get('/posthog/schema-health', getPostHogSchemaHealth);
 
 // POST /api/integrations/flush-cache - Invalidate and flush all cache layers
 integrationRouter.post('/flush-cache', flushAllCache);

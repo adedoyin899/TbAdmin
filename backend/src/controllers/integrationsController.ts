@@ -248,6 +248,16 @@ export async function testIntegration(req: Request, res: Response) {
 }
 
 
+export async function getPostHogSchemaHealth(_req: Request, res: Response) {
+  try {
+    const health = await postHogService.fetchSchemaHealth();
+    return sendSuccess(res, health, 200);
+  } catch (err: any) {
+    logger.error('Error checking PostHog schema health:', err);
+    return sendError(res, 'Failed to check PostHog schema health.', 500);
+  }
+}
+
 export async function flushAllCache(_req: Request, res: Response) {
   try {
     await cacheService.flushAll();

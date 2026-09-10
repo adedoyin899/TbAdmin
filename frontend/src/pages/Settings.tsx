@@ -9,7 +9,7 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useRbac } from '../utils/rbac';
-import { integrationsApi } from '../api/integrationsApi';
+import { integrationsApi, type PostHogSchemaHealth } from '../api/integrationsApi';
 
 type TabKey = 'alerts' | 'email' | 'integrations' | 'security' | 'appearance';
 type ProviderKey = 'posthog' | 'mailgun' | 'linkedin' | 'reddit' | 'buffer' | 'redis' | 'postgres';
@@ -48,6 +48,8 @@ export const SettingsPage: React.FC = () => {
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ provider: string; success: boolean; message: string; ping?: string } | null>(null);
+  const [schemaHealth, setSchemaHealth] = useState<PostHogSchemaHealth | null>(null);
+  const [schemaHealthLoading, setSchemaHealthLoading] = useState(false);
 
   // Team administration state (Maz as Super Admin Source of Truth)
   const [teamUsers, setTeamUsers] = useState<Array<{
@@ -197,6 +199,18 @@ export const SettingsPage: React.FC = () => {
     }).catch(() => {});
   }, []);
 
+  const refreshSchemaHealth = () => {
+    setSchemaHealthLoading(true);
+    integrationsApi.getPostHogSchemaHealth()
+      .then(setSchemaHealth)
+      .catch(() => {})
+      .finally(() => setSchemaHealthLoading(false));
+  };
+
+  // Check PostHog for newly-integrated event/property types not yet wired into the dashboards
+  useEffect(() => {
+    refreshSchemaHealth();
+  }, []);
 
   const handleAddAdminUser = () => {
     if (!newUserForm.name || !newUserForm.email) return;
@@ -1077,6 +1091,86 @@ export const SettingsPage: React.FC = () => {
                         Required for live PostHog query pipeline
                       </span>
                     </div>
+                  </div>
+
+                  {/* PostHog Schema Health — flags event/property types PostHog has captured that
+                      the dashboards don't read yet, so new tracking doesn't go unnoticed. */}
+                  <div style={{
+                    border: '1px solid var(--line)',
+                    borderRadius: 10,
+                    padding: 14,
+                    background: 'var(--panel-2)',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {schemaHealth && (schemaHealth.newEvents.length > 0 || schemaHealth.newProperties.length > 0) ? (
+                          <AlertTriangle size={16} color="var(--warning)" />
+                        ) : (
+                          <CheckCircle2 size={16} color="var(--success)" />
+                        )}
+                        <div>
+                          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                            PostHog Schema Health
+                          </h4>
+                          <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                            {schemaHealth?.checkedAt
+                              ? `Last checked ${new Date(schemaHealth.checkedAt).toLocaleString()}`
+                              : 'Checks PostHog for event/property types not yet wired into the dashboards'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={refreshSchemaHealth}
+                        disabled={schemaHealthLoading}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 11.5, padding: '6px 12px', gap: 6, cursor: 'pointer' }}
+                      >
+                        <RefreshCw size={12} className={schemaHealthLoading ? 'animate-spin' : ''} />
+                        {schemaHealthLoading ? 'Checking…' : 'Recheck'}
+                      </button>
+                    </div>
+
+                    {schemaHealth && !schemaHealthLoading && (
+                      <div style={{ marginTop: 10 }}>
+                        {schemaHealth.newEvents.length === 0 && schemaHealth.newProperties.length === 0 ? (
+                          <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
+                            No new PostHog event or property types since the dashboards were last updated.
+                          </p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {schemaHealth.newEvents.length > 0 && (
+                              <div>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                                  {schemaHealth.newEvents.length} New Event Type{schemaHealth.newEvents.length === 1 ? '' : 's'}
+                                </span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                  {schemaHealth.newEvents.map(e => (
+                                    <span key={e.name} title={e.lastSeenAt ? `Last seen ${new Date(e.lastSeenAt).toLocaleString()}` : undefined} style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace', padding: '3px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.12)', color: 'var(--warning)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                      {e.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {schemaHealth.newProperties.length > 0 && (
+                              <div>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                                  {schemaHealth.newProperties.length} New Propert{schemaHealth.newProperties.length === 1 ? 'y' : 'ies'}
+                                </span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                  {schemaHealth.newProperties.map(p => (
+                                    <span key={p.name} title={p.propertyType || undefined} style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace', padding: '3px 8px', borderRadius: 6, background: 'var(--panel-3)', color: 'var(--text-2)', border: '1px solid var(--line)' }}>
+                                      {p.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
