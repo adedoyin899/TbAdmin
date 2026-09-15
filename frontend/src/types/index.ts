@@ -214,6 +214,7 @@ export interface RoomsDashboardResponse {
     ownerName: string;
     ownerEmail: string;
     ownerDistinctId?: string;
+    ownerIdConfirmed?: boolean;
     views: number;
     uniqueViews: number;
     engagement: number;

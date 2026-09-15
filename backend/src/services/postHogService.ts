@@ -34,7 +34,7 @@ const KNOWN_PROPERTY_NAMES = new Set([
   'signup_source', 'email', '$email', 'email_address', 'name', '$name', 'first_name',
   'plan_tier', 'last_active', '$last_seen', 'rooms_created', 'rooms_published',
   'total_events', 'city', 'country', 'country_code',
-  'room_id', 'room_title', 'slug', 'title', 'author',
+  'room_id', 'room_title', 'slug', 'title', 'author', 'room_owner_id',
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'mc_cid', '_kx',
   ...AD_CLICK_ID_PROPS, ...SOCIAL_SHARE_ID_PROPS,
 ]);
@@ -648,18 +648,26 @@ class PostHogService {
    * Resolves room identity + per-room aggregate stats from a set of room-scoped events. Shared
    * by fetchRoomsAnalytics (platform-wide) and fetchUserRoomInsights (scoped to one person's
    * rooms) so the two never disagree about what a "room" is. Only public_room_viewed and
-   * contact_clicked carry room_id/room_title/author — a plain $pageview or $autocapture on the
-   * same /r/{slug} page doesn't — so identity is resolved per path first, then every event
-   * (including ones that don't carry room_id themselves) is grouped under that resolved id.
-   * Falls back to path-based grouping for non-room pages (e.g. /directory, /dashboard) that have
-   * no room_id concept at all.
+   * contact_clicked carry room_id/room_title/author/room_owner_id — a plain $pageview or
+   * $autocapture on the same /r/{slug} page doesn't — so identity is resolved per path first,
+   * then every event (including ones that don't carry these properties themselves) is grouped
+   * under that resolved id. Falls back to path-based grouping for non-room pages (e.g.
+   * /directory, /dashboard) that have no room_id concept at all.
+   *
+   * room_owner_id (shipped 2026-09-15) is the room's real owner distinct_id, sent directly by
+   * the product — when present it's used as-is (ownerIdConfirmed: true). Older/uninstrumented
+   * rooms fall back to "whoever visited this room first", which is a guess, not a fact.
    */
-  private buildRoomSummaries(roomEvents: any[]): {
+  private buildRoomSummaries(
+    roomEvents: any[],
+    personsByDistinctId?: Map<string, any>
+  ): {
     roomId: string;
     roomName: string;
     ownerName: string;
     ownerEmail: string;
     ownerDistinctId: string;
+    ownerIdConfirmed: boolean;
     views: number;
     uniqueViews: number;
     engagement: number;
@@ -671,7 +679,7 @@ class PostHogService {
     firstSeenAt: string;
     path: string;
   }[] {
-    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string }>();
+    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string; ownerId?: string }>();
     for (const ev of roomEvents) {
       if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked') continue;
       const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
@@ -681,6 +689,9 @@ class PostHogService {
       }
       meta.roomTitle = meta.roomTitle || ev.properties?.room_title || ev.properties?.title;
       meta.author = meta.author || ev.properties?.author;
+      if (ev.properties?.room_owner_id !== undefined && ev.properties?.room_owner_id !== null) {
+        meta.ownerId = meta.ownerId ?? String(ev.properties.room_owner_id);
+      }
       roomMetaByPath.set(p, meta);
     }
 
@@ -699,6 +710,7 @@ class PostHogService {
       roomId?: string;
       roomTitle?: string;
       author?: string;
+      ownerId?: string;
     }>();
 
     for (const ev of roomEvents) {
@@ -726,6 +738,7 @@ class PostHogService {
           roomId: meta?.roomId,
           roomTitle: meta?.roomTitle,
           author: meta?.author,
+          ownerId: meta?.ownerId,
         });
       }
 
@@ -760,14 +773,21 @@ class PostHogService {
       }
 
       const engagementPct = data.views > 0 ? Math.min(100, Math.round((data.clicks / data.views) * 100)) : 0;
-      const ownerName = data.author || `Creator #${data.distinctId}`;
+      const ownerIdConfirmed = Boolean(data.ownerId);
+      const ownerDistinctId = data.ownerId || data.distinctId;
+      const ownerPerson = ownerIdConfirmed ? personsByDistinctId?.get(ownerDistinctId) : undefined;
+      const ownerProps = ownerPerson?.properties;
+      const ownerName = (ownerIdConfirmed && (ownerProps?.name || ownerProps?.$name)) || data.author || `Creator #${ownerDistinctId}`;
+      const ownerEmail = (ownerIdConfirmed && (ownerProps?.email || ownerProps?.$email))
+        || (ownerDistinctId.includes('@') ? ownerDistinctId : `creator_${ownerDistinctId}@talentbridge.cv`);
 
       return {
         roomId: data.roomId || `room_${idx + 1}`,
         roomName: friendlyName,
         ownerName,
-        ownerEmail: data.distinctId.includes('@') ? data.distinctId : `creator_${data.distinctId}@talentbridge.cv`,
-        ownerDistinctId: data.distinctId,
+        ownerEmail,
+        ownerDistinctId,
+        ownerIdConfirmed,
         views: data.views,
         uniqueViews: data.uniqueVisitors.size,
         engagement: engagementPct,
@@ -795,10 +815,16 @@ class PostHogService {
     const nowMs = Date.now();
     const midpointMs = (dateFromMs + nowMs) / 2;
 
-    const [events, recordings] = await Promise.all([
+    const [events, recordings, persons] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchRecordingsList(),
+      this.fetchAllPersons(),
     ]);
+    const personsByDistinctId = new Map<string, any>();
+    for (const p of persons) {
+      const id = String(p.distinct_ids?.[0] || p.id || '');
+      if (id) personsByDistinctId.set(id, p);
+    }
 
     // Filter room & showcase discovery events
     const roomEvents = events.filter((e: any) => {
@@ -824,7 +850,7 @@ class PostHogService {
     const avgTimeSpentDelta = Math.round(avgDurationOf(laterRoomRecordings) - avgDurationOf(earlierRoomRecordings));
     const avgTimeSpentChange = roomRecordings.length > 0 ? `${avgTimeSpentDelta >= 0 ? '+' : ''}${avgTimeSpentDelta}s` : 'N/A';
 
-    const topPerformingRooms = this.buildRoomSummaries(roomEvents);
+    const topPerformingRooms = this.buildRoomSummaries(roomEvents, personsByDistinctId);
 
     // Compute Geo Traffic
     const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
@@ -1018,16 +1044,18 @@ class PostHogService {
       return p.includes('/r/') || p.includes('/assets-room/');
     });
 
-    const allRooms = this.buildRoomSummaries(roomEvents);
-    const myRooms = allRooms.filter(
-      (r) => r.ownerDistinctId === distinctId || (personName && r.ownerName === personName)
-    );
-
     const personByDistinctId = new Map<string, any>();
     for (const p of persons) {
       const id = String(p.distinct_ids?.[0] || p.id || '');
       if (id) personByDistinctId.set(id, p);
     }
+
+    const allRooms = this.buildRoomSummaries(roomEvents, personByDistinctId);
+    // Prefer the real room_owner_id match; only fall back to the author-name heuristic for
+    // older rooms that predate that property being sent.
+    const myRooms = allRooms.filter(
+      (r) => r.ownerDistinctId === distinctId || (personName && r.ownerName === personName)
+    );
 
     const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const TIME_SLOTS: { label: string; startHour: number; endHour: number }[] = [
@@ -1211,7 +1239,7 @@ class PostHogService {
         // Not derivable: PostHog doesn't record which content blocks a creator placed in a room
         // (see fetchFeatureAdoptionData) — honestly null rather than a fabricated block list.
         blocksUsed: null as string[] | null,
-        ownerConfidence: personName && r.ownerName === personName ? 'confirmed' : 'inferred',
+        ownerConfidence: r.ownerIdConfirmed || (personName && r.ownerName === personName) ? 'confirmed' : 'inferred',
       };
     });
 

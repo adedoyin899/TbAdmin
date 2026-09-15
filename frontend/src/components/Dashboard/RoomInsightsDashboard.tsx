@@ -314,7 +314,14 @@ export const RoomInsightsDashboard: React.FC = () => {
                       </td>
                       <td>
                         <div>
-                          <p style={{ fontWeight: 600, fontSize: 13 }}>{room.ownerName}</p>
+                          <p style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {room.ownerName}
+                            {room.ownerIdConfirmed === false && (
+                              <span className="badge badge-neutral" style={{ fontSize: 9, padding: '1px 6px' }} title="Matched by first-visitor activity, not a confirmed owner ID">
+                                inferred
+                              </span>
+                            )}
+                          </p>
                           <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{room.ownerEmail}</p>
                         </div>
                       </td>
@@ -328,7 +335,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                           onClick={() => navigate(`/lookup?userId=${encodeURIComponent(room.ownerDistinctId || room.ownerEmail)}`)}
                           className="btn btn-ghost"
                           style={{ padding: '4px 10px', fontSize: 11.5, gap: 5 }}
-                          title={room.ownerDistinctId ? `Open ${room.ownerName}'s profile` : 'Owner identity is inferred from room activity, not confirmed'}
+                          title={room.ownerIdConfirmed ? `Open ${room.ownerName}'s profile` : 'Owner identity is inferred from room activity, not confirmed'}
                         >
                           Inspect User <ArrowUpRight size={12} />
                         </button>
