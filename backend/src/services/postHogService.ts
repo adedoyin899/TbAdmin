@@ -1790,18 +1790,35 @@ class PostHogService {
    * 7. Fetch Live Session Recordings from PostHog API
    */
   async fetchSessionRecordings(limit = 25, distinctId?: string) {
-    if (this.hasApiKey) {
-      try {
-        const params: any = { limit };
-        if (distinctId) params.distinct_id = distinctId;
+    if (!this.hasApiKey) {
+      return { results: [] };
+    }
 
-        const res = await this.client.get('/session_recordings', { params });
-        const results = res.data?.results || [];
+    try {
+      const params: any = { limit };
+      if (distinctId) params.distinct_id = distinctId;
 
-        return {
-          results: results.map((r: any) => ({
+      const [res, persons] = await Promise.all([
+        this.client.get('/session_recordings', { params }),
+        this.fetchAllPersons(),
+      ]);
+      const results = res.data?.results || [];
+
+      const personByDistinctId = new Map<string, any>();
+      for (const p of persons) {
+        const id = String(p.distinct_ids?.[0] || p.id || '');
+        if (id) personByDistinctId.set(id, p);
+      }
+
+      return {
+        results: results.map((r: any) => {
+          const person = personByDistinctId.get(String(r.distinct_id));
+          const props = person?.properties || {};
+          return {
             id: r.id,
             distinctId: r.distinct_id,
+            userName: props.name || props.$name || null,
+            userEmail: props.email || props.$email || null,
             duration: r.recording_duration || 0,
             activeSeconds: r.active_seconds || 0,
             startTime: r.start_time,
@@ -1814,66 +1831,14 @@ class PostHogService {
             pinned: Boolean(r.pinned),
             postHogReplayUrl: `${this.host}/project/${this.projectId}/replay/${r.id}`,
             snapshotsUrl: `/api/users/recordings/${r.id}/snapshots`,
-          })),
-        };
-      } catch (err: any) {
-        logger.warn('Error fetching live PostHog session recordings:', err.message);
-      }
+          };
+        }),
+      };
+    } catch (err: any) {
+      logger.warn('Error fetching live PostHog session recordings:', err.message);
+      // Honest empty result rather than fabricated recordings with made-up-but-plausible IDs.
+      return { results: [] };
     }
-
-    // High quality fallback recordings
-    return {
-      results: [
-        {
-          id: '01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
-          distinctId: '82',
-          duration: 9,
-          activeSeconds: 8,
-          startTime: new Date(Date.now() - 3600000).toISOString(),
-          endTime: new Date(Date.now() - 3591000).toISOString(),
-          startUrl: 'https://talentbridge.cv/r/qoZEay2DqnaV0w2qHh0Sti5BfYTncSOys1kj2TVy2kDFRjxznXdSWxDfl65NYWvs',
-          clickCount: 2,
-          keypressCount: 0,
-          mouseActivityCount: 18,
-          viewed: false,
-          pinned: false,
-          postHogReplayUrl: `${this.host}/project/${this.projectId}/replay/01a03e66-26bc-77fa-b070-ce6ffe07fb7c`,
-          snapshotsUrl: '/api/users/recordings/01a03e66-26bc-77fa-b070-ce6ffe07fb7c/snapshots',
-        },
-        {
-          id: '01a03df7-5a26-7631-ac32-1a4015559b49',
-          distinctId: '80',
-          duration: 39,
-          activeSeconds: 15,
-          startTime: new Date(Date.now() - 7200000).toISOString(),
-          endTime: new Date(Date.now() - 7161000).toISOString(),
-          startUrl: 'https://talentbridge.cv/dashboard',
-          clickCount: 4,
-          keypressCount: 12,
-          mouseActivityCount: 45,
-          viewed: true,
-          pinned: false,
-          postHogReplayUrl: `${this.host}/project/${this.projectId}/replay/01a03df7-5a26-7631-ac32-1a4015559b49`,
-          snapshotsUrl: '/api/users/recordings/01a03df7-5a26-7631-ac32-1a4015559b49/snapshots',
-        },
-        {
-          id: '01a03c88-1ebc-75b5-9eea-90da37a3c2d6',
-          distinctId: '66',
-          duration: 1161,
-          activeSeconds: 51,
-          startTime: new Date(Date.now() - 14400000).toISOString(),
-          endTime: new Date(Date.now() - 13239000).toISOString(),
-          startUrl: 'https://talentbridge.cv/sign-in',
-          clickCount: 10,
-          keypressCount: 28,
-          mouseActivityCount: 120,
-          viewed: false,
-          pinned: true,
-          postHogReplayUrl: `${this.host}/project/${this.projectId}/replay/01a03c88-1ebc-75b5-9eea-90da37a3c2d6`,
-          snapshotsUrl: '/api/users/recordings/01a03c88-1ebc-75b5-9eea-90da37a3c2d6/snapshots',
-        },
-      ],
-    };
   }
 
   /**

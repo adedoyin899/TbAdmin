@@ -150,51 +150,48 @@ export const userApi = {
   },
 
   getSessionRecordings: async (limit: number = 25, distinctId?: string) => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/users/recordings', {
-          params: { limit, distinctId },
-        });
-        if (res && res.results) return res;
-      } catch {}
+    if (USE_MOCK_ONLY) {
+      return {
+        results: [
+          {
+            id: '01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
+            distinctId: '82',
+            duration: 9,
+            activeSeconds: 8,
+            startTime: new Date(Date.now() - 3600000).toISOString(),
+            endTime: new Date(Date.now() - 3591000).toISOString(),
+            startUrl: 'https://talentbridge.cv/r/qoZEay2DqnaV0w2qHh0Sti5BfYTncSOys1kj2TVy2kDFRjxznXdSWxDfl65NYWvs',
+            clickCount: 2,
+            keypressCount: 0,
+            mouseActivityCount: 18,
+            viewed: false,
+            pinned: false,
+            postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
+            snapshotsUrl: '/api/users/recordings/01a03e66-26bc-77fa-b070-ce6ffe07fb7c/snapshots',
+          },
+          {
+            id: '01a03df7-5a26-7631-ac32-1a4015559b49',
+            distinctId: '80',
+            duration: 39,
+            activeSeconds: 15,
+            startTime: new Date(Date.now() - 7200000).toISOString(),
+            endTime: new Date(Date.now() - 7161000).toISOString(),
+            startUrl: 'https://talentbridge.cv/dashboard',
+            clickCount: 4,
+            keypressCount: 12,
+            mouseActivityCount: 45,
+            viewed: true,
+            pinned: false,
+            postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03df7-5a26-7631-ac32-1a4015559b49',
+            snapshotsUrl: '/api/users/recordings/01a03df7-5a26-7631-ac32-1a4015559b49/snapshots',
+          },
+        ],
+      };
     }
-
-    return {
-      results: [
-        {
-          id: '01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
-          distinctId: '82',
-          duration: 9,
-          activeSeconds: 8,
-          startTime: new Date(Date.now() - 3600000).toISOString(),
-          endTime: new Date(Date.now() - 3591000).toISOString(),
-          startUrl: 'https://talentbridge.cv/r/qoZEay2DqnaV0w2qHh0Sti5BfYTncSOys1kj2TVy2kDFRjxznXdSWxDfl65NYWvs',
-          clickCount: 2,
-          keypressCount: 0,
-          mouseActivityCount: 18,
-          viewed: false,
-          pinned: false,
-          postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03e66-26bc-77fa-b070-ce6ffe07fb7c',
-          snapshotsUrl: '/api/users/recordings/01a03e66-26bc-77fa-b070-ce6ffe07fb7c/snapshots',
-        },
-        {
-          id: '01a03df7-5a26-7631-ac32-1a4015559b49',
-          distinctId: '80',
-          duration: 39,
-          activeSeconds: 15,
-          startTime: new Date(Date.now() - 7200000).toISOString(),
-          endTime: new Date(Date.now() - 7161000).toISOString(),
-          startUrl: 'https://talentbridge.cv/dashboard',
-          clickCount: 4,
-          keypressCount: 12,
-          mouseActivityCount: 45,
-          viewed: true,
-          pinned: false,
-          postHogReplayUrl: 'https://eu.i.posthog.com/project/120100/replay/01a03df7-5a26-7631-ac32-1a4015559b49',
-          snapshotsUrl: '/api/users/recordings/01a03df7-5a26-7631-ac32-1a4015559b49/snapshots',
-        },
-      ],
-    };
+    // No mock fallback on error: an empty/failed fetch should surface as "no recordings", not
+    // silently render two fake sessions with made-up-but-plausible IDs.
+    const res: any = await apiClient.get('/users/recordings', { params: { limit, distinctId } });
+    return res || { results: [] };
   },
 
   getRecordingSnapshots: async (recordingId: string) => {

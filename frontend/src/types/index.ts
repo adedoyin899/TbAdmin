@@ -324,6 +324,8 @@ export interface UserOverviewStats {
 export interface SessionRecording {
   id: string;
   distinctId: string;
+  userName?: string | null;
+  userEmail?: string | null;
   duration: number;
   activeSeconds: number;
   startTime: string;

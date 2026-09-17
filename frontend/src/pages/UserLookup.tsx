@@ -1652,7 +1652,7 @@ export const UserLookupPage: React.FC = () => {
             <table style={{ minWidth: 840 }}>
               <thead>
                 <tr>
-                  <th style={{ minWidth: 160 }}>Distinct ID</th>
+                  <th style={{ minWidth: 160 }}>User</th>
                   <th style={{ minWidth: 260 }}>Visited Page / Route</th>
                   <th style={{ minWidth: 100 }}>Duration</th>
                   <th style={{ minWidth: 120 }}>Activity</th>
@@ -1677,11 +1677,20 @@ export const UserLookupPage: React.FC = () => {
                   recordingsList.map(rec => (
                     <tr key={rec.id} className="hover:bg-[var(--panel-2)] transition-colors">
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span className="badge badge-neutral mono-metric" style={{ fontSize: 11 }}>
-                            ID: {rec.distinctId}
+                        <button
+                          type="button"
+                          onClick={() => selectUser(rec.distinctId)}
+                          className="btn-ghost"
+                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          title={`Open this creator's profile (ID: ${rec.distinctId})`}
+                        >
+                          <span style={{ fontWeight: 600, fontSize: 12.5, color: 'var(--accent)' }}>
+                            {rec.userName || `Creator #${rec.distinctId}`}
                           </span>
-                        </div>
+                          <span className="mono-metric" style={{ fontSize: 10.5, color: 'var(--dim)' }}>
+                            {rec.userEmail || `ID: ${rec.distinctId}`}
+                          </span>
+                        </button>
                       </td>
 
                       <td>
