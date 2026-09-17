@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, TrendingDown, Layers, RotateCcw, Mail, Eye,
   User, RefreshCw, Moon, Zap, ArrowRight,
-  Shield, Check, Share2, Target, BookOpen, Bot
+  Shield, Check, Share2, Target, BookOpen, Bot, Bug
 } from 'lucide-react';
 
 
@@ -208,6 +208,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       badge: 'Viewer Leads',
       action: () => {
         navigate('/dashboard/rooms');
+        onClose();
+      },
+    },
+    {
+      id: 'dash-errors',
+      category: 'Dashboards',
+      title: 'Error Monitoring',
+      subtitle: 'Live JS exceptions, stack traces & affected users from PostHog',
+      icon: Bug,
+      color: '#EF4444',
+      badge: 'Live',
+      action: () => {
+        navigate('/dashboard/errors');
         onClose();
       },
     },

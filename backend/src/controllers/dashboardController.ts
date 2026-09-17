@@ -181,3 +181,28 @@ export async function getWebsiteDashboard(req: AuthenticatedRequest, res: Respon
     return sendError(res, error.message || 'Failed to fetch website analytics.', 500);
   }
 }
+
+/**
+ * 7. GET /api/dashboard/errors
+ * Query Params: ?dateRange=30d
+ */
+export async function getErrorMonitoringDashboard(req: AuthenticatedRequest, res: Response) {
+  try {
+    const dateRange = (req.query.dateRange as string) || '30d';
+    const errorData: any = await postHogService.fetchErrorMonitoring(dateRange);
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 5 * 60 * 1000);
+
+    const responsePayload = {
+      ...errorData,
+      cachedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    };
+
+    return sendSuccess(res, responsePayload, 200);
+  } catch (error: any) {
+    logger.error('Error in getErrorMonitoringDashboard:', error);
+    return sendError(res, error.message || 'Failed to fetch error monitoring data.', 500);
+  }
+}

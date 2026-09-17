@@ -19,6 +19,29 @@ const AD_CLICK_ID_PROPS = [
 // tracked separately rather than lumped into AD_CLICK_ID_PROPS.
 const SOCIAL_SHARE_ID_PROPS = ['igshid'];
 
+// PostHog auto-parses the clean referring domain into $referring_domain (per-session) and
+// $initial_referring_domain (person's first-ever touch) — named real platforms instead of a
+// generic "Organic Search & Social" bucket that would otherwise swallow Slack/LinkedIn shares
+// with no UTM tag. Domains our own product/auth redirects through (not a real acquisition
+// signal) are excluded here and treated as direct instead — see classifyAcquisitionChannel.
+const KNOWN_REFERRER_CHANNELS: Record<string, string> = {
+  'linkedin.com': 'LinkedIn', 'www.linkedin.com': 'LinkedIn',
+  'com.slack': 'Slack', 'slack.com': 'Slack',
+  'twitter.com': 'Twitter / X', 'x.com': 'Twitter / X', 't.co': 'Twitter / X',
+  'facebook.com': 'Facebook', 'www.facebook.com': 'Facebook', 'm.facebook.com': 'Facebook',
+  'instagram.com': 'Instagram', 'www.instagram.com': 'Instagram', 'l.instagram.com': 'Instagram',
+  'reddit.com': 'Reddit', 'www.reddit.com': 'Reddit', 'old.reddit.com': 'Reddit',
+  'whatsapp.com': 'WhatsApp', 'wa.me': 'WhatsApp', 'web.whatsapp.com': 'WhatsApp',
+  'telegram.org': 'Telegram', 't.me': 'Telegram',
+  'github.com': 'GitHub',
+  'google.com': 'Organic Search (Google)', 'www.google.com': 'Organic Search (Google)',
+  'bing.com': 'Organic Search (Bing)', 'www.bing.com': 'Organic Search (Bing)',
+  'duckduckgo.com': 'Organic Search (DuckDuckGo)',
+  'yahoo.com': 'Organic Search (Yahoo)',
+};
+// Referring domains that are really our own product/auth flow, not a discovery channel.
+const INTERNAL_REFERRER_DOMAINS = ['talentbridge.cv', 'accounts.google.com'];
+
 // Event/property names this service already reads by name somewhere above. Kept in sync
 // manually with fetchFunnelData / fetchFeatureAdoptionData / fetchRoomsAnalytics / etc. —
 // fetchSchemaHealth() diffs this against PostHog's live definitions so newly-integrated
@@ -29,8 +52,13 @@ const KNOWN_EVENT_NAMES = new Set([
 ]);
 const KNOWN_PROPERTY_NAMES = new Set([
   '$pathname', '$current_url', '$initial_pathname', '$initial_current_url',
-  '$geoip_country_name', '$geoip_country_code', '$geoip_city_name',
+  '$geoip_country_name', '$geoip_country_code', '$geoip_city_name', '$geoip_subdivision_1_name',
   '$device_type', '$referrer', '$initial_referrer', '$browser', '$os', '$search_engine',
+  '$referring_domain', '$initial_referring_domain', '$browser_version', '$os_version',
+  '$device_model', '$el_text',
+  '$prev_pageview_duration', '$prev_pageview_max_scroll_percentage',
+  '$prev_pageview_max_content_percentage', '$prev_pageview_pathname',
+  '$exception_issue_id', '$exception_types', '$exception_values', '$exception_level', '$exception_handled',
   'signup_source', 'email', '$email', 'email_address', 'name', '$name', 'first_name',
   'plan_tier', 'last_active', '$last_seen', 'rooms_created', 'rooms_published',
   'total_events', 'city', 'country', 'country_code',
@@ -300,16 +328,104 @@ class PostHogService {
   }
 
   /**
-   * Classify a person's acquisition channel from real UTM parameters and ad click IDs when
-   * present, falling back to the coarser signup_source/$initial_referrer signal otherwise.
+   * Classify a person's acquisition channel. Explicit UTM/paid/email signals take priority when
+   * present (someone deliberately tagged that traffic); otherwise this falls back to the real
+   * referring domain PostHog already parsed ($referring_domain, or $initial_referring_domain for
+   * a person's first-ever touch), naming the actual platform (LinkedIn, Slack, etc.) instead of
+   * lumping everything unlabelled into "Organic Search & Social". $referring_domain values that
+   * are our own product/auth redirect (talentbridge.cv, Google OAuth) aren't a real discovery
+   * channel, so those fall through to Direct rather than getting misread as "Organic".
+   *
+   * Deliberately does NOT fall back to $search_engine: in this project's real data every person
+   * carrying $search_engine="google" also has initial_referrer "$direct" — PostHog's own
+   * heuristic is mistagging the Google OAuth redirect as a search visit, not detecting a real
+   * Google results-page referral. Trusting it would silently overcount "Organic Search".
    */
   private classifyAcquisitionChannel(props: Record<string, any>): string {
     if (props.mc_cid || props._kx || props.utm_medium === 'email' || props.signup_source === 'email') return 'Email Campaigns';
     if (AD_CLICK_ID_PROPS.some((key) => props[key]) || props.utm_medium === 'cpc' || props.utm_medium === 'paid' || props.signup_source === 'paid_ad') return 'Paid Ads';
     if (props.utm_medium === 'referral' || props.signup_source === 'referral') return 'Creator Referrals';
-    if (props.utm_source || props.utm_medium === 'social' || props.utm_medium === 'organic' || SOCIAL_SHARE_ID_PROPS.some((key) => props[key]) || props.$search_engine || props.signup_source === 'organic' || props.signup_source === 'google') return 'Organic Search & Social';
-    if (props.$initial_referrer === '$direct' || props.signup_source === 'direct') return 'Direct Traffic';
-    return 'Organic Search & Social';
+    if (SOCIAL_SHARE_ID_PROPS.some((key) => props[key])) return 'Instagram';
+
+    const rawDomain = props.$referring_domain || props.$initial_referring_domain;
+    const domain = typeof rawDomain === 'string' ? rawDomain.toLowerCase() : '';
+    if (domain && domain !== '$direct' && !INTERNAL_REFERRER_DOMAINS.some((d) => domain.includes(d))) {
+      const known = KNOWN_REFERRER_CHANNELS[domain];
+      if (known) return known;
+      if (props.utm_source || props.utm_medium === 'social' || props.utm_medium === 'organic') return 'Organic Search & Social';
+      return `Referral (${domain})`;
+    }
+
+    if (props.signup_source === 'organic' || props.signup_source === 'google') return 'Organic Search & Social';
+    return 'Direct Traffic';
+  }
+
+  /**
+   * Event-level counterpart to classifyAcquisitionChannel, for per-pageview/per-room traffic
+   * source breakdowns (fetchRoomsAnalytics, fetchUserRoomInsights, fetchWebsiteAnalytics all
+   * used to each hand-roll their own crude `$referrer.includes('google')` check here, which
+   * misreads the Google OAuth redirect (accounts.google.com) as "Organic Search" the same way
+   * classifyAcquisitionChannel's old version did). Uses $referring_domain — PostHog's own parsed
+   * domain — instead of substring-matching the raw $referrer URL.
+   */
+  private classifyTrafficSource(props: Record<string, any>): string {
+    const rawDomain = props.$referring_domain || props.$initial_referring_domain;
+    const domain = typeof rawDomain === 'string' ? rawDomain.toLowerCase() : '';
+    if (!domain || domain === '$direct' || INTERNAL_REFERRER_DOMAINS.some((d) => domain.includes(d))) {
+      return 'Direct Link';
+    }
+    return KNOWN_REFERRER_CHANNELS[domain] || `Referral (${domain})`;
+  }
+
+  /**
+   * Real per-page dwell time and scroll depth, from PostHog's own pageleave/scroll tracking
+   * ($prev_pageview_duration, $prev_pageview_max_scroll_percentage,
+   * $prev_pageview_max_content_percentage) — captured automatically, but unused until now in
+   * favor of a cruder proxy (average session-recording duration for anyone who visited). These
+   * properties land on the event AFTER a pageview ends (the next pageview, or $pageleave), so
+   * this scans the full unfiltered event list rather than events already scoped to one page,
+   * and matches by $prev_pageview_pathname rather than the carrying event's own pathname.
+   */
+  private computeDwellStats(allEvents: any[], pathPredicate: (path: string) => boolean): {
+    avgDurationSeconds: number;
+    avgScrollDepthPct: number;
+    avgContentDepthPct: number;
+    sampleSize: number;
+  } {
+    let totalDuration = 0;
+    let durationCount = 0;
+    let totalScroll = 0;
+    let scrollCount = 0;
+    let totalContent = 0;
+    let contentCount = 0;
+
+    for (const ev of allEvents) {
+      const path = ev.properties?.$prev_pageview_pathname;
+      if (typeof path !== 'string' || !pathPredicate(path)) continue;
+
+      const duration = ev.properties?.$prev_pageview_duration;
+      if (typeof duration === 'number' && Number.isFinite(duration)) {
+        totalDuration += duration;
+        durationCount++;
+      }
+      const scroll = ev.properties?.$prev_pageview_max_scroll_percentage;
+      if (typeof scroll === 'number' && Number.isFinite(scroll)) {
+        totalScroll += scroll;
+        scrollCount++;
+      }
+      const content = ev.properties?.$prev_pageview_max_content_percentage;
+      if (typeof content === 'number' && Number.isFinite(content)) {
+        totalContent += content;
+        contentCount++;
+      }
+    }
+
+    return {
+      avgDurationSeconds: durationCount > 0 ? totalDuration / durationCount : 0,
+      avgScrollDepthPct: scrollCount > 0 ? Math.round((totalScroll / scrollCount) * 100) : 0,
+      avgContentDepthPct: contentCount > 0 ? Math.round((totalContent / contentCount) * 100) : 0,
+      sampleSize: Math.max(durationCount, scrollCount, contentCount),
+    };
   }
 
   /**
@@ -321,7 +437,15 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(dateRange);
-    const events = await this.fetchEventsInRange(dateFrom);
+    const [events, persons] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchAllPersons(),
+    ]);
+    const personsByDistinctId = new Map<string, any>();
+    for (const p of persons) {
+      const id = String(p.distinct_ids?.[0] || p.id || '');
+      if (id) personsByDistinctId.set(id, p);
+    }
 
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
@@ -332,17 +456,24 @@ class PostHogService {
     // A real funnel gates each stage on distinct users who completed the previous one — counting
     // raw event occurrences (as this used to) lets a single user's many $autocapture events push
     // a later stage's count past an earlier one, producing >100% "conversion".
-    const idsOf = (predicate: (e: any) => boolean) => new Set(filteredEvents.filter(predicate).map(e => e.distinct_id).filter(Boolean));
+    const eventsOf = (predicate: (e: any) => boolean) => filteredEvents.filter(predicate);
+    const idsOf = (evs: any[]) => new Set(evs.map((e) => e.distinct_id).filter(Boolean));
     const intersect = (a: Set<string>, b: Set<string>) => new Set([...a].filter(x => b.has(x)));
 
     // Stages 3-5 key off named product events (public_room_viewed, contact_clicked,
     // user_signed_up) instead of guessing intent from URL patterns / generic autocapture —
     // those events started flowing from the product and are a direct signal of the milestone.
-    const pageviewIds = idsOf(e => e.event === '$pageview');
-    const discoveryIds = idsOf(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard'));
-    const showcaseIds = idsOf(e => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
-    const interactiveIds = idsOf(e => e.event === 'contact_clicked' || e.event === '$autocapture' || e.event === '$rageclick');
-    const identifiedIds = idsOf(e => e.event === 'user_signed_up');
+    const pageviewEvents = eventsOf(e => e.event === '$pageview');
+    const discoveryEvents = eventsOf(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard'));
+    const showcaseEvents = eventsOf(e => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
+    const interactiveEvents = eventsOf(e => e.event === 'contact_clicked' || e.event === '$autocapture' || e.event === '$rageclick');
+    const identifiedEvents = eventsOf(e => e.event === 'user_signed_up');
+
+    const pageviewIds = idsOf(pageviewEvents);
+    const discoveryIds = idsOf(discoveryEvents);
+    const showcaseIds = idsOf(showcaseEvents);
+    const interactiveIds = idsOf(interactiveEvents);
+    const identifiedIds = idsOf(identifiedEvents);
 
     const step1Set = pageviewIds;
     const step2Set = intersect(step1Set, discoveryIds);
@@ -357,12 +488,106 @@ class PostHogService {
     const step5Identified = step5Set.size;
 
     const total = Math.max(1, step1Landing);
+
+    // Real earliest-timestamp-per-user, per qualifying event set — used below to derive an
+    // honest median seconds-between-stages instead of an invented "avgDuration" string.
+    const earliestByUser = (evs: any[]): Map<string, number> => {
+      const map = new Map<string, number>();
+      for (const e of evs) {
+        if (!e.distinct_id) continue;
+        const t = new Date(e.timestamp).getTime();
+        if (!Number.isFinite(t)) continue;
+        const existing = map.get(e.distinct_id);
+        if (existing === undefined || t < existing) map.set(e.distinct_id, t);
+      }
+      return map;
+    };
+    const median = (nums: number[]): number | null => {
+      if (nums.length === 0) return null;
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+    };
+    const medianSecondsBetween = (fromSet: Set<string>, fromEvs: any[], toSet: Set<string>, toEvs: any[]): number | null => {
+      const fromTimes = earliestByUser(fromEvs);
+      const toTimes = earliestByUser(toEvs);
+      const deltas: number[] = [];
+      for (const id of toSet) {
+        if (!fromSet.has(id)) continue;
+        const from = fromTimes.get(id);
+        const to = toTimes.get(id);
+        if (from === undefined || to === undefined) continue;
+        const deltaSec = (to - from) / 1000;
+        if (deltaSec >= 0) deltas.push(deltaSec);
+      }
+      return median(deltas);
+    };
+    const formatDuration = (seconds: number | null): string | null => {
+      if (seconds === null) return null;
+      const s = Math.round(seconds);
+      if (s < 60) return `${s}s`;
+      if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+      return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+    };
+
+    // Real device split for the users who reached this stage (not a fixed guessed percentage).
+    const deviceBreakdownFor = (evs: any[], idSet: Set<string>) => {
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const e of evs) {
+        if (!idSet.has(e.distinct_id)) continue;
+        const dev = e.properties?.$device_type || 'Unknown';
+        counts[dev] = (counts[dev] || 0) + 1;
+        total++;
+      }
+      return Object.entries(counts)
+        .map(([name, count]) => ({ name, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
+        .sort((a, b) => b.percentage - a.percentage);
+    };
+
+    // Real sample of the actual people who reached this stage, resolved against PostHog's
+    // person records — replaces a previously hardcoded, identical-across-every-stage fake list.
+    const sampleUsersFor = (idSet: Set<string>, evs: any[]) => {
+      const lastSeenById = new Map<string, string>();
+      for (const e of evs) {
+        if (!idSet.has(e.distinct_id)) continue;
+        const prev = lastSeenById.get(e.distinct_id);
+        if (!prev || new Date(e.timestamp).getTime() > new Date(prev).getTime()) lastSeenById.set(e.distinct_id, e.timestamp);
+      }
+      return Array.from(idSet).slice(0, 5).map((distinctId) => {
+        const person = personsByDistinctId.get(distinctId);
+        const props = person?.properties || {};
+        const name = props.name || props.$name || `Creator #${distinctId}`;
+        const email = props.email || props.$email || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
+        const country = props.$geoip_country_name || props.country || 'Unknown';
+        const source = this.classifyAcquisitionChannel(props);
+        return { userId: distinctId, name, email, country, source, lastSeen: lastSeenById.get(distinctId) || person?.created_at || new Date().toISOString() };
+      });
+    };
+
+    const buildDetail = (idSet: Set<string>, evs: any[], prevSet: Set<string> | null, prevEvs: any[], prevCount: number, curCount: number) => {
+      const dropOffCount = Math.max(0, prevCount - curCount);
+      const dropOffPct = calculateDropOff(prevCount, curCount);
+      const durationSeconds = prevSet ? medianSecondsBetween(prevSet, prevEvs, idSet, evs) : null;
+      return {
+        deviceBreakdown: deviceBreakdownFor(evs, idSet),
+        medianDurationSeconds: durationSeconds,
+        medianDurationLabel: formatDuration(durationSeconds),
+        dropOffSummary: prevSet === null
+          ? 'Entry stage — nothing to compare against.'
+          : prevCount > 0
+            ? `${dropOffPct}% of the previous stage's creators (${dropOffCount} of ${prevCount}) did not reach this stage.`
+            : 'No prior-stage cohort to compare against yet.',
+        sampleUsers: sampleUsersFor(idSet, evs),
+      };
+    };
+
     const stages = [
-      { stage: '1. Landing & Pageview', count: step1Landing, percentage: 100, dropOff: 0 },
-      { stage: '2. Directory & App Navigation', count: step2Discovery, percentage: calculateConversionRate(total, step2Discovery), dropOff: calculateDropOff(step1Landing, step2Discovery) },
-      { stage: '3. Showcase Room Inspection', count: step3Showcase, percentage: calculateConversionRate(total, step3Showcase), dropOff: calculateDropOff(step2Discovery, step3Showcase) },
-      { stage: '4. Interactive Telemetry Actions', count: step4Interactive, percentage: calculateConversionRate(total, step4Interactive), dropOff: calculateDropOff(step3Showcase, step4Interactive) },
-      { stage: '5. Identified Creator Accounts', count: step5Identified, percentage: calculateConversionRate(total, step5Identified), dropOff: calculateDropOff(step4Interactive, step5Identified) },
+      { stage: '1. Landing & Pageview', count: step1Landing, percentage: 100, dropOff: 0, detail: buildDetail(step1Set, pageviewEvents, null, [], 0, step1Landing) },
+      { stage: '2. Directory & App Navigation', count: step2Discovery, percentage: calculateConversionRate(total, step2Discovery), dropOff: calculateDropOff(step1Landing, step2Discovery), detail: buildDetail(step2Set, discoveryEvents, step1Set, pageviewEvents, step1Landing, step2Discovery) },
+      { stage: '3. Showcase Room Inspection', count: step3Showcase, percentage: calculateConversionRate(total, step3Showcase), dropOff: calculateDropOff(step2Discovery, step3Showcase), detail: buildDetail(step3Set, showcaseEvents, step2Set, discoveryEvents, step2Discovery, step3Showcase) },
+      { stage: '4. Interactive Telemetry Actions', count: step4Interactive, percentage: calculateConversionRate(total, step4Interactive), dropOff: calculateDropOff(step3Showcase, step4Interactive), detail: buildDetail(step4Set, interactiveEvents, step3Set, showcaseEvents, step3Showcase, step4Interactive) },
+      { stage: '5. Identified Creator Accounts', count: step5Identified, percentage: calculateConversionRate(total, step5Identified), dropOff: calculateDropOff(step4Interactive, step5Identified), detail: buildDetail(step5Set, identifiedEvents, step4Set, interactiveEvents, step4Interactive, step5Identified) },
     ];
 
     const result = {
@@ -671,6 +896,9 @@ class PostHogService {
     views: number;
     uniqueViews: number;
     engagement: number;
+    // $rageclick is a frustration signal (repeated clicking on something that isn't responding),
+    // not positive engagement — tracked separately so it can't inflate `engagement`.
+    rageClicks: number;
     publishedUrl: string;
     country: string;
     countryCode: string;
@@ -701,6 +929,7 @@ class PostHogService {
       views: number;
       uniqueVisitors: Set<string>;
       clicks: number;
+      rageClicks: number;
       distinctId: string;
       country: string;
       code: string;
@@ -718,8 +947,8 @@ class PostHogService {
       const meta = roomMetaByPath.get(p);
       const key = meta?.roomId ? `room:${meta.roomId}` : `path:${p}`;
       const distinctId = ev.distinct_id || 'unknown';
-      const country = ev.properties?.$geoip_country_name || 'United Kingdom';
-      const code = ev.properties?.$geoip_country_code || 'GB';
+      const country = ev.properties?.$geoip_country_name || 'Unknown';
+      const code = ev.properties?.$geoip_country_code || '';
       const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
 
       if (!roomMap.has(key)) {
@@ -729,6 +958,7 @@ class PostHogService {
           views: 0,
           uniqueVisitors: new Set(),
           clicks: 0,
+          rageClicks: 0,
           distinctId,
           country,
           code,
@@ -745,7 +975,8 @@ class PostHogService {
       const item = roomMap.get(key)!;
       item.views++;
       item.uniqueVisitors.add(distinctId);
-      if (ev.event === '$autocapture' || ev.event === '$rageclick') item.clicks++;
+      if (ev.event === '$autocapture') item.clicks++;
+      if (ev.event === '$rageclick') item.rageClicks++;
       const evMs = new Date(ev.timestamp).getTime();
       if (Number.isFinite(evMs)) {
         if (evMs < new Date(item.firstSeenAt).getTime()) item.firstSeenAt = ev.timestamp;
@@ -791,6 +1022,7 @@ class PostHogService {
         views: data.views,
         uniqueViews: data.uniqueVisitors.size,
         engagement: engagementPct,
+        rageClicks: data.rageClicks,
         publishedUrl: data.url,
         country: data.country,
         countryCode: data.code,
@@ -850,13 +1082,18 @@ class PostHogService {
     const avgTimeSpentDelta = Math.round(avgDurationOf(laterRoomRecordings) - avgDurationOf(earlierRoomRecordings));
     const avgTimeSpentChange = roomRecordings.length > 0 ? `${avgTimeSpentDelta >= 0 ? '+' : ''}${avgTimeSpentDelta}s` : 'N/A';
 
+    // Real scroll/content depth from PostHog's own pageleave tracking, previously unused —
+    // avgTimeSpent above is session-recording-derived; this is precise per-pageview data.
+    const isRoomPath = (p: string) => p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory') || p.includes('/dashboard');
+    const dwellStats = this.computeDwellStats(events, isRoomPath);
+
     const topPerformingRooms = this.buildRoomSummaries(roomEvents, personsByDistinctId);
 
     // Compute Geo Traffic
     const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
     for (const ev of roomEvents) {
-      const country = ev.properties?.$geoip_country_name || 'United Kingdom';
-      const code = ev.properties?.$geoip_country_code || 'GB';
+      const country = ev.properties?.$geoip_country_name || 'Unknown';
+      const code = ev.properties?.$geoip_country_code || '';
       const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : '🌍';
       if (!geoCounts[country]) geoCounts[country] = { count: 0, code, flag };
       geoCounts[country].count++;
@@ -888,20 +1125,16 @@ class PostHogService {
       { name: 'Tablet (iPad)', value: Math.round((deviceCounts.Tablet / totalGeoEvents) * 100), color: '#0F766E' },
     ];
 
-    // Compute Traffic Sources
-    const sourceCounts: Record<string, number> = { 'Direct Link': 0, 'Organic Search': 0, 'Referral': 0 };
+    // Compute Traffic Sources — named real platforms (LinkedIn/Slack/etc.), not a 3-bucket guess.
+    const sourceCounts: Record<string, number> = {};
     for (const ev of roomEvents) {
-      const ref = ev.properties?.$referrer || ev.properties?.$initial_referrer || '$direct';
-      if (ref.includes('google')) sourceCounts['Organic Search']++;
-      else if (ref === '$direct' || ref === 'talentbridge.cv') sourceCounts['Direct Link']++;
-      else sourceCounts['Referral']++;
+      const source = this.classifyTrafficSource(ev.properties || {});
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
     }
 
-    const trafficSources = Object.entries(sourceCounts).map(([name, count]) => ({
-      name,
-      count,
-      percentage: Math.round((count / totalGeoEvents) * 100),
-    }));
+    const trafficSources = Object.entries(sourceCounts)
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalGeoEvents) * 100) }))
+      .sort((a, b) => b.count - a.count);
 
     // Real engagement heatmap: bucket actual pageview timestamps by weekday + hour range,
     // instead of a formula that fabricated a plausible-looking pattern.
@@ -1000,6 +1233,8 @@ class PostHogService {
         uniqueViews: { count: uniqueViewsCount, change: uniqueViewsChange },
         avgTimeSpent: { value: avgTimeSpentStr, change: avgTimeSpentChange },
         engagementQuality: { percentage: roomEvents.length > 0 ? Math.round((roomEvents.filter(e => e.event === '$autocapture').length / roomEvents.length) * 100) : 0, change: engagementQualityChange },
+        avgScrollDepth: dwellStats.avgScrollDepthPct,
+        avgContentDepth: dwellStats.avgContentDepthPct,
       },
       viewsTrend,
       trafficSources,
@@ -1093,19 +1328,20 @@ class PostHogService {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, d]) => ({ month: date, totalViews: d.total, uniqueViews: d.unique.size }));
 
-      const sourceCounts: Record<string, number> = { 'Direct Link': 0, 'Organic Search': 0, Referral: 0 };
+      const sourceCounts: Record<string, number> = {};
       for (const ev of roomOwnEvents) {
-        const ref = ev.properties?.$referrer || ev.properties?.$initial_referrer || '$direct';
-        if (ref.includes('google')) sourceCounts['Organic Search']++;
-        else if (ref === '$direct' || ref === 'talentbridge.cv') sourceCounts['Direct Link']++;
-        else sourceCounts.Referral++;
+        const source = this.classifyTrafficSource(ev.properties || {});
+        sourceCounts[source] = (sourceCounts[source] || 0) + 1;
       }
-      const trafficSources = Object.entries(sourceCounts).map(([name, count]) => ({
-        name,
-        count,
-        percentage: Math.round((count / totalRoomEvents) * 100),
-        color: name === 'Direct Link' ? '#0D9488' : name === 'Organic Search' ? '#2DD4BF' : '#3B82F6',
-      }));
+      const TRAFFIC_SOURCE_PALETTE = ['#0D9488', '#2DD4BF', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#10B981'];
+      const trafficSources = Object.entries(sourceCounts)
+        .sort(([, a], [, b]) => b - a)
+        .map(([name, count], idx) => ({
+          name,
+          count,
+          percentage: Math.round((count / totalRoomEvents) * 100),
+          color: name === 'Direct Link' ? '#0D9488' : TRAFFIC_SOURCE_PALETTE[idx % TRAFFIC_SOURCE_PALETTE.length],
+        }));
 
       const deviceCounts: Record<string, number> = { Desktop: 0, Mobile: 0, Tablet: 0 };
       for (const ev of roomOwnEvents) {
@@ -1298,14 +1534,13 @@ class PostHogService {
       .sort((a, b) => b.views - a.views)
       .slice(0, 10);
 
-    // Traffic sources, sitewide
-    const sourceCounts: Record<string, number> = { Direct: 0, 'Organic Search': 0, Social: 0, Referral: 0 };
+    // Traffic sources, sitewide — named real platforms via PostHog's parsed $referring_domain,
+    // not a substring-matched guess (the old regex here also misread the Google OAuth redirect
+    // as "Organic Search" — see classifyTrafficSource).
+    const sourceCounts: Record<string, number> = {};
     for (const ev of scopedEvents) {
-      const ref = ev.properties?.$referrer || ev.properties?.$initial_referrer || '$direct';
-      if (ref === '$direct' || ref === 'talentbridge.cv') sourceCounts['Direct']++;
-      else if (/google|bing|duckduckgo/i.test(ref)) sourceCounts['Organic Search']++;
-      else if (/linkedin|twitter|x\.com|facebook|reddit|instagram/i.test(ref)) sourceCounts['Social']++;
-      else sourceCounts['Referral']++;
+      const source = this.classifyTrafficSource(ev.properties || {});
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
     }
     const totalSourceEvents = Math.max(1, scopedEvents.length);
     const trafficSources = Object.entries(sourceCounts)
@@ -1313,45 +1548,99 @@ class PostHogService {
       .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalSourceEvents) * 100) }))
       .sort((a, b) => b.count - a.count);
 
-    // Devices, browsers, OS — sitewide
+    // Devices, browsers, OS — sitewide. $browser_version/$os_version are populated on
+    // essentially every event in this dataset (confirmed against live samples), so each
+    // browser/OS entry also carries its single most common version string — real granularity
+    // PostHog itself shows that this dashboard didn't surface before.
     const deviceCounts: Record<string, number> = {};
     const browserCounts: Record<string, number> = {};
+    const browserVersionCounts: Record<string, Record<string, number>> = {};
     const osCounts: Record<string, number> = {};
+    const osVersionCounts: Record<string, Record<string, number>> = {};
     for (const ev of scopedEvents) {
       const dev = ev.properties?.$device_type || 'Desktop';
       deviceCounts[dev] = (deviceCounts[dev] || 0) + 1;
       const browser = ev.properties?.$browser || 'Unknown';
       browserCounts[browser] = (browserCounts[browser] || 0) + 1;
+      const browserVersion = ev.properties?.$browser_version;
+      if (browserVersion !== undefined && browserVersion !== null) {
+        const v = String(browserVersion);
+        (browserVersionCounts[browser] ||= {})[v] = (browserVersionCounts[browser][v] || 0) + 1;
+      }
       const os = ev.properties?.$os || 'Unknown';
       osCounts[os] = (osCounts[os] || 0) + 1;
+      const osVersion = ev.properties?.$os_version;
+      if (osVersion !== undefined && osVersion !== null) {
+        const v = String(osVersion);
+        (osVersionCounts[os] ||= {})[v] = (osVersionCounts[os][v] || 0) + 1;
+      }
     }
+    const topVersionOf = (counts: Record<string, number> | undefined): string | null => {
+      if (!counts) return null;
+      const entries = Object.entries(counts);
+      if (entries.length === 0) return null;
+      return entries.sort((a, b) => b[1] - a[1])[0][0];
+    };
     const totalDeviceEvents = Math.max(1, scopedEvents.length);
     const devices = Object.entries(deviceCounts)
       .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
       .sort((a, b) => b.count - a.count);
     const browsers = Object.entries(browserCounts)
-      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100), topVersion: topVersionOf(browserVersionCounts[name]) }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
     const operatingSystems = Object.entries(osCounts)
-      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100) }))
+      .map(([name, count]) => ({ name, count, percentage: Math.round((count / totalDeviceEvents) * 100), topVersion: topVersionOf(osVersionCounts[name]) }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
 
-    // Geo, sitewide
+    // Geo, sitewide — country level
     const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
+    // Geo, sitewide — city/region level ($geoip_city_name + $geoip_subdivision_1_name), a finer
+    // breakdown than country alone that this dashboard didn't expose before.
+    const cityCounts: Record<string, { count: number; city: string; region: string; country: string }> = {};
     for (const ev of scopedEvents) {
       const country = ev.properties?.$geoip_country_name || 'Unknown';
       const code = ev.properties?.$geoip_country_code || '';
       const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : code === 'IT' ? '🇮🇹' : code === 'GH' ? '🇬🇭' : code === 'IN' ? '🇮🇳' : '🌍';
       if (!geoCounts[country]) geoCounts[country] = { count: 0, code, flag };
       geoCounts[country].count++;
+
+      const city = ev.properties?.$geoip_city_name;
+      if (city) {
+        const region = ev.properties?.$geoip_subdivision_1_name || '';
+        const key = `${city}|${region}|${country}`;
+        if (!cityCounts[key]) cityCounts[key] = { count: 0, city, region, country };
+        cityCounts[key].count++;
+      }
     }
     const totalGeoEvents = Math.max(1, scopedEvents.length);
     const geoTraffic = Object.entries(geoCounts)
       .map(([country, data]) => ({ country, code: data.code, flag: data.flag, views: data.count, percentage: Math.round((data.count / totalGeoEvents) * 100) }))
       .sort((a, b) => b.views - a.views)
       .slice(0, 8);
+    const topCities = Object.values(cityCounts)
+      .map((data) => ({ city: data.city, region: data.region, country: data.country, views: data.count, percentage: Math.round((data.count / totalGeoEvents) * 100) }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    // Top click actions — $el_text is the real, human-readable label of whatever element a
+    // visitor clicked (from $autocapture), previously never surfaced anywhere in this app. This
+    // is the same signal that caught the live "Contacthh" button-label typo on production.
+    const actionCounts: Record<string, { count: number; urls: Set<string> }> = {};
+    for (const ev of scopedEvents) {
+      if (ev.event !== '$autocapture') continue;
+      const text = (ev.properties?.$el_text || '').trim();
+      if (!text) continue;
+      if (!actionCounts[text]) actionCounts[text] = { count: 0, urls: new Set() };
+      actionCounts[text].count++;
+      const path = ev.properties?.$pathname;
+      if (path) actionCounts[text].urls.add(path);
+    }
+    const topActions = Object.entries(actionCounts)
+      .map(([text, data]) => ({ text, count: data.count, urls: Array.from(data.urls).slice(0, 3) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
 
     // Daily pageviews trend — real buckets from actual event timestamps
     const dayMap = new Map<string, { total: number; unique: Set<string> }>();
@@ -1386,6 +1675,14 @@ class PostHogService {
       ? Math.round((singlePageVisitors / visitorPageviewCounts.size) * 100)
       : 0;
 
+    // Real per-page dwell time + scroll depth from PostHog's own pageleave tracking — a
+    // page-level complement to the session-level avgSessionDuration above, previously unused.
+    const dwellStats = this.computeDwellStats(scopedEvents, () => true);
+    const avgPageDwellSeconds = Math.round(dwellStats.avgDurationSeconds);
+    const avgPageDwellTime = avgPageDwellSeconds >= 60
+      ? `${Math.floor(avgPageDwellSeconds / 60)}m ${avgPageDwellSeconds % 60}s`
+      : `${avgPageDwellSeconds}s`;
+
     const result = {
       dateRange,
       postHogConnected: this.hasApiKey,
@@ -1395,6 +1692,9 @@ class PostHogService {
         totalSessions,
         avgSessionDuration,
         bounceRate,
+        avgPageDwellTime,
+        avgScrollDepth: dwellStats.avgScrollDepthPct,
+        avgContentDepth: dwellStats.avgContentDepthPct,
       },
       pageviewsTrend,
       topPages,
@@ -1403,6 +1703,120 @@ class PostHogService {
       browsers,
       operatingSystems,
       geoTraffic,
+      topCities,
+      topActions,
+      cachedAt: new Date().toISOString(),
+    };
+
+    await cacheService.set(cacheKey, result, ttl);
+    return result;
+  }
+
+  /**
+   * 3c. Error Monitoring — real JS exception tracking ($exception events, captured
+   * automatically by the PostHog SDK) that nothing in this app surfaced before. Groups by
+   * $exception_issue_id (PostHog's own de-dupe fingerprint) so the same crash hit repeatedly
+   * shows as one issue with an occurrence count, not N separate rows.
+   */
+  async fetchErrorMonitoring(dateRange = '30d', ttl = 300) {
+    const cacheKey = `error_monitoring:${dateRange}`;
+    const cached = await cacheService.get(cacheKey);
+    if (cached) return cached;
+
+    const { dateFrom } = parseDateRange(dateRange);
+    const [events, persons] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchAllPersons(),
+    ]);
+
+    const personByDistinctId = new Map<string, any>();
+    for (const p of persons) {
+      const id = String(p.distinct_ids?.[0] || p.id || '');
+      if (id) personByDistinctId.set(id, p);
+    }
+
+    const exceptions = events.filter((e: any) => e.event === '$exception');
+
+    const issues = new Map<string, {
+      issueId: string;
+      type: string;
+      message: string;
+      level: string;
+      handled: boolean;
+      count: number;
+      firstSeen: string;
+      lastSeen: string;
+      urls: Set<string>;
+      browsers: Set<string>;
+      affectedUsers: Set<string>;
+    }>();
+
+    for (const ev of exceptions) {
+      const props = ev.properties || {};
+      const issueId = props.$exception_issue_id || `${props.$exception_types?.[0] || 'Error'}:${props.$exception_values?.[0] || ''}`;
+      const type = props.$exception_types?.[0] || 'Error';
+      const message = props.$exception_values?.[0] || 'No message';
+      const url = props.$current_url || props.$pathname || '';
+      const browser = [props.$browser, props.$os].filter(Boolean).join(' / ');
+      const distinctId = String(ev.distinct_id || '');
+
+      if (!issues.has(issueId)) {
+        issues.set(issueId, {
+          issueId,
+          type,
+          message,
+          level: props.$exception_level || 'error',
+          handled: Boolean(props.$exception_handled),
+          count: 0,
+          firstSeen: ev.timestamp,
+          lastSeen: ev.timestamp,
+          urls: new Set(),
+          browsers: new Set(),
+          affectedUsers: new Set(),
+        });
+      }
+
+      const issue = issues.get(issueId)!;
+      issue.count++;
+      if (url) issue.urls.add(url);
+      if (browser) issue.browsers.add(browser);
+      if (distinctId) issue.affectedUsers.add(distinctId);
+      const evMs = new Date(ev.timestamp).getTime();
+      if (Number.isFinite(evMs)) {
+        if (evMs < new Date(issue.firstSeen).getTime()) issue.firstSeen = ev.timestamp;
+        if (evMs > new Date(issue.lastSeen).getTime()) issue.lastSeen = ev.timestamp;
+      }
+    }
+
+    const issueList = Array.from(issues.values())
+      .map((issue) => ({
+        issueId: issue.issueId,
+        type: issue.type,
+        message: issue.message,
+        level: issue.level,
+        handled: issue.handled,
+        occurrences: issue.count,
+        firstSeen: issue.firstSeen,
+        lastSeen: issue.lastSeen,
+        urls: Array.from(issue.urls).slice(0, 5),
+        browsers: Array.from(issue.browsers).slice(0, 5),
+        affectedUsers: Array.from(issue.affectedUsers).map((id) => {
+          const p = personByDistinctId.get(id);
+          const props = p?.properties || {};
+          return {
+            distinctId: id,
+            name: props.name || props.$name || null,
+            email: props.email || props.$email || null,
+          };
+        }),
+      }))
+      .sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
+
+    const result = {
+      dateRange,
+      totalExceptions: exceptions.length,
+      unhandledCount: exceptions.filter((e: any) => e.properties?.$exception_handled === false).length,
+      issues: issueList,
       cachedAt: new Date().toISOString(),
     };
 
@@ -1429,8 +1843,8 @@ class PostHogService {
             const rawEmail = props.email || props.$email || props.email_address || '';
             const rawName = props.name || props.$name || props.first_name || '';
             const city = props.$geoip_city_name || props.city || '';
-            const country = props.$geoip_country_name || props.country || 'United Kingdom';
-            const countryCode = props.$geoip_country_code || props.country_code || 'GB';
+            const country = props.$geoip_country_name || props.country || 'Unknown';
+            const countryCode = props.$geoip_country_code || props.country_code || '';
             const initialPath = props.$initial_pathname || props.$pathname || '/';
 
             const firstName = rawName.split(' ')[0] || (rawEmail ? rawEmail.split('@')[0] : `Creator ${distinctId}`);
@@ -1447,16 +1861,19 @@ class PostHogService {
               country: country,
               countryCode: countryCode,
               city: city,
-              browser: props.$browser || 'Chrome',
-              os: props.$os || 'macOS',
-              deviceType: props.$device_type || 'Desktop',
+              browser: props.$browser || 'Unknown',
+              os: props.$os || 'Unknown',
+              deviceType: props.$device_type || 'Unknown',
               initialUrl: props.$initial_current_url || props.$current_url || 'https://talentbridge.cv/',
               initialReferrer: props.$initial_referrer || props.$referrer || '$direct',
               initialPath: initialPath,
-              signupSource: props.signup_source || (props.$initial_referrer === '$direct' ? 'direct' : 'organic'),
-              planTier: props.plan_tier || 'pro',
+              signupSource: props.signup_source || this.classifyAcquisitionChannel(props),
+              planTier: props.plan_tier || 'Unknown',
               lastActive: props.last_active || props.$last_seen || p.created_at || new Date().toISOString(),
-              totalEvents: p.properties?.total_events || p.distinct_ids?.length || 1,
+              // total_events isn't a real PostHog property here, and distinct_ids.length is a
+              // merge-count, not an event count — neither is a trustworthy proxy, so this is left
+              // unset rather than guessed. The profile view (fetchUserProfile) reports a real count.
+              totalEvents: p.properties?.total_events ?? undefined,
             };
           });
 
@@ -1540,8 +1957,8 @@ class PostHogService {
           const rawEmail = rawProps.email || rawProps.$email || rawProps.email_address || '';
           const rawName = rawProps.name || rawProps.$name || rawProps.first_name || '';
           const city = rawProps.$geoip_city_name || rawProps.city || '';
-          const country = rawProps.$geoip_country_name || rawProps.country || 'United Kingdom';
-          const countryCode = rawProps.$geoip_country_code || rawProps.country_code || 'GB';
+          const country = rawProps.$geoip_country_name || rawProps.country || 'Unknown';
+          const countryCode = rawProps.$geoip_country_code || rawProps.country_code || '';
 
           const firstName = rawName.split(' ')[0] || (rawEmail ? rawEmail.split('@')[0] : `Creator ${distinctId}`);
           const lastName = rawName.split(' ')[1] || '';
@@ -1558,17 +1975,20 @@ class PostHogService {
               country: country,
               countryCode: countryCode,
               city: city,
-              browser: rawProps.$browser || 'Chrome',
-              os: rawProps.$os || 'macOS',
-              deviceType: rawProps.$device_type || 'Desktop',
+              browser: rawProps.$browser || 'Unknown',
+              os: rawProps.$os || 'Unknown',
+              deviceType: rawProps.$device_type || 'Unknown',
               initialUrl: rawProps.$initial_current_url || rawProps.$current_url || 'https://talentbridge.cv/',
               initialReferrer: rawProps.$initial_referrer || rawProps.$referrer || '$direct',
-              signupSource: rawProps.signup_source || (rawProps.$initial_referrer === '$direct' ? 'direct' : 'organic'),
-              planTier: rawProps.plan_tier || 'pro',
+              signupSource: rawProps.signup_source || this.classifyAcquisitionChannel(rawProps),
+              planTier: rawProps.plan_tier || 'Unknown',
               lastActive: rawProps.last_active || rawProps.$last_seen || (liveEvents[0]?.timestamp || p.created_at || new Date().toISOString()),
-              roomsCreated: rawProps.rooms_created || 1,
-              roomsPublished: rawProps.rooms_published || 1,
-              totalEvents: liveEvents.length || 1,
+              // PostHog doesn't track room creation as an event (confirmed: no room_created/
+              // block_added event exists), so these only reflect an explicit person property if
+              // the product side ever sets one — never a guessed "at least 1".
+              roomsCreated: rawProps.rooms_created ?? undefined,
+              roomsPublished: rawProps.rooms_published ?? undefined,
+              totalEvents: liveEvents.length,
             },
             properties: rawProps,
             distinctIds: p.distinct_ids || [userId],
@@ -1639,14 +2059,10 @@ class PostHogService {
       return lastActive >= horizonCutoff;
     });
 
-    // Compute Channels from real PostHog persons
-    const channelCounts: Record<string, number> = {
-      'Organic Search & Social': 0,
-      'Direct Traffic': 0,
-      'Creator Referrals': 0,
-      'Email Campaigns': 0,
-      'Paid Ads': 0,
-    };
+    // Compute Channels from real PostHog persons — dynamic buckets (named platforms like
+    // "LinkedIn"/"Slack" show up on their own; see classifyAcquisitionChannel) rather than a
+    // fixed 5-bucket dict that would hide any channel it didn't already know the name of.
+    const channelCounts: Record<string, number> = {};
 
     const geoCounts: Record<string, { count: number; code: string; flag: string }> = {};
     const browserCounts: Record<string, number> = {};
@@ -1657,23 +2073,24 @@ class PostHogService {
 
     for (const p of personsToAggregate) {
       const props = p.properties || {};
-      channelCounts[this.classifyAcquisitionChannel(props)]++;
+      const channel = this.classifyAcquisitionChannel(props);
+      channelCounts[channel] = (channelCounts[channel] || 0) + 1;
 
-      const country = props.$geoip_country_name || props.country || 'United Kingdom';
-      const code = props.$geoip_country_code || props.country_code || 'GB';
+      const country = props.$geoip_country_name || props.country || 'Unknown';
+      const code = props.$geoip_country_code || props.country_code || '';
       const flag = code === 'GB' ? '🇬🇧' : code === 'NG' ? '🇳🇬' : code === 'US' ? '🇺🇸' : code === 'IT' ? '🇮🇹' : code === 'GH' ? '🇬🇭' : code === 'IN' ? '🇮🇳' : '🌍';
 
       if (!geoCounts[country]) geoCounts[country] = { count: 0, code, flag };
       geoCounts[country].count++;
 
-      const browser = props.$browser || 'Chrome';
+      const browser = props.$browser || 'Unknown';
       browserCounts[browser] = (browserCounts[browser] || 0) + 1;
 
-      const os = props.$os || 'macOS';
+      const os = props.$os || 'Unknown';
       osCounts[os] = (osCounts[os] || 0) + 1;
 
-      const initialUrl = props.$initial_current_url || props.$current_url || 'https://talentbridge.cv/';
-      topUrls[initialUrl] = (topUrls[initialUrl] || 0) + 1;
+      const initialUrl = props.$initial_current_url || props.$current_url || '';
+      if (initialUrl) topUrls[initialUrl] = (topUrls[initialUrl] || 0) + 1;
     }
 
     // Build Acquisition breakdown
@@ -1684,7 +2101,8 @@ class PostHogService {
         name,
         count: String(count),
         percentage: Math.round((count / totalAggregated) * 100),
-      }));
+      }))
+      .sort((a, b) => Number(b.count) - Number(a.count));
 
     if (acquisitionChannels.length === 0) {
       acquisitionChannels.push(

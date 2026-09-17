@@ -11,6 +11,7 @@ import { RetentionDashboard } from './components/Dashboard/RetentionDashboard';
 import { EmailDashboard } from './components/Dashboard/EmailDashboard';
 import { RoomInsightsDashboard } from './components/Dashboard/RoomInsightsDashboard';
 import { WebsiteAnalyticsDashboard } from './components/Dashboard/WebsiteAnalyticsDashboard';
+import { ErrorMonitoringDashboard } from './components/Dashboard/ErrorMonitoringDashboard';
 
 import { SocialMediaOverview } from './components/SocialMedia/SocialMediaOverview';
 import { LinkedInDetailedView } from './components/SocialMedia/LinkedInDetailedView';
@@ -210,6 +211,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Layout><RoomInsightsDashboard /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/errors"
+                element={
+                  <ProtectedRoute>
+                    <Layout><ErrorMonitoringDashboard /></Layout>
                   </ProtectedRoute>
                 }
               />

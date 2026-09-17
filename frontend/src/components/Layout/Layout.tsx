@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
   ChevronsUpDown, Share2, Target, Globe,
-  ChevronDown, ChevronUp, BookOpen, HelpCircle, Bot,
+  ChevronDown, ChevronUp, BookOpen, HelpCircle, Bot, Bug,
 } from 'lucide-react';
 import tblogo from '../../assets/tblogo.svg';
 import tbLogolight from '../../assets/tbLogolight.svg';
@@ -32,6 +32,7 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   BookOpen,
   HelpCircle,
   Bot,
+  Bug,
 };
 
 
@@ -99,6 +100,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Directory & Admin',
     items: [
       { path: '/lookup', label: 'User Directory', icon: 'Search' },
+      { path: '/dashboard/errors', label: 'Error Monitoring', icon: 'Bug' },
       { path: '/settings', label: 'Settings & Alerts', icon: 'Settings' },
     ],
   },

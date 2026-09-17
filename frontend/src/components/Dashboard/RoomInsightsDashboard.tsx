@@ -328,7 +328,14 @@ export const RoomInsightsDashboard: React.FC = () => {
                       <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.views)}</td>
                       <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.uniqueViews)}</td>
                       <td>
-                        <span className="badge badge-teal mono-metric">{room.engagement}% quality</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span className="badge badge-teal mono-metric">{room.engagement}% quality</span>
+                          {!!room.rageClicks && (
+                            <span className="badge badge-error mono-metric" title="Repeated clicks on something unresponsive — a friction signal, not counted toward engagement">
+                              {room.rageClicks} rage click{room.rageClicks === 1 ? '' : 's'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <button

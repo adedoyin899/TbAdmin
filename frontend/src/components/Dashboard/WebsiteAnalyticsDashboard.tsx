@@ -263,8 +263,11 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {data.browsers.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>No browser data yet.</p>}
                 {data.browsers.map(b => (
-                  <div key={b.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{b.name}</span>
+                  <div key={b.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
+                    <span style={{ color: 'var(--text)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {b.name}
+                      {b.topVersion && <span className="badge badge-neutral mono-metric" style={{ fontSize: 10, padding: '1px 6px' }}>v{b.topVersion}</span>}
+                    </span>
                     <span className="mono-metric" style={{ color: 'var(--text-2)' }}>{b.count} ({b.percentage}%)</span>
                   </div>
                 ))}
@@ -280,14 +283,41 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {data.operatingSystems.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>No OS data yet.</p>}
                 {data.operatingSystems.map(o => (
-                  <div key={o.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5 }}>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{o.name}</span>
+                  <div key={o.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
+                    <span style={{ color: 'var(--text)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {o.name}
+                      {o.topVersion && <span className="badge badge-neutral mono-metric" style={{ fontSize: 10, padding: '1px 6px' }}>v{o.topVersion}</span>}
+                    </span>
                     <span className="mono-metric" style={{ color: 'var(--text-2)' }}>{o.count} ({o.percentage}%)</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* Top Click Actions — real $el_text from autocapture, e.g. surfaces UI copy typos */}
+          {!!data.topActions?.length && (
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Top Click Actions
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>What visitors actually clicked, by the element's own label — real autocapture text, sitewide</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {data.topActions.map(a => (
+                  <div key={a.text} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                    <div>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>"{a.text}"</span>
+                      {a.urls.length > 0 && (
+                        <span className="mono-metric" style={{ color: 'var(--dim)', fontSize: 11, marginLeft: 8 }}>{a.urls.join(', ')}</span>
+                      )}
+                    </div>
+                    <span className="mono-metric badge badge-teal" style={{ fontSize: 11 }}>{a.count} clicks</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Top Pages Table */}
           <div className="table-wrap">
@@ -330,32 +360,56 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
           </div>
 
           {/* Geo Traffic */}
-          <div className="card-mistral" style={{ padding: '20px 22px' }}>
-            <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-              Geographic Traffic
-            </h3>
-            <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>Where sitewide visitors are located</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Geographic Traffic
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>Where sitewide visitors are located, by country</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {data.geoTraffic.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>No geo data yet.</p>}
-              {data.geoTraffic.map(g => (
-                <div key={g.country}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
-                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{g.flag} {g.country}</span>
-                    <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>{g.views}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {data.geoTraffic.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>No geo data yet.</p>}
+                {data.geoTraffic.map(g => (
+                  <div key={g.country}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
+                      <span style={{ color: 'var(--text)', fontWeight: 500 }}>{g.flag} {g.country}</span>
+                      <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>{g.views}</span>
+                    </div>
+                    <div style={{ height: 12, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${g.percentage}%`,
+                          background: 'linear-gradient(90deg, #14B8A6, #3B82F6)',
+                          borderRadius: 9999,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ height: 12, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
-                    <div
-                      style={{
-                        height: '100%',
-                        width: `${g.percentage}%`,
-                        background: 'linear-gradient(90deg, #14B8A6, #3B82F6)',
-                        borderRadius: 9999,
-                      }}
-                    />
+                ))}
+              </div>
+            </div>
+
+            {/* City/region-level breakdown from $geoip_city_name + $geoip_subdivision_1_name —
+                finer granularity than country alone, previously unused. */}
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+                Top Cities
+              </h3>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>City/region-level GeoIP breakdown, sitewide</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {(!data.topCities || data.topCities.length === 0) && <p style={{ fontSize: 12.5, color: 'var(--dim)' }}>No city-level geo data yet.</p>}
+                {data.topCities?.map(c => (
+                  <div key={`${c.city}-${c.region}-${c.country}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, padding: '4px 0', borderBottom: '1px solid var(--line)' }}>
+                    <div>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{c.city}</span>
+                      <span style={{ color: 'var(--dim)', fontSize: 11, marginLeft: 6 }}>{[c.region, c.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                    <span className="mono-metric" style={{ color: 'var(--text-2)' }}>{c.views} ({c.percentage}%)</span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </>

@@ -9,15 +9,9 @@ const USE_MOCK_ONLY = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 export const dashboardApi = {
   getFunnel: async (dateRange: string = '30d', signupSource: string = 'all') => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/dashboard/funnel', {
-          params: { dateRange, signupSource },
-        });
-        if (res && res.funnel && res.funnel.length > 0) return res;
-      } catch {}
-    }
-    return MOCK_FUNNEL;
+    if (USE_MOCK_ONLY) return MOCK_FUNNEL;
+    const res: any = await apiClient.get('/dashboard/funnel', { params: { dateRange, signupSource } });
+    return res;
   },
 
   getFeatures: async (dateRange: string = '30d') => {
@@ -31,27 +25,19 @@ export const dashboardApi = {
   },
 
   getRetention: async (signupSource: string = 'all') => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/dashboard/retention', {
-          params: { signupSource },
-        });
-        if (res && (res.retention7d || res.trend)) return res;
-      } catch {}
-    }
-    return MOCK_RETENTION;
+    if (USE_MOCK_ONLY) return MOCK_RETENTION;
+    const res: any = await apiClient.get('/dashboard/retention', { params: { signupSource } });
+    return res;
   },
 
   getEmail: async (dateRange: string = '30d') => {
-    if (!USE_MOCK_ONLY) {
-      try {
-        const res: any = await apiClient.get('/dashboard/email', {
-          params: { dateRange },
-        });
-        if (res && res.campaigns && res.campaigns.length > 0) return res;
-      } catch {}
-    }
-    return MOCK_EMAIL;
+    if (USE_MOCK_ONLY) return MOCK_EMAIL;
+    // No mock fallback on error or empty result: MOCK_EMAIL is a full fabricated campaign set
+    // (fake recipients like "Alice Chen"/"Kwame Asante", fake open/click rates, fake HTML
+    // previews) — silently rendering that instead of "no campaigns yet" is exactly the
+    // fabrication pattern removed everywhere else.
+    const res: any = await apiClient.get('/dashboard/email', { params: { dateRange } });
+    return res;
   },
 
   getRoomsDashboard: async (dateRange: string = '30d') => {
@@ -107,5 +93,13 @@ export const dashboardApi = {
       operatingSystems: [],
       geoTraffic: [],
     };
+  },
+
+  getErrors: async (dateRange: string = '30d') => {
+    if (USE_MOCK_ONLY) {
+      return { dateRange, totalExceptions: 0, unhandledCount: 0, issues: [] };
+    }
+    const res: any = await apiClient.get('/dashboard/errors', { params: { dateRange } });
+    return res;
   },
 };

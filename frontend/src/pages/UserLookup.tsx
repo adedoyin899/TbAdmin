@@ -1036,7 +1036,7 @@ const GranularUserProfileView: React.FC<{
             },
             {
               label: 'Browser / OS',
-              value: extUser.browser ? `${extUser.browser} (${extUser.os || 'OS'})` : 'Brave (Win 10)',
+              value: extUser.browser && extUser.browser !== 'Unknown' ? `${extUser.browser} (${extUser.os && extUser.os !== 'Unknown' ? extUser.os : 'OS unknown'})` : 'Unknown',
               icon: <Monitor size={12} color="var(--dim)" />,
             },
             {
@@ -1570,9 +1570,13 @@ export const UserLookupPage: React.FC = () => {
                         </td>
 
                         <td>
-                          <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>
-                            {ext.totalEvents ?? 1} events
-                          </span>
+                          {typeof ext.totalEvents === 'number' ? (
+                            <span className="badge badge-teal mono-metric" style={{ fontSize: 11 }}>
+                              {ext.totalEvents} events
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: 'var(--dim)' }} title="Event count not available in the directory listing — open the profile for a full timeline">—</span>
+                          )}
                         </td>
 
                         <td style={{ fontSize: 12.5, color: 'var(--text-2)' }}>

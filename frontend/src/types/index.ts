@@ -1,9 +1,18 @@
 // ── Dashboard Types ──────────────────────────────────────────
 
+export interface FunnelStageDetail {
+  deviceBreakdown: { name: string; percentage: number }[];
+  medianDurationSeconds: number | null;
+  medianDurationLabel: string | null;
+  dropOffSummary: string;
+  sampleUsers: { userId: string; name: string; email: string; country: string; source: string; lastSeen: string }[];
+}
+
 export interface FunnelStage {
   stage: string;
   count: number;
   percentage: number;
+  detail?: FunnelStageDetail;
 }
 
 export interface Dropoff {
@@ -218,6 +227,7 @@ export interface RoomsDashboardResponse {
     views: number;
     uniqueViews: number;
     engagement: number;
+    rageClicks?: number;
   }[];
 }
 
@@ -230,14 +240,41 @@ export interface WebsiteDashboardResponse {
     totalSessions: number;
     avgSessionDuration: string;
     bounceRate: number;
+    avgPageDwellTime?: string;
+    avgScrollDepth?: number;
+    avgContentDepth?: number;
   };
   pageviewsTrend: { date: string; pageviews: number; uniqueVisitors: number }[];
   topPages: { path: string; views: number; uniqueVisitors: number; percentage: number }[];
   trafficSources: { name: string; count: number; percentage: number }[];
   devices: { name: string; count: number; percentage: number }[];
-  browsers: { name: string; count: number; percentage: number }[];
-  operatingSystems: { name: string; count: number; percentage: number }[];
+  browsers: { name: string; count: number; percentage: number; topVersion?: string | null }[];
+  operatingSystems: { name: string; count: number; percentage: number; topVersion?: string | null }[];
   geoTraffic: { country: string; code: string; flag: string; views: number; percentage: number }[];
+  topCities?: { city: string; region: string; country: string; views: number; percentage: number }[];
+  topActions?: { text: string; count: number; urls: string[] }[];
+}
+
+export interface ErrorIssue {
+  issueId: string;
+  type: string;
+  message: string;
+  level: string;
+  handled: boolean;
+  occurrences: number;
+  firstSeen: string;
+  lastSeen: string;
+  urls: string[];
+  browsers: string[];
+  affectedUsers: { distinctId: string; name: string | null; email: string | null }[];
+}
+
+export interface ErrorMonitoringResponse {
+  dateRange: string;
+  totalExceptions: number;
+  unhandledCount: number;
+  issues: ErrorIssue[];
+  cachedAt?: string;
 }
 
 export interface User {
