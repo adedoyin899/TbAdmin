@@ -6,23 +6,50 @@ import {
 } from 'recharts';
 import {
   Share2, Globe, Mail, Search, Zap, ArrowUpRight, TrendingUp,
-  Linkedin, Twitter, MessageCircle, Hash, Github, Youtube, ShoppingBag,
+  MessageCircle, Hash, ShoppingBag,
   Radio, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Users,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import { formatNumber } from '../../utils/formatters';
 
+const LinkedInSvg = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+const TwitterSvg = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, color }}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const GithubSvg = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+  </svg>
+);
+
+const YoutubeSvg = ({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+    <polygon points="10 15 15 12 10 9 10 15" fill={color} />
+  </svg>
+);
+
 // ── Platform icon resolver ────────────────────────────────────────────────────
 function ChannelIcon({ name, size = 16, color }: { name: string; size?: number; color?: string }) {
   const s = name.toLowerCase();
   const style = { flexShrink: 0, color: color || 'currentColor' };
-  if (s.includes('linkedin')) return <Linkedin size={size} style={style} />;
-  if (s.includes('twitter') || s.includes('x.com') || s === 'twitter / x') return <Twitter size={size} style={style} />;
+  if (s.includes('linkedin')) return <LinkedInSvg size={size} color={color} />;
+  if (s.includes('twitter') || s.includes('x.com') || s === 'twitter / x') return <TwitterSvg size={size} color={color} />;
   if (s.includes('whatsapp')) return <MessageCircle size={size} style={style} />;
   if (s.includes('telegram')) return <Radio size={size} style={style} />;
-  if (s.includes('github')) return <Github size={size} style={style} />;
+  if (s.includes('github')) return <GithubSvg size={size} color={color} />;
   if (s.includes('reddit')) return <Hash size={size} style={style} />;
-  if (s.includes('youtube')) return <Youtube size={size} style={style} />;
+  if (s.includes('youtube')) return <YoutubeSvg size={size} color={color} />;
   if (s.includes('product hunt')) return <ShoppingBag size={size} style={style} />;
   if (s.includes('search')) return <Search size={size} style={style} />;
   if (s.includes('email')) return <Mail size={size} style={style} />;
@@ -110,8 +137,8 @@ function GroupCard({ label, icon, count, percentage, color, channels }: {
 }
 
 // ── Donut legend item ─────────────────────────────────────────────────────────
-function DonutLegendItem({ name, count, percentage, color, total }: {
-  name: string; count: number; percentage: number; color: string; total: number;
+function DonutLegendItem({ name, count, percentage, color }: {
+  name: string; count: number; percentage: number; color: string;
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
@@ -364,9 +391,9 @@ export const ChannelBreakdownDashboard: React.FC = () => {
                       <Tooltip
                         contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow-lg)' }}
                         labelStyle={{ fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora' }}
-                        formatter={(value: number, _: string, entry: any) => [
-                          `${formatNumber(value)} users (${entry?.payload?.percentage ?? 0}%)`, 'Signups',
-                        ]}
+                        formatter={(value: any, _: any, entry: any) => [
+                          `${formatNumber(Number(value || 0))} users (${entry?.payload?.percentage ?? 0}%)`, 'Signups',
+                        ] as [string, string]}
                       />
                       <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={28}>
                         {sortedChannels.map((entry) => (
@@ -404,7 +431,7 @@ export const ChannelBreakdownDashboard: React.FC = () => {
                         </Pie>
                         <Tooltip
                           contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 12 }}
-                          formatter={(value: number, name: string) => [`${formatNumber(value)} users`, name]}
+                          formatter={(value: any, name: any) => [`${formatNumber(Number(value || 0))} users`, String(name || '')] as [string, string]}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -418,7 +445,6 @@ export const ChannelBreakdownDashboard: React.FC = () => {
                           count={ch.count}
                           percentage={ch.percentage}
                           color={ch.color}
-                          total={totalUsers}
                         />
                       ))}
                     </div>

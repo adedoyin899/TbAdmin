@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
-import { Globe, Download, FileText } from 'lucide-react';
+import {
+  Globe, Download, FileText, TrendingUp, Share2, Search, Zap, ArrowUpRight, Mail, Users,
+  MessageCircle, Hash, Radio, ShoppingBag,
+} from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { WebsiteDashboardResponse } from '../../types';
 import { formatNumber, formatDate } from '../../utils/formatters';
@@ -12,6 +15,67 @@ import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelec
 import { exportToCsv } from '../../utils/exportCsv';
 import { useRbac } from '../../utils/rbac';
 
+const LinkedInSvg = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+const TwitterSvg = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, color }}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const GithubSvg = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+  </svg>
+);
+
+const YoutubeSvg = ({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+    <polygon points="10 15 15 12 10 9 10 15" fill={color} />
+  </svg>
+);
+
+// ── Channel color + icon helpers (shared with ChannelBreakdownDashboard) ─────
+const CHANNEL_COLORS: Record<string, string> = {
+  'LinkedIn': '#0A66C2', 'WhatsApp': '#25D366',
+  'Direct Link': '#0D9488', 'Direct Traffic': '#0D9488',
+  'Organic Search (Google)': '#4285F4', 'Organic Search (Bing)': '#00809D',
+  'Organic Search (DuckDuckGo)': '#DE5833', 'Organic Search & Social': '#8B5CF6',
+  'Twitter / X': '#1DA1F2', 'Facebook': '#1877F2', 'Instagram': '#E1306C',
+  'Reddit': '#FF4500', 'Telegram': '#229ED9', 'Slack': '#4A154B',
+  'GitHub': '#6366F1', 'YouTube': '#FF0000', 'TikTok': '#010101',
+  'Product Hunt': '#DA552F', 'Email Campaigns': '#F59E0B',
+  'Paid Ads': '#EC4899', 'Creator Referrals': '#10B981',
+  'Google Ads (Paid)': '#4285F4', 'LinkedIn Ads (Paid)': '#0A66C2',
+};
+const DEFAULT_COLORS = ['#0D9488','#2DD4BF','#3B82F6','#8B5CF6','#F59E0B','#EC4899','#10B981','#FA520F','#6366F1'];
+
+function ChannelIcon({ name, size = 14, color }: { name: string; size?: number; color?: string }) {
+  const s = name.toLowerCase();
+  const st = { flexShrink: 0 as const, color: color || 'currentColor' };
+  if (s.includes('linkedin')) return <LinkedInSvg size={size} color={color} />;
+  if (s.includes('twitter') || s === 'twitter / x') return <TwitterSvg size={size} color={color} />;
+  if (s.includes('whatsapp')) return <MessageCircle size={size} style={st} />;
+  if (s.includes('telegram')) return <Radio size={size} style={st} />;
+  if (s.includes('github')) return <GithubSvg size={size} color={color} />;
+  if (s.includes('reddit')) return <Hash size={size} style={st} />;
+  if (s.includes('youtube')) return <YoutubeSvg size={size} color={color} />;
+  if (s.includes('product hunt')) return <ShoppingBag size={size} style={st} />;
+  if (s.includes('search')) return <Search size={size} style={st} />;
+  if (s.includes('email')) return <Mail size={size} style={st} />;
+  if (s.includes('paid') || s.includes('ads')) return <Zap size={size} style={st} />;
+  if (s.includes('referral') || s.includes('creator')) return <Users size={size} style={st} />;
+  if (s.includes('direct')) return <ArrowUpRight size={size} style={st} />;
+  if (s.includes('social')) return <Share2 size={size} style={st} />;
+  return <Globe size={size} style={st} />;
+}
 export const WebsiteAnalyticsDashboard: React.FC = () => {
   const rbac = useRbac();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
@@ -35,7 +99,20 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
     });
   };
 
-  const hasData = Boolean(data && data.summary && data.summary.totalPageviews > 0);
+  // Show the dashboard if PostHog is connected and has ANY data (persons or events)
+  // Don't require $pageview events — channel/geo/device data from persons is still valuable
+  const hasData = Boolean(
+    data &&
+    data.postHogConnected &&
+    (
+      (data.summary && data.summary.totalPageviews > 0) ||
+      (data.trafficSources && data.trafficSources.length > 0) ||
+      (data.acquisitionChannels && data.acquisitionChannels.length > 0) ||
+      (data.geoTraffic && data.geoTraffic.length > 0) ||
+      (data.devices && data.devices.length > 0)
+    )
+  );
+  const hasPageviewData = Boolean(data && data.summary && data.summary.totalPageviews > 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -93,50 +170,152 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
             Add a valid PostHog API key in Settings to pull live sitewide pageview, traffic, and device telemetry.
           </p>
         </div>
-      ) : data && !hasData ? (
+      ) : data && data.postHogConnected && !hasData ? (
+        // Truly no data at all — show a simple notice
         <div className="card-mistral" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(20, 184, 166, 0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color: 'var(--accent)' }}>
             <FileText size={24} />
           </div>
           <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-            No Pageview Data Yet
+            No Data Yet
           </h3>
           <p style={{ color: 'var(--text-2)', fontSize: 13.5, maxWidth: 480, margin: '0 auto' }}>
-            Connected to PostHog, but no $pageview / $autocapture events have arrived for this date range yet. Confirm the client-side snippet (autocapture + capture_pageview) is installed on talentbridge.cv.
+            Connected to PostHog, but no events or person records have arrived yet. Confirm the client-side snippet is installed on talentbridge.cv.
           </p>
         </div>
       ) : data && hasData && (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-            <div className="stat-card">
-              <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Total Pageviews</p>
-              <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.totalPageviews)}</p>
-            </div>
+          {/* Acquisition Channels — person-based, always available when PostHog is connected */}
+          {((data as any).acquisitionChannels?.length > 0) && (
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                    <TrendingUp size={16} color="var(--accent)" />
+                    <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                      Where Users Are Joining From
+                    </h3>
+                    <span className="badge badge-teal" style={{ fontSize: 10.5 }}>Live · Person-based</span>
+                  </div>
+                  <p style={{ color: 'var(--text-2)', fontSize: 12.5 }}>
+                    Acquisition channels across all {(data as any).acquisitionChannels.reduce((sum: number, c: any) => sum + Number(c.count || 0), 0)} tracked users — from UTM tags, referrer domains &amp; ad click IDs
+                  </p>
+                </div>
+                <a
+                  href="/dashboard/channels"
+                  style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                >
+                  Full breakdown →
+                </a>
+              </div>
 
-            <div className="stat-card">
-              <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Unique Visitors</p>
-              <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.uniqueVisitors)}</p>
-            </div>
+              {/* Donut + bar list side by side */}
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                {/* Mini donut */}
+                <div style={{ flexShrink: 0, width: 160, height: 160 }}>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie
+                        data={(data as any).acquisitionChannels}
+                        dataKey="count"
+                        nameKey="name"
+                        cx="50%" cy="50%"
+                        innerRadius={40} outerRadius={70}
+                        paddingAngle={2}
+                      >
+                        {(data as any).acquisitionChannels.map((ch: any, idx: number) => (
+                          <Cell key={ch.name} fill={ch.color || CHANNEL_COLORS[ch.name] || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]} stroke="var(--panel)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 10 }}
+                        formatter={(v: any, name: any) => [`${formatNumber(Number(v || 0))} users`, String(name || '')] as [string, string]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
 
-            <div className="stat-card">
-              <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Sessions</p>
-              <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.totalSessions)}</p>
+                {/* Channel list */}
+                <div style={{ flex: 1, minWidth: 200, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(data as any).acquisitionChannels.map((ch: any, idx: number) => {
+                    const color = ch.color || CHANNEL_COLORS[ch.name] || DEFAULT_COLORS[idx % DEFAULT_COLORS.length];
+                    return (
+                      <div key={ch.name}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5, alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                            <ChannelIcon name={ch.name} size={13} color={color} />
+                            <span style={{ color: 'var(--text)', fontWeight: 500 }}>{ch.name}</span>
+                          </div>
+                          <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 8 }}>
+                            {formatNumber(Number(ch.count))} ({ch.percentage}%)
+                          </span>
+                        </div>
+                        <div style={{ height: 8, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                          <div style={{ height: '100%', width: `${ch.percentage}%`, background: color, borderRadius: 9999, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="stat-card">
-              <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Avg Session Duration</p>
-              <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{data.summary.avgSessionDuration || '—'}</p>
+          {/* No pageview events notice (inline — still show person-based data) */}
+          {!hasPageviewData && (
+            <div style={{
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: 'var(--radius-xs)',
+              padding: '11px 16px',
+              fontSize: 12.5,
+              color: '#B45309',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <FileText size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                <strong>No $pageview events yet</strong> — pageview count, trends and top-pages sections are unavailable.
+                Channel, device, geo and browser data (sourced from PostHog person records) are still shown.
+                Install the PostHog JS snippet with <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>capture_pageview: true</code> on talentbridge.cv to enable pageview tracking.
+              </span>
             </div>
+          )}
 
-            <div className="stat-card">
-              <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Bounce Rate</p>
-              <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{data.summary.bounceRate}%</p>
-              <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>Single-pageview visits</p>
+          {/* KPI Cards (pageview-dependent) */}
+          {hasPageviewData && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+              <div className="stat-card">
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Total Pageviews</p>
+                <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.totalPageviews)}</p>
+              </div>
+
+              <div className="stat-card">
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Unique Visitors</p>
+                <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.uniqueVisitors)}</p>
+              </div>
+
+              <div className="stat-card">
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Sessions</p>
+                <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{formatNumber(data.summary.totalSessions)}</p>
+              </div>
+
+              <div className="stat-card">
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Avg Session Duration</p>
+                <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{data.summary.avgSessionDuration || '—'}</p>
+              </div>
+
+              <div className="stat-card">
+                <p style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.04em' }}>Bounce Rate</p>
+                <p className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>{data.summary.bounceRate}%</p>
+                <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>Single-pageview visits</p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Pageviews Trend */}
+          {/* Pageviews Over Time */}
           {data.pageviewsTrend.length > 0 && (
             <div className="card-mistral">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>

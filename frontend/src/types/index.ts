@@ -274,6 +274,7 @@ export interface WebsiteDashboardResponse {
   pageviewsTrend: { date: string; pageviews: number; uniqueVisitors: number }[];
   topPages: { path: string; views: number; uniqueVisitors: number; percentage: number }[];
   trafficSources: { name: string; count: number; percentage: number }[];
+  acquisitionChannels?: { name: string; count: number; percentage: number; color?: string }[];
   devices: { name: string; count: number; percentage: number }[];
   browsers: { name: string; count: number; percentage: number; topVersion?: string | null }[];
   operatingSystems: { name: string; count: number; percentage: number; topVersion?: string | null }[];

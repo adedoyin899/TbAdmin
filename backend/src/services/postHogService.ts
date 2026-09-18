@@ -25,19 +25,28 @@ const SOCIAL_SHARE_ID_PROPS = ['igshid'];
 // with no UTM tag. Domains our own product/auth redirects through (not a real acquisition
 // signal) are excluded here and treated as direct instead — see classifyAcquisitionChannel.
 const KNOWN_REFERRER_CHANNELS: Record<string, string> = {
-  'linkedin.com': 'LinkedIn', 'www.linkedin.com': 'LinkedIn',
+  'linkedin.com': 'LinkedIn', 'www.linkedin.com': 'LinkedIn', 'lnkd.in': 'LinkedIn',
   'com.slack': 'Slack', 'slack.com': 'Slack',
   'twitter.com': 'Twitter / X', 'x.com': 'Twitter / X', 't.co': 'Twitter / X',
-  'facebook.com': 'Facebook', 'www.facebook.com': 'Facebook', 'm.facebook.com': 'Facebook',
+  'facebook.com': 'Facebook', 'www.facebook.com': 'Facebook', 'm.facebook.com': 'Facebook', 'l.facebook.com': 'Facebook', 'lm.facebook.com': 'Facebook',
   'instagram.com': 'Instagram', 'www.instagram.com': 'Instagram', 'l.instagram.com': 'Instagram',
   'reddit.com': 'Reddit', 'www.reddit.com': 'Reddit', 'old.reddit.com': 'Reddit',
-  'whatsapp.com': 'WhatsApp', 'wa.me': 'WhatsApp', 'web.whatsapp.com': 'WhatsApp',
+  'whatsapp.com': 'WhatsApp', 'wa.me': 'WhatsApp', 'web.whatsapp.com': 'WhatsApp', 'api.whatsapp.com': 'WhatsApp',
   'telegram.org': 'Telegram', 't.me': 'Telegram',
+  'threads.net': 'Threads',
+  'tiktok.com': 'TikTok', 'vm.tiktok.com': 'TikTok',
+  'youtube.com': 'YouTube', 'youtu.be': 'YouTube', 'm.youtube.com': 'YouTube',
+  'linktr.ee': 'Linktree',
+  'discord.com': 'Discord', 'discord.gg': 'Discord',
+  'substack.com': 'Substack',
+  'medium.com': 'Medium',
   'github.com': 'GitHub',
+  'producthunt.com': 'Product Hunt',
   'google.com': 'Organic Search (Google)', 'www.google.com': 'Organic Search (Google)',
   'bing.com': 'Organic Search (Bing)', 'www.bing.com': 'Organic Search (Bing)',
   'duckduckgo.com': 'Organic Search (DuckDuckGo)',
   'yahoo.com': 'Organic Search (Yahoo)',
+  'ecosia.org': 'Organic Search (Ecosia)',
 };
 // Referring domains that are really our own product/auth flow, not a discovery channel.
 const INTERNAL_REFERRER_DOMAINS = ['talentbridge.cv', 'accounts.google.com'];
@@ -1782,10 +1791,37 @@ class PostHogService {
 
     const { dateFrom } = parseDateRange(dateRange);
 
-    const [scopedEvents, recordings] = await Promise.all([
+    // Fetch person-based acquisition channel data in parallel —
+    // this is available even without $pageview events (sourced from PostHog persons)
+    const [scopedEvents, recordings, personOverview] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchRecordingsList(),
+      this.fetchUserOverview(dateRange).catch(() => null),
     ]);
+
+    // Acquisition channels with brand colors for the frontend
+    const CHANNEL_COLORS: Record<string, string> = {
+      'LinkedIn': '#0A66C2', 'WhatsApp': '#25D366',
+      'Direct Link': '#0D9488', 'Direct Traffic': '#0D9488',
+      'Organic Search (Google)': '#4285F4', 'Organic Search (Bing)': '#00809D',
+      'Organic Search (DuckDuckGo)': '#DE5833', 'Organic Search & Social': '#8B5CF6',
+      'Twitter / X': '#1DA1F2', 'Facebook': '#1877F2', 'Instagram': '#E1306C',
+      'Reddit': '#FF4500', 'Telegram': '#229ED9', 'Slack': '#4A154B',
+      'GitHub': '#6366F1', 'YouTube': '#FF0000', 'TikTok': '#010101',
+      'Product Hunt': '#DA552F', 'Email Campaigns': '#F59E0B',
+      'Paid Ads': '#EC4899', 'Creator Referrals': '#10B981',
+      'Google Ads (Paid)': '#4285F4', 'LinkedIn Ads (Paid)': '#0A66C2',
+      'Meta Ads (Facebook/Instagram)': '#1877F2',
+    };
+    const DEFAULT_COLORS = ['#0D9488','#2DD4BF','#3B82F6','#8B5CF6','#F59E0B','#EC4899','#10B981','#FA520F','#6366F1'];
+
+    const rawAcquisitionChannels: any[] = (personOverview as any)?.acquisitionChannels || [];
+    const acquisitionChannels = rawAcquisitionChannels.map((ch: any, idx: number) => ({
+      name: ch.name,
+      count: Number(ch.count),
+      percentage: ch.percentage,
+      color: CHANNEL_COLORS[ch.name] || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+    }));
     const pageviews = scopedEvents.filter((e: any) => e.event === '$pageview');
 
     const totalPageviews = pageviews.length || scopedEvents.length;
@@ -1986,6 +2022,7 @@ class PostHogService {
       pageviewsTrend,
       topPages,
       trafficSources,
+      acquisitionChannels,
       devices,
       browsers,
       operatingSystems,
