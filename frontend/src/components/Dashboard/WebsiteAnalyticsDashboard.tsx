@@ -205,7 +205,9 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
                   <div key={s.name}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
                       <span style={{ color: 'var(--text)', fontWeight: 500 }}>{s.name}</span>
-                      <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>{s.count}</span>
+                      <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>
+                        {s.count} ({s.percentage}%)
+                      </span>
                     </div>
                     <div style={{ height: 12, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
                       <div
@@ -234,7 +236,9 @@ export const WebsiteAnalyticsDashboard: React.FC = () => {
                   <div key={d.name}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
                       <span style={{ color: 'var(--text)', fontWeight: 500 }}>{d.name}</span>
-                      <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>{d.count}</span>
+                      <span className="mono-metric" style={{ color: 'var(--text)', fontWeight: 600 }}>
+                        {d.count} ({d.percentage}%)
+                      </span>
                     </div>
                     <div style={{ height: 12, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
                       <div

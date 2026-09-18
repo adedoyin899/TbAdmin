@@ -69,14 +69,41 @@ export interface FeaturesDashboardResponse {
 
 export interface RetentionTrendEntry {
   week: string;
+  weekNumber?: number;
+  period: string;
+  dateRangeFormatted?: string;
+  shortRange?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrentCohort?: boolean;
   retention7d: number;
   retention30d: number;
+  day1?: number;
+  day7?: number;
+  day14?: number;
+  day30?: number;
+  newUsers?: number;
+  topReturningAction?: string;
+  activeUsers?: Array<{
+    userId: string;
+    name: string;
+    email: string;
+    country: string;
+    flag: string;
+    sessions: number;
+    lastActive: string | null;
+    topAction: string;
+  }>;
 }
 
 export interface RetentionDashboardResponse {
+  dateRange?: string;
+  signupSource?: string;
   retention7d: { percentage: number; change: number };
   retention30d: { percentage: number; change: number };
   trend: RetentionTrendEntry[];
+  cachedAt?: string;
+  expiresAt?: string;
 }
 
 export interface EmailLinkClick {

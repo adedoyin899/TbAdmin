@@ -24,9 +24,9 @@ export const dashboardApi = {
     return res;
   },
 
-  getRetention: async (signupSource: string = 'all') => {
+  getRetention: async (dateRange: string = 'all', signupSource: string = 'all') => {
     if (USE_MOCK_ONLY) return MOCK_RETENTION;
-    const res: any = await apiClient.get('/dashboard/retention', { params: { signupSource } });
+    const res: any = await apiClient.get('/dashboard/retention', { params: { dateRange, signupSource } });
     return res;
   },
 

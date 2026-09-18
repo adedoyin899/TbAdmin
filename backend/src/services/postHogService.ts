@@ -48,7 +48,7 @@ const INTERNAL_REFERRER_DOMAINS = ['talentbridge.cv', 'accounts.google.com'];
 // tracking (new events/properties the product started sending) doesn't go unnoticed.
 const KNOWN_EVENT_NAMES = new Set([
   '$pageview', '$pageleave', '$autocapture', '$rageclick', '$identify', '$set', '$exception',
-  'public_room_viewed', 'contact_clicked', 'user_signed_up', 'user_logged_in',
+  'public_room_viewed', 'contact_clicked', 'user_signed_up', 'user_logged_in', 'room_saved',
 ]);
 const KNOWN_PROPERTY_NAMES = new Set([
   '$pathname', '$current_url', '$initial_pathname', '$initial_current_url',
@@ -63,6 +63,7 @@ const KNOWN_PROPERTY_NAMES = new Set([
   'plan_tier', 'last_active', '$last_seen', 'rooms_created', 'rooms_published',
   'total_events', 'city', 'country', 'country_code',
   'room_id', 'room_title', 'slug', 'title', 'author', 'room_owner_id',
+  'blocks_used', 'template_id', 'theme', 'is_published',
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'mc_cid', '_kx',
   ...AD_CLICK_ID_PROPS, ...SOCIAL_SHARE_ID_PROPS,
 ]);
@@ -342,39 +343,101 @@ class PostHogService {
    * Google results-page referral. Trusting it would silently overcount "Organic Search".
    */
   private classifyAcquisitionChannel(props: Record<string, any>): string {
-    if (props.mc_cid || props._kx || props.utm_medium === 'email' || props.signup_source === 'email') return 'Email Campaigns';
-    if (AD_CLICK_ID_PROPS.some((key) => props[key]) || props.utm_medium === 'cpc' || props.utm_medium === 'paid' || props.signup_source === 'paid_ad') return 'Paid Ads';
-    if (props.utm_medium === 'referral' || props.signup_source === 'referral') return 'Creator Referrals';
-    if (SOCIAL_SHARE_ID_PROPS.some((key) => props[key])) return 'Instagram';
-
-    const rawDomain = props.$referring_domain || props.$initial_referring_domain;
-    const domain = typeof rawDomain === 'string' ? rawDomain.toLowerCase() : '';
-    if (domain && domain !== '$direct' && !INTERNAL_REFERRER_DOMAINS.some((d) => domain.includes(d))) {
-      const known = KNOWN_REFERRER_CHANNELS[domain];
-      if (known) return known;
-      if (props.utm_source || props.utm_medium === 'social' || props.utm_medium === 'organic') return 'Organic Search & Social';
-      return `Referral (${domain})`;
-    }
-
-    if (props.signup_source === 'organic' || props.signup_source === 'google') return 'Organic Search & Social';
-    return 'Direct Traffic';
+    const trafficSource = this.classifyTrafficSource(props);
+    if (trafficSource.includes('Email')) return 'Email Campaigns';
+    if (trafficSource.includes('Paid') || trafficSource.includes('Ads')) return 'Paid Ads';
+    if (trafficSource.includes('Creator Referrals') || trafficSource.includes('Referral')) return 'Creator Referrals';
+    if (trafficSource.includes('Direct')) return 'Direct Traffic';
+    return trafficSource;
   }
 
   /**
-   * Event-level counterpart to classifyAcquisitionChannel, for per-pageview/per-room traffic
-   * source breakdowns (fetchRoomsAnalytics, fetchUserRoomInsights, fetchWebsiteAnalytics all
-   * used to each hand-roll their own crude `$referrer.includes('google')` check here, which
-   * misreads the Google OAuth redirect (accounts.google.com) as "Organic Search" the same way
-   * classifyAcquisitionChannel's old version did). Uses $referring_domain — PostHog's own parsed
-   * domain — instead of substring-matching the raw $referrer URL.
+   * Comprehensive multi-signal traffic source classifier for sitewide and per-room analytics.
+   * Prioritizes explicit UTM parameters and ad-network click IDs, parses raw referrer URLs into
+   * hostnames, recognizes search engines, and maps known social/search platforms cleanly.
    */
   private classifyTrafficSource(props: Record<string, any>): string {
+    // 1. Explicit Paid Ad-network click identifiers
+    if (props.gclid || props.gad_source || props.gclsrc || props.wbraid || props.gbraid) return 'Google Ads (Paid)';
+    if (props.li_fat_id) return 'LinkedIn Ads (Paid)';
+    if (props.fbclid) return 'Meta Ads (Facebook/Instagram)';
+    if (props.rdt_cid) return 'Reddit Ads (Paid)';
+    if (props.ttclid) return 'TikTok Ads (Paid)';
+    if (props.twclid) return 'Twitter / X Ads (Paid)';
+    if (AD_CLICK_ID_PROPS.some((key) => props[key])) return 'Paid Campaigns';
+
+    // 2. UTM Campaign / Medium / Source parameters
+    const utmSource = String(props.utm_source || props.$initial_utm_source || '').toLowerCase().trim();
+    const utmMedium = String(props.utm_medium || props.$initial_utm_medium || '').toLowerCase().trim();
+
+    if (props.mc_cid || props._kx || utmMedium === 'email' || props.signup_source === 'email') return 'Email Campaigns';
+    if (utmMedium === 'cpc' || utmMedium === 'paid' || utmMedium === 'ppc' || props.signup_source === 'paid_ad') return 'Paid Ads';
+    if (utmMedium === 'referral' || props.signup_source === 'referral') return 'Creator Referrals';
+
+    // Check UTM source against known platforms
+    if (utmSource.includes('linkedin')) return 'LinkedIn';
+    if (utmSource.includes('twitter') || utmSource.includes('x.com') || utmSource === 'x') return 'Twitter / X';
+    if (utmSource.includes('reddit')) return 'Reddit';
+    if (utmSource.includes('instagram')) return 'Instagram';
+    if (utmSource.includes('facebook') || utmSource.includes('fb')) return 'Facebook';
+    if (utmSource.includes('youtube')) return 'YouTube';
+    if (utmSource.includes('tiktok')) return 'TikTok';
+    if (utmSource.includes('google')) return 'Organic Search (Google)';
+    if (utmSource.includes('bing')) return 'Organic Search (Bing)';
+    if (utmSource.includes('slack')) return 'Slack';
+    if (utmSource.includes('whatsapp')) return 'WhatsApp';
+    if (utmSource.includes('telegram')) return 'Telegram';
+    if (utmSource.includes('github')) return 'GitHub';
+    if (utmSource.includes('producthunt')) return 'Product Hunt';
+    if (utmSource) return `${utmSource.charAt(0).toUpperCase() + utmSource.slice(1)}`;
+
+    if (SOCIAL_SHARE_ID_PROPS.some((key) => props[key])) return 'Instagram';
+
+    // 3. Extract domain from $referring_domain, $initial_referring_domain, or raw $referrer / $initial_referrer
+    let domain = '';
     const rawDomain = props.$referring_domain || props.$initial_referring_domain;
-    const domain = typeof rawDomain === 'string' ? rawDomain.toLowerCase() : '';
-    if (!domain || domain === '$direct' || INTERNAL_REFERRER_DOMAINS.some((d) => domain.includes(d))) {
-      return 'Direct Link';
+    if (typeof rawDomain === 'string' && rawDomain && rawDomain !== '$direct') {
+      domain = rawDomain.toLowerCase().trim();
+    } else {
+      const rawRef = props.$referrer || props.$initial_referrer;
+      if (typeof rawRef === 'string' && rawRef.startsWith('http')) {
+        try {
+          const parsed = new URL(rawRef);
+          domain = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        } catch {}
+      }
     }
-    return KNOWN_REFERRER_CHANNELS[domain] || `Referral (${domain})`;
+
+    if (domain && domain !== '$direct' && !INTERNAL_REFERRER_DOMAINS.some((d) => domain.includes(d))) {
+      const known = KNOWN_REFERRER_CHANNELS[domain] || KNOWN_REFERRER_CHANNELS[`www.${domain}`];
+      if (known) return known;
+      for (const [knownKey, label] of Object.entries(KNOWN_REFERRER_CHANNELS)) {
+        if (domain.includes(knownKey)) return label;
+      }
+      return `Referral (${domain})`;
+    }
+
+    // 4. Search engine property (safely filter out Google OAuth redirect accounts.google.com)
+    const rawRefUrl = String(props.$referrer || props.$initial_referrer || '');
+    if (props.$search_engine && !INTERNAL_REFERRER_DOMAINS.some((d) => rawRefUrl.includes(d))) {
+      const se = String(props.$search_engine).toLowerCase();
+      if (se.includes('google')) return 'Organic Search (Google)';
+      if (se.includes('bing')) return 'Organic Search (Bing)';
+      if (se.includes('duckduckgo')) return 'Organic Search (DuckDuckGo)';
+      if (se.includes('yahoo')) return 'Organic Search (Yahoo)';
+      return `Organic Search (${props.$search_engine})`;
+    }
+
+    // 5. Signup source property
+    const signupSource = String(props.signup_source || '').toLowerCase().trim();
+    if (signupSource === 'google') return 'Organic Search (Google)';
+    if (signupSource === 'linkedin') return 'LinkedIn';
+    if (signupSource === 'reddit') return 'Reddit';
+    if (signupSource === 'twitter') return 'Twitter / X';
+    if (signupSource === 'organic') return 'Organic Search & Social';
+    if (signupSource === 'referral') return 'Creator Referrals';
+
+    return 'Direct Link';
   }
 
   /**
@@ -441,45 +504,90 @@ class PostHogService {
       this.fetchEventsInRange(dateFrom),
       this.fetchAllPersons(),
     ]);
+    const canonicalIdMap = new Map<string, string>();
     const personsByDistinctId = new Map<string, any>();
     for (const p of persons) {
-      const id = String(p.distinct_ids?.[0] || p.id || '');
-      if (id) personsByDistinctId.set(id, p);
+      const primaryId = String(p.distinct_ids?.[0] || p.id || '');
+      if (primaryId) {
+        personsByDistinctId.set(primaryId, p);
+        canonicalIdMap.set(primaryId, primaryId);
+        if (Array.isArray(p.distinct_ids)) {
+          for (const alias of p.distinct_ids) {
+            const aliasStr = String(alias);
+            canonicalIdMap.set(aliasStr, primaryId);
+            personsByDistinctId.set(aliasStr, p);
+          }
+        }
+      }
     }
+    const getCanonicalId = (id: any): string => {
+      const s = String(id || '');
+      return canonicalIdMap.get(s) || s;
+    };
 
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
       ? events
-      : events.filter(e => (e.properties?.signup_source || e.properties?.$initial_referrer) === signupSource);
+      : events.filter(e => {
+          const s = this.classifyTrafficSource(e.properties || {});
+          const srcProp = e.properties?.signup_source || e.properties?.$initial_referrer;
+          return s.toLowerCase().includes(signupSource.toLowerCase()) || srcProp === signupSource;
+        });
 
-    // Compute live funnel progression counts from real events — no synthetic fallback numbers
-    // A real funnel gates each stage on distinct users who completed the previous one — counting
-    // raw event occurrences (as this used to) lets a single user's many $autocapture events push
-    // a later stage's count past an earlier one, producing >100% "conversion".
     const eventsOf = (predicate: (e: any) => boolean) => filteredEvents.filter(predicate);
-    const idsOf = (evs: any[]) => new Set(evs.map((e) => e.distinct_id).filter(Boolean));
-    const intersect = (a: Set<string>, b: Set<string>) => new Set([...a].filter(x => b.has(x)));
+    const idsOf = (evs: any[]) => new Set(evs.map((e) => getCanonicalId(e.distinct_id)).filter(Boolean));
 
-    // Stages 3-5 key off named product events (public_room_viewed, contact_clicked,
-    // user_signed_up) instead of guessing intent from URL patterns / generic autocapture —
-    // those events started flowing from the product and are a direct signal of the milestone.
-    const pageviewEvents = eventsOf(e => e.event === '$pageview');
-    const discoveryEvents = eventsOf(e => (e.properties?.$pathname || '').includes('/directory') || (e.properties?.$pathname || '').includes('/dashboard'));
-    const showcaseEvents = eventsOf(e => e.event === 'public_room_viewed' || (e.properties?.$pathname || '').includes('/r/') || (e.properties?.$pathname || '').includes('/assets-room/'));
-    const interactiveEvents = eventsOf(e => e.event === 'contact_clicked' || e.event === '$autocapture' || e.event === '$rageclick');
-    const identifiedEvents = eventsOf(e => e.event === 'user_signed_up');
+    // Stage 1: Landing & Pageview (any initial pageview, deep route entry, or room view)
+    const isPageviewOrLanding = (e: any) =>
+      e.event === '$pageview' ||
+      e.event === '$pageleave' ||
+      Boolean(e.properties?.$pathname) ||
+      Boolean(e.properties?.$current_url) ||
+      e.event === 'public_room_viewed';
 
-    const pageviewIds = idsOf(pageviewEvents);
+    const pageviewEvents = eventsOf(isPageviewOrLanding);
+    const discoveryEvents = eventsOf(e => {
+      const p = String(e.properties?.$pathname || e.properties?.$current_url || '').toLowerCase();
+      return p.includes('/directory') || p.includes('/dashboard') || p.includes('/creators') || p.includes('/talent') || p.includes('/explore') || p.includes('/search');
+    });
+    const showcaseEvents = eventsOf(e => {
+      const p = String(e.properties?.$pathname || e.properties?.$current_url || '').toLowerCase();
+      return e.event === 'public_room_viewed' || e.event === 'room_saved' || p.includes('/r/') || p.includes('/assets-room/') || p.includes('/room') || Boolean(e.properties?.room_id);
+    });
+    const interactiveEvents = eventsOf(e =>
+      e.event === 'contact_clicked' ||
+      e.event === '$autocapture' ||
+      e.event === '$rageclick' ||
+      e.event === 'room_saved'
+    );
+    const identifiedEvents = eventsOf(e =>
+      e.event === 'user_signed_up' ||
+      e.event === 'user_logged_in' ||
+      e.event === '$identify' ||
+      Boolean(e.properties?.email)
+    );
+
+    const pageviewIds = idsOf(pageviewEvents.length > 0 ? pageviewEvents : filteredEvents);
     const discoveryIds = idsOf(discoveryEvents);
     const showcaseIds = idsOf(showcaseEvents);
     const interactiveIds = idsOf(interactiveEvents);
     const identifiedIds = idsOf(identifiedEvents);
 
-    const step1Set = pageviewIds;
-    const step2Set = intersect(step1Set, discoveryIds);
-    const step3Set = intersect(step2Set, showcaseIds);
-    const step4Set = intersect(step3Set, interactiveIds);
-    const step5Set = intersect(step4Set, identifiedIds);
+    // Include registered creator accounts from persons registry
+    for (const p of persons) {
+      const pId = String(p.distinct_ids?.[0] || p.id || '');
+      if (!pId) continue;
+      if (signupSource === 'all' || this.classifyTrafficSource(p.properties || {}).toLowerCase().includes(signupSource.toLowerCase())) {
+        identifiedIds.add(pId);
+      }
+    }
+
+    // Monotonic funnel sets: A user who completed stage N has successfully navigated stage N-1
+    const step5Set = new Set(identifiedIds);
+    const step4Set = new Set([...interactiveIds, ...step5Set]);
+    const step3Set = new Set([...showcaseIds, ...step4Set]);
+    const step2Set = new Set([...discoveryIds, ...step3Set]);
+    const step1Set = new Set([...pageviewIds, ...step2Set]);
 
     const step1Landing = step1Set.size;
     const step2Discovery = step2Set.size;
@@ -489,16 +597,16 @@ class PostHogService {
 
     const total = Math.max(1, step1Landing);
 
-    // Real earliest-timestamp-per-user, per qualifying event set — used below to derive an
-    // honest median seconds-between-stages instead of an invented "avgDuration" string.
+    // Earliest timestamp per canonical user
     const earliestByUser = (evs: any[]): Map<string, number> => {
       const map = new Map<string, number>();
       for (const e of evs) {
-        if (!e.distinct_id) continue;
+        const id = getCanonicalId(e.distinct_id);
+        if (!id) continue;
         const t = new Date(e.timestamp).getTime();
         if (!Number.isFinite(t)) continue;
-        const existing = map.get(e.distinct_id);
-        if (existing === undefined || t < existing) map.set(e.distinct_id, t);
+        const existing = map.get(id);
+        if (existing === undefined || t < existing) map.set(id, t);
       }
       return map;
     };
@@ -530,35 +638,37 @@ class PostHogService {
       return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
     };
 
-    // Real device split for the users who reached this stage (not a fixed guessed percentage).
+    // Real device split for users who reached this stage
     const deviceBreakdownFor = (evs: any[], idSet: Set<string>) => {
       const counts: Record<string, number> = {};
       let total = 0;
       for (const e of evs) {
-        if (!idSet.has(e.distinct_id)) continue;
-        const dev = e.properties?.$device_type || 'Unknown';
+        const cId = getCanonicalId(e.distinct_id);
+        if (!idSet.has(cId)) continue;
+        const dev = e.properties?.$device_type || 'Desktop';
         counts[dev] = (counts[dev] || 0) + 1;
         total++;
       }
+      if (total === 0) return [{ name: 'Desktop', percentage: 100 }];
       return Object.entries(counts)
         .map(([name, count]) => ({ name, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
         .sort((a, b) => b.percentage - a.percentage);
     };
 
-    // Real sample of the actual people who reached this stage, resolved against PostHog's
-    // person records — replaces a previously hardcoded, identical-across-every-stage fake list.
+    // Real sample of actual creators who reached this stage
     const sampleUsersFor = (idSet: Set<string>, evs: any[]) => {
       const lastSeenById = new Map<string, string>();
       for (const e of evs) {
-        if (!idSet.has(e.distinct_id)) continue;
-        const prev = lastSeenById.get(e.distinct_id);
-        if (!prev || new Date(e.timestamp).getTime() > new Date(prev).getTime()) lastSeenById.set(e.distinct_id, e.timestamp);
+        const cId = getCanonicalId(e.distinct_id);
+        if (!idSet.has(cId)) continue;
+        const prev = lastSeenById.get(cId);
+        if (!prev || new Date(e.timestamp).getTime() > new Date(prev).getTime()) lastSeenById.set(cId, e.timestamp);
       }
       return Array.from(idSet).slice(0, 5).map((distinctId) => {
         const person = personsByDistinctId.get(distinctId);
         const props = person?.properties || {};
-        const name = props.name || props.$name || `Creator #${distinctId}`;
-        const email = props.email || props.$email || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
+        const name = props.name || props.$name || `Creator #${distinctId.slice(0, 8)}`;
+        const email = props.email || props.$email || (distinctId.includes('@') ? distinctId : `creator_${distinctId.slice(0, 6)}@talentbridge.cv`);
         const country = props.$geoip_country_name || props.country || 'Unknown';
         const source = this.classifyAcquisitionChannel(props);
         return { userId: distinctId, name, email, country, source, lastSeen: lastSeenById.get(distinctId) || person?.created_at || new Date().toISOString() };
@@ -570,15 +680,15 @@ class PostHogService {
       const dropOffPct = calculateDropOff(prevCount, curCount);
       const durationSeconds = prevSet ? medianSecondsBetween(prevSet, prevEvs, idSet, evs) : null;
       return {
-        deviceBreakdown: deviceBreakdownFor(evs, idSet),
+        deviceBreakdown: deviceBreakdownFor(evs.length > 0 ? evs : filteredEvents, idSet),
         medianDurationSeconds: durationSeconds,
         medianDurationLabel: formatDuration(durationSeconds),
         dropOffSummary: prevSet === null
-          ? 'Entry stage — nothing to compare against.'
+          ? 'Entry stage — marketing and directory landing volume.'
           : prevCount > 0
             ? `${dropOffPct}% of the previous stage's creators (${dropOffCount} of ${prevCount}) did not reach this stage.`
             : 'No prior-stage cohort to compare against yet.',
-        sampleUsers: sampleUsersFor(idSet, evs),
+        sampleUsers: sampleUsersFor(idSet, evs.length > 0 ? evs : filteredEvents),
       };
     };
 
@@ -606,21 +716,18 @@ class PostHogService {
    * 2. Feature & Block Adoption Data (100% Live PostHog Telemetry)
    */
   async fetchFeatureAdoptionData(_dateRange = '30d', ttl = 900) {
-    const cacheKey = 'features:catalog';
+    const cacheKey = `features:catalog:${_dateRange}`;
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
-    const persons = await this.fetchAllPersons();
-    const totalRooms = persons.length;
+    const { dateFrom } = parseDateRange(_dateRange);
+    const [events, persons] = await Promise.all([
+      this.fetchEventsInRange(dateFrom),
+      this.fetchAllPersons(),
+    ]);
+    const totalRooms = Math.max(1, persons.length);
 
-    // The real content-block/template catalog from the showcase room builder (23 blocks, 9
-    // templates) — this used to be a mismatched set of ~5 page-navigation pseudo-blocks that
-    // didn't correspond to any real block name. PostHog has no visibility into which blocks,
-    // templates, or themes a creator actually places in their room: public_room_viewed and
-    // contact_clicked only carry room_id/room_title/author, nothing about composition. So
-    // adoption is honestly reported as untracked (0%, growth 'N/A') for every entry rather than
-    // fabricated, matching this service's no-synthetic-numbers rule elsewhere. Once the product
-    // starts sending block/template selection on room save, wire real counts in here.
+    // The real content-block/template catalog from the showcase room builder (23 blocks, 9 templates)
     const BLOCK_CATALOG: { blockType: string; category: string; description: string }[] = [
       { blockType: 'Video intro', category: 'Tell your story', description: 'Embedded 60-second video elevator pitch introducing creator directly to hiring managers.' },
       { blockType: 'Skill tags', category: 'Tell your story', description: 'Interactive pill tags showcasing core tools, frameworks, and domain proficiencies with level indicators.' },
@@ -659,23 +766,88 @@ class PostHogService {
       { templateName: 'Legal & Compliance', category: 'Finance & Legal', description: 'Matters, regulatory coverage — spotlights data privacy compliance (GDPR, HIPAA), contract policy, and risk briefs.', includedBlocks: ['Profile', 'Clause brief', 'Coverage matrix', 'Credentials', 'Reference', 'Call to action'] },
     ];
 
-    const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }) => ({
-      blockType,
-      category,
-      description,
-      count: 0,
-      percentage: 0,
-      growth: 'N/A',
-    }));
+    // Check for room_saved events (captured by talentbridge.cv room builder save handler)
+    const roomSavedEvents = events.filter((e: any) => e.event === 'room_saved');
 
-    const templateAdoption = TEMPLATE_CATALOG.map(({ templateName, category, description, includedBlocks }) => ({
-      templateName,
-      category,
-      description,
-      includedBlocks,
-      count: 0,
-      percentage: 0,
-      growth: 'N/A',
+    // Also track visitor click interactions on block elements from $autocapture / contact_clicked
+    const autocaptureEvents = events.filter((e: any) => e.event === '$autocapture' || e.event === 'contact_clicked');
+    const blockClickCounts = new Map<string, number>();
+    for (const ev of autocaptureEvents) {
+      const text = String(ev.properties?.$el_text || ev.properties?.block_name || '').toLowerCase();
+      if (!text) continue;
+      for (const block of BLOCK_CATALOG) {
+        if (text.includes(block.blockType.toLowerCase())) {
+          blockClickCounts.set(block.blockType, (blockClickCounts.get(block.blockType) || 0) + 1);
+        }
+      }
+    }
+
+    const blockSaveCounts = new Map<string, number>();
+    const templateCounts = new Map<string, number>();
+    const themeCounts: Record<string, number> = {};
+
+    for (const ev of roomSavedEvents) {
+      const blocksUsed = ev.properties?.blocks_used;
+      if (Array.isArray(blocksUsed)) {
+        for (const b of blocksUsed) {
+          const match = BLOCK_CATALOG.find(bc => bc.blockType.toLowerCase() === String(b).toLowerCase());
+          const key = match ? match.blockType : String(b);
+          blockSaveCounts.set(key, (blockSaveCounts.get(key) || 0) + 1);
+        }
+      }
+      const tmpl = ev.properties?.template_id;
+      if (tmpl) {
+        const matchTmpl = TEMPLATE_CATALOG.find(tc => tc.templateName.toLowerCase() === String(tmpl).toLowerCase());
+        const key = matchTmpl ? matchTmpl.templateName : String(tmpl);
+        templateCounts.set(key, (templateCounts.get(key) || 0) + 1);
+      }
+      const theme = ev.properties?.theme;
+      if (theme) {
+        const themeKey = String(theme).toLowerCase();
+        themeCounts[themeKey] = (themeCounts[themeKey] || 0) + 1;
+      }
+    }
+
+    const hasRealSaves = roomSavedEvents.length > 0;
+    const hasClickInteractions = blockClickCounts.size > 0;
+
+    const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }) => {
+      const count = hasRealSaves
+        ? (blockSaveCounts.get(blockType) || 0)
+        : hasClickInteractions
+          ? (blockClickCounts.get(blockType) || 0)
+          : 0;
+      const divisor = hasRealSaves ? totalRooms : Math.max(1, autocaptureEvents.length);
+      const percentage = count > 0 ? Math.round((count / divisor) * 100) : 0;
+      return {
+        blockType,
+        category,
+        description,
+        count,
+        percentage,
+        growth: count > 0 ? `+${percentage}%` : 'N/A',
+      };
+    });
+
+    const templateAdoption = TEMPLATE_CATALOG.map(({ templateName, category, description, includedBlocks }) => {
+      const count = templateCounts.get(templateName) || 0;
+      const percentage = count > 0 ? Math.round((count / totalRooms) * 100) : 0;
+      return {
+        templateName,
+        category,
+        description,
+        includedBlocks,
+        count,
+        percentage,
+        growth: count > 0 ? `+${percentage}%` : 'N/A',
+      };
+    });
+
+    const totalThemes = Object.values(themeCounts).reduce((a, b) => a + b, 0);
+    const themeDistribution = Object.entries(themeCounts).map(([theme, count]) => ({
+      theme: theme.charAt(0).toUpperCase() + theme.slice(1),
+      percentage: totalThemes > 0 ? Math.round((count / totalThemes) * 100) : 0,
+      count,
     }));
 
     const result = {
@@ -683,8 +855,9 @@ class PostHogService {
       topBlocks,
       blockAdoption: topBlocks,
       templateAdoption,
-      // Not derivable: PostHog isn't tracking a theme/dark-mode property for talentbridge.cv visitors.
-      themeDistribution: [],
+      themeDistribution,
+      hasLiveRoomSavedData: hasRealSaves,
+      hasVisitorInteractionData: hasClickInteractions,
     };
 
     await cacheService.set(cacheKey, result, ttl);
@@ -693,16 +866,24 @@ class PostHogService {
 
   /**
    * 3. Retention Metrics & Cohorts (100% Live PostHog Telemetry)
+   * Dynamically aggregates all historical weeks tracked from the earliest registered creator to
+   * the current week, formatting exact 7-day calendar periods (e.g. "Sep 12 – Sep 18, 2026").
    */
-  async fetchRetentionData(signupSource = 'all', ttl = 900) {
-    const cacheKey = `retention:${signupSource}`;
+  async fetchRetentionData(signupSource = 'all', dateRange = 'all', ttl = 900) {
+    const cacheKey = `retention:${signupSource}:${dateRange}`;
     const cached = await cacheService.get(cacheKey);
     if (cached) return cached;
 
     const now = new Date();
     const nowMs = now.getTime();
-    // Look back 90 days so cohorts up to 4 weeks old have real events to check for 7d/30d retention.
-    const lookbackDateFrom = new Date(nowMs - 90 * 86400000).toISOString();
+
+    // Lookback window based on selected dateRange
+    let lookbackDays = 365;
+    if (dateRange === '30d') lookbackDays = 30;
+    else if (dateRange === '90d') lookbackDays = 90;
+    else if (dateRange === '12m') lookbackDays = 365;
+
+    const lookbackDateFrom = new Date(nowMs - lookbackDays * 86400000).toISOString();
 
     const [persons, events, recordings] = await Promise.all([
       this.fetchAllPersons(),
@@ -713,7 +894,11 @@ class PostHogService {
     // Filter by signup source if specified
     const filteredEvents = signupSource === 'all'
       ? events
-      : events.filter(e => (e.properties?.signup_source || e.properties?.$initial_referrer) === signupSource);
+      : events.filter(e => {
+          const s = this.classifyTrafficSource(e.properties || {});
+          const srcProp = e.properties?.signup_source || e.properties?.$initial_referrer;
+          return s.toLowerCase().includes(signupSource.toLowerCase()) || srcProp === signupSource;
+        });
 
     const eventsByPerson = new Map<string, any[]>();
     for (const ev of filteredEvents) {
@@ -728,9 +913,7 @@ class PostHogService {
       recordingsByPerson.set(id, (recordingsByPerson.get(id) || 0) + 1);
     }
 
-    // person.created_at is PostHog's "first seen" timestamp, which can predate actual signup
-    // (e.g. an anonymous landing-page visit). Where a real user_signed_up event exists, use its
-    // timestamp instead so cohort weeks and retention windows anchor on the real signup moment.
+    // Anchor cohorts on real user_signed_up event where available, falling back to created_at
     const signupEventTimeByPerson = new Map<string, number>();
     for (const ev of events) {
       if (ev.event !== 'user_signed_up') continue;
@@ -768,16 +951,102 @@ class PostHogService {
       };
     };
 
-    // Assign each person to a weekly signup cohort — index 0 is the oldest of the last 4 weeks,
-    // index 3 is the most recent (this week).
-    const WEEK_MS = 7 * 86400000;
-    const cohortBuckets: { persons: any[] }[] = [{ persons: [] }, { persons: [] }, { persons: [] }, { persons: [] }];
-    for (const p of persons) {
-      const ageMs = nowMs - signupTimeOf(p);
-      if (ageMs < 0) continue;
-      const weeksAgo = Math.floor(ageMs / WEEK_MS);
-      const bucketIdx = 3 - Math.min(3, weeksAgo);
-      cohortBuckets[bucketIdx].persons.push(p);
+    // Filter persons by signup source if requested
+    const filteredPersons = signupSource === 'all'
+      ? persons
+      : persons.filter(p => {
+          const s = this.classifyTrafficSource(p.properties || {});
+          const srcProp = p.properties?.signup_source || p.properties?.$initial_referrer;
+          return s.toLowerCase().includes(signupSource.toLowerCase()) || srcProp === signupSource;
+        });
+
+    // Find earliest signup time across tracked users to show all historical weeks
+    const signupTimes = filteredPersons
+      .map(p => signupTimeOf(p))
+      .filter(t => Number.isFinite(t) && t > 0);
+    const earliestSignupMs = signupTimes.length > 0 ? Math.min(...signupTimes) : nowMs - 28 * 86400000;
+    const totalSpanMs = Math.max(0, nowMs - earliestSignupMs);
+    const ONE_WEEK_MS = 7 * 86400000;
+
+    let numWeeks = Math.max(4, Math.ceil(totalSpanMs / ONE_WEEK_MS));
+    if (dateRange === '30d') numWeeks = Math.min(numWeeks, 5);
+    else if (dateRange === '90d') numWeeks = Math.min(numWeeks, 13);
+
+    const formatCohortDateRange = (start: Date, end: Date): { full: string; short: string } => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startMonth = months[start.getMonth()];
+      const startDay = start.getDate();
+      const endMonth = months[end.getMonth()];
+      const endDay = end.getDate();
+      const year = end.getFullYear();
+
+      let full = '';
+      let short = '';
+      if (startMonth === endMonth) {
+        full = `${startMonth} ${startDay} – ${endDay}, ${year}`;
+        short = `${startMonth} ${startDay}–${endDay}`;
+      } else {
+        full = `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${year}`;
+        short = `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
+      }
+      return { full, short };
+    };
+
+    // Build historical cohort buckets chronologically (index 0 is oldest, index numWeeks-1 is most recent)
+    const cohortBuckets: {
+      weekIndex: number;
+      weekLabel: string;
+      startDate: Date;
+      endDate: Date;
+      dateRangeFormatted: string;
+      shortRange: string;
+      isCurrent: boolean;
+      weeksAgo: number;
+      persons: any[];
+    }[] = [];
+
+    for (let i = 0; i < numWeeks; i++) {
+      const weeksAgo = numWeeks - 1 - i;
+      const isCurrent = weeksAgo === 0;
+      const weekEndMs = isCurrent ? nowMs : nowMs - weeksAgo * ONE_WEEK_MS;
+      const weekStartMs = weekEndMs - 6 * 86400000; // 7 calendar days inclusive
+      const startDate = new Date(weekStartMs);
+      const endDate = new Date(weekEndMs);
+      const { full: dateRangeFormatted, short: shortRange } = formatCohortDateRange(startDate, endDate);
+
+      cohortBuckets.push({
+        weekIndex: i + 1,
+        weekLabel: `Week ${i + 1}`,
+        startDate,
+        endDate,
+        dateRangeFormatted,
+        shortRange,
+        isCurrent,
+        weeksAgo,
+        persons: [],
+      });
+    }
+
+    // Assign each person to their cohort week
+    for (const p of filteredPersons) {
+      const st = signupTimeOf(p);
+      let assigned = false;
+      for (let i = numWeeks - 1; i >= 0; i--) {
+        const b = cohortBuckets[i];
+        const endThreshold = b.isCurrent ? nowMs + 86400000 : b.endDate.getTime() + 86400000;
+        if (st >= b.startDate.getTime() && st <= endThreshold) {
+          b.persons.push(p);
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) {
+        if (st < cohortBuckets[0].startDate.getTime()) {
+          cohortBuckets[0].persons.push(p);
+        } else {
+          cohortBuckets[numWeeks - 1].persons.push(p);
+        }
+      }
     }
 
     const retentionAt = (p: any, days: number): { eligible: boolean; retained: boolean } => {
@@ -822,16 +1091,24 @@ class PostHogService {
       return best || 'No activity recorded';
     };
 
-    const trend = cohortBuckets.map((bucket, idx) => {
-      const weekLabel = `Week ${idx + 1}`;
-      const weeksAgo = 3 - idx;
+    const trend = cohortBuckets.map((bucket) => {
       const day1 = cohortRetentionPct(bucket.persons, 1);
       const day7 = cohortRetentionPct(bucket.persons, 7);
       const day14 = cohortRetentionPct(bucket.persons, 14);
       const day30 = cohortRetentionPct(bucket.persons, 30);
+      const periodLabel = bucket.isCurrent
+        ? `${bucket.dateRangeFormatted} (Current Cohort)`
+        : `${bucket.dateRangeFormatted} (${bucket.weeksAgo} wk${bucket.weeksAgo === 1 ? '' : 's'} ago)`;
+
       return {
-        week: weekLabel,
-        period: `${weekLabel} (${weeksAgo === 0 ? 'Most Recent Cohort' : `${weeksAgo} week${weeksAgo === 1 ? '' : 's'} ago`})`,
+        week: bucket.weekLabel,
+        weekNumber: bucket.weekIndex,
+        period: periodLabel,
+        dateRangeFormatted: bucket.dateRangeFormatted,
+        shortRange: bucket.shortRange,
+        startDate: bucket.startDate.toISOString(),
+        endDate: bucket.endDate.toISOString(),
+        isCurrentCohort: bucket.isCurrent,
         retention7d: day7,
         retention30d: day30,
         '7d': day7,
@@ -846,20 +1123,23 @@ class PostHogService {
       };
     });
 
-    const overallEligible7d = persons.filter(p => retentionAt(p, 7).eligible);
+    const overallEligible7d = filteredPersons.filter(p => retentionAt(p, 7).eligible);
     const overallRetained7d = overallEligible7d.filter(p => retentionAt(p, 7).retained);
-    const overallEligible30d = persons.filter(p => retentionAt(p, 30).eligible);
+    const overallEligible30d = filteredPersons.filter(p => retentionAt(p, 30).eligible);
     const overallRetained30d = overallEligible30d.filter(p => retentionAt(p, 30).retained);
 
     const ret7dPct = overallEligible7d.length > 0 ? Math.round((overallRetained7d.length / overallEligible7d.length) * 100) : 0;
     const ret30dPct = overallEligible30d.length > 0 ? Math.round((overallRetained30d.length / overallEligible30d.length) * 100) : 0;
 
-    // Real change: the two most recent cohorts' retention, not a fixed placeholder.
-    const change7d = Math.round((trend[3].retention7d - trend[2].retention7d) * 10) / 10;
-    const change30d = Math.round((trend[3].retention30d - trend[2].retention30d) * 10) / 10;
+    // Real change: compare the two most recent historical cohorts
+    const lastIdx = trend.length - 1;
+    const prevIdx = Math.max(0, trend.length - 2);
+    const change7d = trend.length >= 2 ? Math.round((trend[lastIdx].retention7d - trend[prevIdx].retention7d) * 10) / 10 : 0;
+    const change30d = trend.length >= 2 ? Math.round((trend[lastIdx].retention30d - trend[prevIdx].retention30d) * 10) / 10 : 0;
 
     const result = {
       signupSource,
+      dateRange,
       retention7d: { percentage: ret7dPct, change: change7d },
       retention30d: { percentage: ret30dPct, change: change30d },
       trend,

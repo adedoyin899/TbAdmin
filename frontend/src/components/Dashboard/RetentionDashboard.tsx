@@ -20,58 +20,24 @@ import { useRbac } from '../../utils/rbac';
 
 interface CohortDetail {
   week: string;
+  dateRangeFormatted?: string;
+  shortRange?: string;
+  isCurrentCohort?: boolean;
   signups: number;
   day1: number;
   day7: number;
   day14: number;
   day30: number;
   topReturningAction: string;
-  activeUsers: { name: string; email: string; sessions: number; lastActive: string }[];
+  activeUsers: { name: string; email: string; sessions: number; lastActive: string; userId?: string; country?: string; flag?: string }[];
 }
 
-const COHORT_DETAILS: Record<string, CohortDetail> = {
-  'Week 1': {
-    week: 'Week 1 (Aug 1 - Aug 7)',
-    signups: 4,
-    day1: 75,
-    day7: 50,
-    day14: 25,
-    day30: 25,
-    topReturningAction: 'Editing and customizing 3D showcase room assets (58%)',
-    activeUsers: [
-      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live' },
-      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago' },
-      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', sessions: 12, lastActive: '4h ago' },
-    ],
-  },
-  'Week 2': {
-    week: 'Week 2 (Aug 8 - Aug 14)',
-    signups: 4,
-    day1: 75,
-    day7: 60,
-    day14: 30,
-    day30: 30,
-    topReturningAction: 'Sharing room links to recruiters on LinkedIn/X (62%)',
-    activeUsers: [
-      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live' },
-      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', sessions: 8, lastActive: '1d ago' },
-    ],
-  },
-  'Week 3': {
-    week: 'Week 3 (Aug 15 - Aug 21)',
-    signups: 4,
-    day1: 80,
-    day7: 75,
-    day14: 50,
-    day30: 50,
-    topReturningAction: 'Checking 3D room recruiter dwell-time heatmaps (51%)',
-    activeUsers: [
-      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live' },
-      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago' },
-    ],
-  },
-  'Week 4': {
-    week: 'Week 4 (Current Cohort)',
+const DEFAULT_COHORTS: CohortDetail[] = [
+  {
+    week: 'Week 1 (Sep 12 – Sep 18, 2026)',
+    dateRangeFormatted: 'Sep 12 – Sep 18, 2026',
+    shortRange: 'Sep 12–18',
+    isCurrentCohort: true,
     signups: 4,
     day1: 100,
     day7: 50,
@@ -79,34 +45,63 @@ const COHORT_DETAILS: Record<string, CohortDetail> = {
     day30: 25,
     topReturningAction: 'Adding certified credentials & verified project badges (49%)',
     activeUsers: [
-      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live' },
-      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago' },
-      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', sessions: 12, lastActive: '4h ago' },
-      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', sessions: 8, lastActive: '1d ago' },
+      { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live', userId: '82' },
+      { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago', userId: '80' },
+      { name: 'Creator #66', email: 'creator_66@talentbridge.cv', sessions: 12, lastActive: '4h ago', userId: '66' },
+      { name: 'Creator #71', email: 'creator_71@talentbridge.cv', sessions: 8, lastActive: '1d ago', userId: '71' },
     ],
   },
-};
+];
 
 export const RetentionDashboard: React.FC = () => {
   const rbac = useRbac();
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: 'all' });
   const [signupSource, setSignupSource] = useState('all');
   const [selectedCohort, setSelectedCohort] = useState<CohortDetail | null>(null);
 
   const { data, isLoading, error } = useQuery<RetentionDashboardResponse>({
     queryKey: ['retention', dateRange.preset, dateRange.startDate, dateRange.endDate, signupSource],
-    queryFn: () => dashboardApi.getRetention(signupSource) as Promise<RetentionDashboardResponse>,
+    queryFn: () => dashboardApi.getRetention(dateRange.preset || 'all', signupSource) as Promise<RetentionDashboardResponse>,
   });
+
+  const mapTrendToDetail = (t: any, idx?: number): CohortDetail => {
+    const weekLabel = t.week || (idx !== undefined ? `Week ${idx + 1}` : 'Cohort');
+    return {
+      week: weekLabel,
+      dateRangeFormatted: t.dateRangeFormatted,
+      shortRange: t.shortRange,
+      isCurrentCohort: t.isCurrentCohort,
+      signups: t.newUsers ?? 4,
+      day1: t.day1 ?? 75,
+      day7: t.retention7d ?? t['7d'] ?? 50,
+      day14: t.day14 ?? 30,
+      day30: t.retention30d ?? t['30d'] ?? 25,
+      topReturningAction: t.topReturningAction || '3D room customization and recruiter showcase reviews',
+      activeUsers: (t.activeUsers || []).length > 0
+        ? t.activeUsers
+        : [
+            { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live', userId: '82' },
+            { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago', userId: '80' },
+            { name: 'Creator #66', email: 'creator_66@talentbridge.cv', sessions: 12, lastActive: '4h ago', userId: '66' },
+          ],
+    };
+  };
 
   const handleExportCsv = () => {
     if (!data?.trend?.length) return;
     exportToCsv({
       filename: `talentbridge_retention_trends_${signupSource}`,
       columns: [
-        { header: 'Week / Period', accessor: row => row.week },
-        { header: '7-Day Retention (%)', accessor: row => `${row.retention7d}%` },
-        { header: '30-Day Retention (%)', accessor: row => `${row.retention30d}%` },
+        { header: 'Exact Date Period', accessor: row => row.dateRangeFormatted || row.week },
+        { header: 'Short Range', accessor: row => row.shortRange || row.week },
+        { header: 'Week Label', accessor: row => row.week },
+        { header: 'New Creators', accessor: row => `${row.newUsers ?? 0}` },
+        { header: 'Day 1 Return (%)', accessor: row => `${row.day1 ?? 0}%` },
+        { header: 'Day 7 Return (%)', accessor: row => `${row.retention7d ?? 0}%` },
+        { header: 'Day 14 Return (%)', accessor: row => `${row.day14 ?? 0}%` },
+        { header: 'Day 30 Return (%)', accessor: row => `${row.retention30d ?? 0}%` },
+        { header: 'Primary Action', accessor: row => row.topReturningAction || '' },
       ],
       data: data.trend,
     });
@@ -195,7 +190,9 @@ export const RetentionDashboard: React.FC = () => {
                 value: data.retention7d?.percentage ?? 0,
                 change: data.retention7d?.change ?? 0,
                 desc: 'Creators active in 3D studio within 7 days of signup',
-                cohortKey: 'Week 3',
+                targetCohort: data.trend && data.trend.length > 1
+                  ? data.trend[data.trend.length - 2]
+                  : (data.trend && data.trend.length > 0 ? data.trend[data.trend.length - 1] : null),
                 accentColor: 'var(--accent)',
               },
               {
@@ -203,13 +200,15 @@ export const RetentionDashboard: React.FC = () => {
                 value: data.retention30d?.percentage ?? 0,
                 change: data.retention30d?.change ?? 0,
                 desc: 'Creators maintaining active rooms after 30 days',
-                cohortKey: 'Week 1',
+                targetCohort: data.trend && data.trend.length > 3
+                  ? data.trend[data.trend.length - 4]
+                  : (data.trend && data.trend.length > 0 ? data.trend[0] : null),
                 accentColor: 'var(--sunset)',
               },
             ].map(stat => (
               <div
                 key={stat.label}
-                onClick={() => setSelectedCohort(COHORT_DETAILS[stat.cohortKey])}
+                onClick={() => setSelectedCohort(stat.targetCohort ? mapTrendToDetail(stat.targetCohort) : DEFAULT_COHORTS[0])}
                 className="stat-card card-interactive animate-slide-up p-5 sm:p-7"
                 title={`Click to inspect ${stat.label} cohort breakdown`}
               >
@@ -256,7 +255,7 @@ export const RetentionDashboard: React.FC = () => {
                   Cohort Retention Trajectory
                 </h3>
                 <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 2 }}>
-                  Weekly 7-day and 30-day returning user trajectories from live PostHog telemetry
+                  Weekly 7-day and 30-day returning user trajectories across all historical cohort periods
                 </p>
               </div>
               <span className="badge badge-teal" style={{ fontSize: 11 }}>
@@ -267,8 +266,8 @@ export const RetentionDashboard: React.FC = () => {
               <LineChart data={data.trend} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} opacity={0.6} />
                 <XAxis
-                  dataKey="week"
-                  tick={{ fill: 'var(--text-2)', fontSize: 12, fontFamily: 'Geist' }}
+                  dataKey="shortRange"
+                  tick={{ fill: 'var(--text-2)', fontSize: 11, fontFamily: 'Geist' }}
                   axisLine={false} tickLine={false}
                 />
                 <YAxis
@@ -279,6 +278,13 @@ export const RetentionDashboard: React.FC = () => {
                 />
                 <Tooltip
                   formatter={(v: unknown, name: unknown) => [`${v}%`, name === 'retention7d' ? '7-Day Retention' : '30-Day Retention']}
+                  labelFormatter={(label, payload) => {
+                    const item = payload?.[0]?.payload;
+                    if (item?.dateRangeFormatted) {
+                      return `${item.dateRangeFormatted} (${item.week})`;
+                    }
+                    return label;
+                  }}
                   contentStyle={{
                     background: 'var(--panel)',
                     border: '1px solid var(--line)',
@@ -316,7 +322,7 @@ export const RetentionDashboard: React.FC = () => {
               <table style={{ minWidth: 700 }}>
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 160 }}>Cohort Period</th>
+                    <th style={{ minWidth: 200 }}>Exact Date Period</th>
                     <th style={{ minWidth: 100 }}>New Users</th>
                     <th style={{ minWidth: 80 }}>Day 1</th>
                     <th style={{ minWidth: 80 }}>Day 7</th>
@@ -328,41 +334,40 @@ export const RetentionDashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   {(data.trend || []).map((t: any, idx) => {
-                    const cohortLabel = t.period || t.week || `Week ${idx + 1}`;
-                    const day1Val = t.day1 ?? 75;
-                    const day7Val = t.retention7d ?? t['7d'] ?? 50;
-                    const day14Val = t.day14 ?? 30;
-                    const day30Val = t.retention30d ?? t['30d'] ?? 25;
-                    const newUsersVal = t.newUsers ?? 4;
-
-                    const rowDetail: CohortDetail = {
-                      week: cohortLabel,
-                      signups: newUsersVal,
-                      day1: day1Val,
-                      day7: day7Val,
-                      day14: day14Val,
-                      day30: day30Val,
-                      topReturningAction: t.topReturningAction || '3D room customization and recruiter showcase reviews',
-                      activeUsers: (t.activeUsers || []).length > 0
-                        ? t.activeUsers
-                        : [
-                            { name: 'Creator #82', email: 'creator_82@talentbridge.cv', sessions: 84, lastActive: 'Live' },
-                            { name: 'Creator #80', email: 'creator_80@talentbridge.cv', sessions: 18, lastActive: '2h ago' },
-                            { name: 'Creator #66', email: 'creator_66@talentbridge.cv', sessions: 12, lastActive: '4h ago' },
-                          ],
-                    };
+                    const rowDetail = mapTrendToDetail(t, idx);
+                    const primaryDateLabel = t.dateRangeFormatted || t.week || `Week ${idx + 1}`;
+                    const weekSubLabel = t.week || `Week ${idx + 1}`;
+                    const day1Val = rowDetail.day1;
+                    const day7Val = rowDetail.day7;
+                    const day14Val = rowDetail.day14;
+                    const day30Val = rowDetail.day30;
+                    const newUsersVal = rowDetail.signups;
 
                     return (
                       <tr
-                        key={cohortLabel}
+                        key={`${primaryDateLabel}-${idx}`}
                         onClick={() => setSelectedCohort(rowDetail)}
                         className="hover:bg-[var(--panel-2)] cursor-pointer transition-colors"
-                        title={`Click to inspect ${cohortLabel} cohort`}
+                        title={`Click to inspect ${primaryDateLabel} cohort`}
                       >
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                             <Calendar size={14} color="var(--accent)" />
-                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{cohortLabel}</span>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: 13 }}>
+                                  {primaryDateLabel}
+                                </span>
+                                {t.isCurrentCohort && (
+                                  <span className="badge badge-teal" style={{ fontSize: 10, padding: '1px 6px' }}>
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: 11.5, color: 'var(--dim)' }}>
+                                {weekSubLabel}
+                              </span>
+                            </div>
                           </div>
                         </td>
                         <td className="mono-metric" style={{ fontWeight: 700 }}>
@@ -461,10 +466,18 @@ export const RetentionDashboard: React.FC = () => {
                   <Calendar size={20} />
                 </div>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                      {selectedCohort.week}
+                      {selectedCohort.dateRangeFormatted || selectedCohort.week}
                     </h3>
+                    <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                      {selectedCohort.week}
+                    </span>
+                    {selectedCohort.isCurrentCohort && (
+                      <span className="badge badge-teal" style={{ fontSize: 11 }}>
+                        Current Week
+                      </span>
+                    )}
                     <span className="badge badge-teal" style={{ fontSize: 11 }}>
                       {selectedCohort.signups} Cohort Signups
                     </span>

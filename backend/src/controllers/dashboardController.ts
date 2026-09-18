@@ -82,12 +82,14 @@ export async function getFeatureDashboard(req: AuthenticatedRequest, res: Respon
 export async function getRetentionDashboard(req: AuthenticatedRequest, res: Response) {
   try {
     const signupSource = (req.query.signupSource as string) || 'all';
-    const retentionData: any = await postHogService.fetchRetentionData(signupSource);
+    const dateRange = (req.query.dateRange as string) || 'all';
+    const retentionData: any = await postHogService.fetchRetentionData(signupSource, dateRange);
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
 
     const responsePayload = {
+      dateRange,
       signupSource,
       retention7d: retentionData.retention7d,
       retention30d: retentionData.retention30d,
