@@ -1,4 +1,7 @@
 import rateLimit from 'express-rate-limit';
+import type { Request } from 'express';
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -12,12 +15,23 @@ export const apiLimiter = rateLimit({
 });
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20, // 20 login attempts per 15 min per IP
+  // 5-minute rolling window — shorter so users aren't locked out for 15 min
+  windowMs: 5 * 60 * 1000,
+  // 30 attempts per 5 min in dev (avoids self-lockout during testing),
+  // 10 attempts per 5 min in production (sufficient for legitimate use)
+  max: isDev ? 30 : 10,
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for localhost in development
+  skip: (req: Request) => {
+    if (isDev) {
+      const ip = req.ip || req.socket?.remoteAddress || '';
+      return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    }
+    return false;
+  },
   message: {
     success: false,
-    error: 'Too many authentication attempts, please try again later.',
+    error: 'Too many authentication attempts, please try again in a few minutes.',
   },
 });

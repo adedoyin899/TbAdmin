@@ -27,7 +27,7 @@
     "passwordHash": "$2b$10$KtBeE6G6ogfFJDwaDNNsme7opnczOV2CCtZFB7Cg7oHCSGQCRfjxu",
     "expiry": "7 Days (Sliding)",
     "status": "Active",
-    "lastActive": "14m ago",
+    "lastActive": "Just now",
     "isOwner": false,
     "createdAt": "2026-09-18T10:56:06.672Z"
   },
@@ -60,7 +60,7 @@
     "passwordHash": "$2b$10$HCsHl33kU7z9GaW8Xh3q8.weJ3HQlNQTYfwjLqo6oUwDgILsjYP5u",
     "expiry": "24 Hours",
     "status": "Active",
-    "lastActive": "2h ago",
+    "lastActive": "Just now",
     "isOwner": false,
     "createdAt": "2026-09-18T10:56:06.784Z"
   },
@@ -77,7 +77,7 @@
     "passwordHash": "$2b$10$i0.OMbkgfSPMGtSMY8BIO.zoC7K4zXz4j6qERgAdPbzFOdJyJYRei",
     "expiry": "24 Hours",
     "status": "Active",
-    "lastActive": "Yesterday",
+    "lastActive": "Just now",
     "isOwner": false,
     "createdAt": "2026-09-18T10:56:06.839Z"
   }
