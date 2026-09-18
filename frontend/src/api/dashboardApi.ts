@@ -102,4 +102,25 @@ export const dashboardApi = {
     const res: any = await apiClient.get('/dashboard/errors', { params: { dateRange } });
     return res;
   },
+
+  getNotifications: async () => {
+    const res: any = await apiClient.get('/notifications');
+    return res;
+  },
+
+  markAllNotificationsRead: async () => {
+    const res: any = await apiClient.post('/notifications/read-all');
+    return res;
+  },
+
+  markNotificationRead: async (id: string) => {
+    const res: any = await apiClient.post(`/notifications/${id}/read`);
+    return res;
+  },
+
+  deleteNotification: async (id: string) => {
+    const res: any = await apiClient.delete(`/notifications/${id}`);
+    return res;
+  },
 };
+

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, X, Check, CheckCheck, Trash2, ArrowRight,
   AlertTriangle, AlertCircle, CheckCircle2, Info,
-  SlidersHorizontal,
+  SlidersHorizontal, RefreshCw,
 } from 'lucide-react';
 import { useSettings, type AppNotification } from '../../context/SettingsContext';
 import { formatRelativeTime } from '../../utils/formatters';
@@ -41,18 +41,39 @@ const SEVERITY_CONFIG = {
 };
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose }) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useSettings();
-  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'alerts' | 'system'>('all');
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotifications,
+    dismissNotification,
+    refreshNotifications,
+  } = useSettings();
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'alerts' | 'activity'>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshNotifications();
+    }
+  }, [isOpen, refreshNotifications]);
 
   if (!isOpen) return null;
 
   const filteredNotifications = notifications.filter(n => {
     if (activeTab === 'unread') return !n.isRead;
     if (activeTab === 'alerts') return n.severity === 'critical' || n.severity === 'warning';
-    if (activeTab === 'system') return n.category === 'system';
+    if (activeTab === 'activity') return n.category === 'rooms' || n.category === 'funnel' || n.category === 'retention';
     return true;
   });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshNotifications();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   const handleNotificationClick = (n: AppNotification) => {
     markAsRead(n.id);
@@ -141,28 +162,50 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-2)' }}>System events & anomaly trigger logs</p>
+              <p style={{ fontSize: 12, color: 'var(--text-2)' }}>Live telemetry events &amp; trigger alerts</p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Close notification drawer"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              background: 'var(--panel-2)',
-              border: '1px solid var(--line)',
-              color: 'var(--text-2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <X size={16} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              aria-label="Refresh notifications"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: 'var(--panel-2)',
+                border: '1px solid var(--line)',
+                color: 'var(--text-2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+              title="Refresh live telemetry notifications"
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close notification drawer"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: 'var(--panel-2)',
+                border: '1px solid var(--line)',
+                color: 'var(--text-2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Filter Tabs & Bulk Actions */}
@@ -180,7 +223,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
         >
           {/* Mistral Style Pill Tabs */}
           <div className="pill-group">
-            {(['all', 'unread', 'alerts', 'system'] as const).map(tab => (
+            {(['all', 'unread', 'alerts', 'activity'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -191,7 +234,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
                   textTransform: 'capitalize',
                 }}
               >
-                {tab === 'alerts' ? 'Alerts' : tab}
+                {tab === 'alerts' ? 'Alerts' : tab === 'activity' ? 'Activity' : tab}
               </button>
             ))}
           </div>
@@ -287,13 +330,46 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
                   }}
                   className="hover:border-teal-500"
                 >
+                  {/* Dismiss individual notification button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dismissNotification(n.id);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 10,
+                      right: 10,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--dim)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0.6,
+                      transition: 'opacity 0.15s ease',
+                      zIndex: 2,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+                    title="Dismiss notification"
+                    aria-label="Dismiss notification"
+                  >
+                    <X size={13} />
+                  </button>
+
                   {/* Unread indicator dot */}
                   {!n.isRead && (
                     <div
                       style={{
                         position: 'absolute',
-                        top: 14,
-                        right: 14,
+                        top: 16,
+                        right: 36,
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
@@ -303,7 +379,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, 
                   )}
 
                   {/* Notification Header */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, paddingRight: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, paddingRight: 32 }}>
                     <div
                       style={{
                         width: 28,

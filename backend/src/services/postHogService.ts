@@ -255,7 +255,7 @@ class PostHogService {
   /**
    * Fetch all persons, following pagination rather than capping at a single 100-record page.
    */
-  private async fetchAllPersons(opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
+  public async fetchAllPersons(opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
     if (!this.hasApiKey) return [];
     const maxPages = opts?.maxPages ?? 4;
     const pageSize = opts?.pageSize ?? 100;
@@ -278,6 +278,13 @@ class PostHogService {
     }
 
     return allPersons;
+  }
+
+  /**
+   * Alias for fetchAllPersons
+   */
+  public async fetchPersons(opts?: { maxPages?: number; pageSize?: number }): Promise<any[]> {
+    return this.fetchAllPersons(opts);
   }
 
   /**
@@ -342,7 +349,7 @@ class PostHogService {
    * heuristic is mistagging the Google OAuth redirect as a search visit, not detecting a real
    * Google results-page referral. Trusting it would silently overcount "Organic Search".
    */
-  private classifyAcquisitionChannel(props: Record<string, any>): string {
+  public classifyAcquisitionChannel(props: Record<string, any>): string {
     const trafficSource = this.classifyTrafficSource(props);
     if (trafficSource.includes('Email')) return 'Email Campaigns';
     if (trafficSource.includes('Paid') || trafficSource.includes('Ads')) return 'Paid Ads';
@@ -356,7 +363,7 @@ class PostHogService {
    * Prioritizes explicit UTM parameters and ad-network click IDs, parses raw referrer URLs into
    * hostnames, recognizes search engines, and maps known social/search platforms cleanly.
    */
-  private classifyTrafficSource(props: Record<string, any>): string {
+  public classifyTrafficSource(props: Record<string, any>): string {
     // 1. Explicit Paid Ad-network click identifiers
     if (props.gclid || props.gad_source || props.gclsrc || props.wbraid || props.gbraid) return 'Google Ads (Paid)';
     if (props.li_fat_id) return 'LinkedIn Ads (Paid)';

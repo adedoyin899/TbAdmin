@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-
+import { dashboardApi } from '../api/dashboardApi';
 
 export interface AppNotification {
   id: string;
@@ -44,7 +44,9 @@ interface SettingsContextType {
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  dismissNotification: (id: string) => void;
   clearNotifications: () => void;
+  refreshNotifications: () => Promise<void>;
   addNotification: (notification: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => void;
   sendTestEmailAlert: () => Promise<{ success: boolean; message: string }>;
 }
@@ -69,62 +71,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   },
 };
 
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'notif-1',
-    title: 'High Funnel Drop-off Alert',
-    message: 'Room Created → Room Published dropped by 40% this week. Creator onboarding assistance recommended.',
-    severity: 'warning',
-    category: 'funnel',
-    triggerRule: 'Trigger: Funnel Step Drop-off ≥ 40% threshold',
-    timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(), // 12 mins ago
-    isRead: false,
-    link: '/dashboard/funnel',
-  },
-  {
-    id: 'notif-2',
-    title: 'High-Value Lead in Showcase Room',
-    message: 'Senior Director from Spotify spent 8m 45s viewing "Design Engineering Reel 2026".',
-    severity: 'info',
-    category: 'rooms',
-    triggerRule: 'Trigger: High-Value Recruiter / Exec Room Lead detected',
-    timestamp: new Date(Date.now() - 1000 * 60 * 48).toISOString(), // 48 mins ago
-    isRead: false,
-    link: '/dashboard/rooms',
-  },
-  {
-    id: 'notif-3',
-    title: 'Weekly Retention Benchmark Achieved',
-    message: '7-Day returning creator retention reached 42% (+3.5% week-over-week growth).',
-    severity: 'success',
-    category: 'retention',
-    triggerRule: 'Trigger: Retention milestone exceeded (+3% WoW gain)',
-    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(), // 3 hours ago
-    isRead: false,
-    link: '/dashboard/retention',
-  },
-  {
-    id: 'notif-4',
-    title: 'Elevated Email Bounces on Welcome Campaign',
-    message: '18 bounce events recorded via Mailgun webhook. Domain sender reputation check advised.',
-    severity: 'critical',
-    category: 'email',
-    triggerRule: 'Trigger: Campaign Bounces > 15 bounce threshold',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-    isRead: true,
-    link: '/dashboard/email',
-  },
-  {
-    id: 'notif-5',
-    title: 'PostHog Cache Fallback Active',
-    message: 'In-memory cache fallback operational while local Redis was offline. No telemetry lost.',
-    severity: 'info',
-    category: 'system',
-    triggerRule: 'Trigger: Database / in-memory cache resilience trigger',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    isRead: true,
-  },
-];
+const LEGACY_DUMMY_IDS = new Set(['notif-1', 'notif-2', 'notif-3', 'notif-4', 'notif-5']);
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
@@ -148,20 +95,43 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   });
 
-
-
-  // Load notifications from localStorage
+  // Load notifications from localStorage, purging legacy dummy notifications
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     try {
       const saved = localStorage.getItem('talentbridge_notifications');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed: AppNotification[] = JSON.parse(saved);
+        // Filter out legacy dummy items with fake Spotify leads or cache fallback messages
+        const sanitized = parsed.filter(n =>
+          !LEGACY_DUMMY_IDS.has(n.id) &&
+          !n.message?.toLowerCase().includes('spotify') &&
+          !n.message?.toLowerCase().includes('in-memory cache fallback operational')
+        );
+        if (sanitized.length > 0) return sanitized;
       }
     } catch (e) {
       console.warn('Failed to parse notifications from localStorage', e);
     }
-    return INITIAL_NOTIFICATIONS;
+    return [];
   });
+
+  // Fetch live event-driven notifications from backend API
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const res: any = await dashboardApi.getNotifications();
+      if (res?.notifications && Array.isArray(res.notifications)) {
+        setNotifications(res.notifications);
+        localStorage.setItem('talentbridge_notifications', JSON.stringify(res.notifications));
+      }
+    } catch (e) {
+      console.warn('Failed to fetch live notifications from API', e);
+    }
+  }, []);
+
+  // Automatically fetch live notifications on mount
+  useEffect(() => {
+    refreshNotifications();
+  }, [refreshNotifications]);
 
   // Save settings on update
   const updateSettings = (newSettings: Partial<NotificationSettings>) => {
@@ -188,23 +158,32 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const markAsRead = (id: string) => {
+    dashboardApi.markNotificationRead(id).catch(() => {});
     const updated = notifications.map(n => (n.id === id ? { ...n, isRead: true } : n));
     saveNotifications(updated);
   };
 
   const markAllAsRead = () => {
+    dashboardApi.markAllNotificationsRead().catch(() => {});
     const updated = notifications.map(n => ({ ...n, isRead: true }));
     saveNotifications(updated);
   };
 
+  const dismissNotification = (id: string) => {
+    dashboardApi.deleteNotification(id).catch(() => {});
+    const updated = notifications.filter(n => n.id !== id);
+    saveNotifications(updated);
+  };
+
   const clearNotifications = () => {
+    dashboardApi.markAllNotificationsRead().catch(() => {});
     saveNotifications([]);
   };
 
   const addNotification = (item: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => {
     const newNotif: AppNotification = {
       ...item,
-      id: `notif-${Date.now()}`,
+      id: `notif-client-${Date.now()}`,
       timestamp: new Date().toISOString(),
       isRead: false,
     };
@@ -212,13 +191,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const sendTestEmailAlert = async (): Promise<{ success: boolean; message: string }> => {
-    // Simulate / Trigger backend API email
     await new Promise(resolve => setTimeout(resolve, 600));
 
-    // Create a new notification entry confirming the dispatch
     addNotification({
-      title: 'Test Email Update Dispatched',
-      message: `A test analytics update was delivered to ${settings.recipientEmail} (${settings.emailFrequency} digest schedule).`,
+      title: 'Test Email Digest Sent',
+      message: `A test analytics update was delivered to ${settings.recipientEmail} (${settings.emailFrequency} schedule).`,
       severity: 'success',
       category: 'system',
       triggerRule: 'Trigger: Manual Test Alert execution from Settings',
@@ -243,7 +220,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         unreadCount,
         markAsRead,
         markAllAsRead,
+        dismissNotification,
         clearNotifications,
+        refreshNotifications,
         addNotification,
         sendTestEmailAlert,
       }}
@@ -260,3 +239,4 @@ export const useSettings = () => {
   }
   return context;
 };
+

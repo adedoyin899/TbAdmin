@@ -1,64 +1,6 @@
 import type { Request, Response } from 'express';
 import { logger } from '../utils/logger.js';
-
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  severity: 'critical' | 'warning' | 'info' | 'success';
-  category: 'funnel' | 'email' | 'rooms' | 'retention' | 'system';
-  triggerRule: string;
-  timestamp: string;
-  isRead: boolean;
-  link?: string;
-}
-
-let SYSTEM_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    title: 'High Funnel Drop-off Alert',
-    message: 'Room Created → Room Published dropped by 40% this week. Creator onboarding friction detected.',
-    severity: 'warning',
-    category: 'funnel',
-    triggerRule: 'Trigger: Funnel Step Drop-off ≥ 40% threshold',
-    timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-    isRead: false,
-    link: '/dashboard/funnel',
-  },
-  {
-    id: 'notif-2',
-    title: 'High-Value Lead in Showcase Room',
-    message: 'Senior Director from Spotify spent 8m 45s viewing "Design Engineering Reel 2026".',
-    severity: 'info',
-    category: 'rooms',
-    triggerRule: 'Trigger: High-Value Recruiter / Exec Room Lead detected',
-    timestamp: new Date(Date.now() - 1000 * 60 * 48).toISOString(),
-    isRead: false,
-    link: '/dashboard/rooms',
-  },
-  {
-    id: 'notif-3',
-    title: 'Weekly Retention Benchmark Achieved',
-    message: '7-Day returning creator retention reached 42% (+3.5% week-over-week growth).',
-    severity: 'success',
-    category: 'retention',
-    triggerRule: 'Trigger: Retention milestone exceeded (+3% WoW gain)',
-    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    isRead: false,
-    link: '/dashboard/retention',
-  },
-  {
-    id: 'notif-4',
-    title: 'Elevated Email Bounces on Welcome Campaign',
-    message: '18 bounce events recorded via Mailgun webhook. Domain sender reputation check advised.',
-    severity: 'critical',
-    category: 'email',
-    triggerRule: 'Trigger: Campaign Bounces > 15 bounce threshold',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-    isRead: true,
-    link: '/dashboard/email',
-  },
-];
+import { notificationService, type NotificationItem } from '../services/notificationService.js';
 
 let SAVED_SETTINGS = {
   funnelDropoffThreshold: 40,
@@ -78,16 +20,43 @@ let SAVED_SETTINGS = {
   },
 };
 
-export const getNotifications = (_req: Request, res: Response): void => {
-  res.status(200).json({
-    notifications: SYSTEM_NOTIFICATIONS,
-    unreadCount: SYSTEM_NOTIFICATIONS.filter(n => !n.isRead).length,
-  });
+export const getNotifications = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const notifications = await notificationService.getNotifications(SAVED_SETTINGS);
+    res.status(200).json({
+      notifications,
+      unreadCount: notifications.filter(n => !n.isRead).length,
+    });
+  } catch (err: any) {
+    logger.error(`Error fetching live notifications: ${err.message}`);
+    res.status(200).json({
+      notifications: [],
+      unreadCount: 0,
+    });
+  }
 };
 
 export const markAllNotificationsRead = (_req: Request, res: Response): void => {
-  SYSTEM_NOTIFICATIONS = SYSTEM_NOTIFICATIONS.map(n => ({ ...n, isRead: true }));
+  notificationService.markAllAsRead();
   res.status(200).json({ success: true, message: 'All notifications marked as read' });
+};
+
+export const markNotificationRead = (req: Request, res: Response): void => {
+  const idParam = req.params.id;
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
+  if (id) {
+    notificationService.markAsRead(id);
+  }
+  res.status(200).json({ success: true, message: 'Notification marked as read' });
+};
+
+export const deleteNotification = (req: Request, res: Response): void => {
+  const idParam = req.params.id;
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
+  if (id) {
+    notificationService.dismiss(id);
+  }
+  res.status(200).json({ success: true, message: 'Notification dismissed' });
 };
 
 export const getNotificationSettings = (req: Request, res: Response): void => {
@@ -116,18 +85,14 @@ export const sendTestEmailAlert = (req: Request, res: Response): void => {
   logger.info(`📨 Test notification email alert dispatched to ${targetEmail}`);
 
   // Create an automated event notification
-  const testNotif: NotificationItem = {
-    id: `notif-${Date.now()}`,
+  const testNotif = notificationService.addManualNotification({
     title: 'Test Email Alert Dispatched',
     message: `A sample analytics summary email was dispatched to ${targetEmail}.`,
     severity: 'success',
     category: 'system',
     triggerRule: 'Trigger: Manual Test Alert from Settings',
-    timestamp: new Date().toISOString(),
-    isRead: false,
     link: '/settings',
-  };
-  SYSTEM_NOTIFICATIONS.unshift(testNotif);
+  });
 
   res.status(200).json({
     success: true,
@@ -135,3 +100,4 @@ export const sendTestEmailAlert = (req: Request, res: Response): void => {
     notification: testNotif,
   });
 };
+
