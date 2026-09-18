@@ -29,13 +29,35 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!validateEmail(email)) { setError('Please enter a valid email address.'); return; }
-    if (!password) { setError('Password is required.'); return; }
+    if (!validateEmail(email)) {
+      setError('Please enter a valid work email address.');
+      return;
+    }
+    if (!password) {
+      setError('Password is required.');
+      return;
+    }
+
     try {
       await login(email, password);
+      // Determine default dashboard based on user role
+      const stored = localStorage.getItem('auth_user');
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          const role = (user.role || '').toLowerCase();
+          if (role.includes('market')) {
+            navigate('/dashboard/campaigns');
+            return;
+          } else if (role.includes('viewer') || role.includes('analyst')) {
+            navigate('/dashboard/website');
+            return;
+          }
+        } catch {}
+      }
       navigate('/dashboard/funnel');
-    } catch {
-      setError('Login failed. Please check your credentials.');
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -92,7 +114,7 @@ export const LoginPage: React.FC = () => {
             background: 'var(--panel)',
             border: '1px solid var(--line)',
             borderRadius: 'var(--radius)',
-            padding: '34px 30px',
+            padding: '36px 32px',
             boxShadow: 'var(--shadow-lg)',
             position: 'relative',
             overflow: 'hidden',
@@ -101,12 +123,12 @@ export const LoginPage: React.FC = () => {
           {/* Top Edge Sunset Stripe */}
           <div className="sunset-stripe absolute top-0 left-0 right-0" style={{ height: 3 }} />
 
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 26 }}>
             <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
               Sign in to Portal
             </h2>
             <p style={{ fontSize: 12.5, color: 'var(--dim)', marginTop: 4 }}>
-              Enter your corporate credentials or choose a test account below
+              Enter your corporate credentials to access the analytics portal
             </p>
           </div>
 
@@ -117,10 +139,11 @@ export const LoginPage: React.FC = () => {
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.25)',
                 borderRadius: 'var(--radius-xs)',
-                padding: '10px 14px',
-                marginBottom: 20,
+                padding: '11px 14px',
+                marginBottom: 22,
                 color: '#EF4444',
                 fontSize: 13,
+                lineHeight: 1.4,
               }}
             >
               <AlertCircle size={16} className="shrink-0" />
@@ -150,7 +173,7 @@ export const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 26 }}>
               <label
                 htmlFor="login-password"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7, fontWeight: 600, fontSize: 13, color: 'var(--text-2)' }}
@@ -184,7 +207,7 @@ export const LoginPage: React.FC = () => {
               id="login-submit"
               type="submit"
               className="btn btn-primary w-full"
-              style={{ padding: '11px 16px', fontSize: 14.5, fontWeight: 600, gap: 8 }}
+              style={{ padding: '12px 16px', fontSize: 14.5, fontWeight: 600, gap: 8 }}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -200,82 +223,6 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Fill RBAC Role Accounts */}
-          <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--line)' }}>
-            <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, fontFamily: 'Sora, sans-serif' }}>
-              Quick-Fill Role Access (RBAC)
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {/* Super Admin */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('maz@talentbridge.cv');
-                  setPassword('temp_password_123');
-                }}
-                className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '8px 10px', fontSize: 11.5, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
-              >
-                <div>
-                  <span style={{ fontWeight: 700, color: 'var(--accent)', display: 'block' }}>👑 Maz (Super Admin)</span>
-                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Full Read/Write</span>
-                </div>
-                <span style={{ color: 'var(--accent)', fontSize: 11 }}>Fill →</span>
-              </button>
-
-              {/* System Admin */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@talentbridge.cv');
-                  setPassword('password123');
-                }}
-                className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '8px 10px', fontSize: 11.5, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
-              >
-                <div>
-                  <span style={{ fontWeight: 700, color: 'var(--text)', display: 'block' }}>🛠️ System Admin</span>
-                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Analytics &amp; Config</span>
-                </div>
-                <span style={{ color: 'var(--accent)', fontSize: 11 }}>Fill →</span>
-              </button>
-
-              {/* Data Analyst */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('kwame.asante@talentbridge.cv');
-                  setPassword('password123');
-                }}
-                className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '8px 10px', fontSize: 11.5, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
-              >
-                <div>
-                  <span style={{ fontWeight: 700, color: '#3B82F6', display: 'block' }}>📊 Kwame (Analyst)</span>
-                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Analytics &amp; CSV</span>
-                </div>
-                <span style={{ color: '#3B82F6', fontSize: 11 }}>Fill →</span>
-              </button>
-
-              {/* Viewer / Read-Only */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('sarah.jenkins@talentbridge.cv');
-                  setPassword('password123');
-                }}
-                className="btn btn-ghost"
-                style={{ justifyContent: 'space-between', padding: '8px 10px', fontSize: 11.5, border: '1px solid var(--line)', background: 'var(--panel-2)', textAlign: 'left' }}
-              >
-                <div>
-                  <span style={{ fontWeight: 700, color: '#F59E0B', display: 'block' }}>👁️ Sarah (Viewer)</span>
-                  <span style={{ color: 'var(--dim)', fontSize: 10 }}>Read-Only Mode</span>
-                </div>
-                <span style={{ color: '#F59E0B', fontSize: 11 }}>Fill →</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 22, color: 'var(--dim)', fontSize: 12 }}>

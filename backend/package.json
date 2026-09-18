@@ -12,6 +12,7 @@
     "migrate:rollback": "tsx src/db/migrate.ts down",
     "seed": "tsx src/db/seeders/admin_users.ts",
     "test:auth": "tsx src/tests/auth.test.ts",
+    "test:rbac": "tsx src/tests/authRbac.test.ts",
     "test:cache": "tsx src/tests/cache.test.ts",
     "test:funnel": "tsx src/tests/funnel.test.ts",
     "test:dashboards": "tsx src/tests/dashboards.test.ts",

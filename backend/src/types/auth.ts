@@ -10,8 +10,10 @@ export interface JWTPayload {
 
 export interface AuthUser {
   id: string;
+  name?: string;
   email: string;
   role: UserRole;
+  isOwner?: boolean;
   createdAt?: string;
   lastLogin?: string | null;
 }

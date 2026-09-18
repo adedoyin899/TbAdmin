@@ -1,4 +1,15 @@
-export type UserRole = 'admin' | 'product' | 'marketing' | 'operations' | 'intern';
+export type UserRole =
+  | 'Super Admin'
+  | 'Admin'
+  | 'Marketing'
+  | 'Data Analyst'
+  | 'Viewer'
+  | 'admin'
+  | 'product'
+  | 'marketing'
+  | 'operations'
+  | 'intern'
+  | string;
 
 export interface AdminUserRow {
   id: string;

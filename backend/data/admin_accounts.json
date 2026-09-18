@@ -1,0 +1,84 @@
+[
+  {
+    "id": "adm_001_maz",
+    "name": "Maz (Lead Admin)",
+    "email": "maz@talentbridge.cv",
+    "aliases": [
+      "maz@tb.com"
+    ],
+    "role": "Super Admin",
+    "password": "temp_password_123",
+    "passwordHash": "$2b$10$akO4BMPn4o1SXx.sMrQkl.SafKkmx2ehl8UxiqMSaTaOFeGrpik16",
+    "expiry": "7 Days (Sliding)",
+    "status": "Active",
+    "lastActive": "Just now",
+    "isOwner": true,
+    "createdAt": "2026-09-18T10:56:06.616Z"
+  },
+  {
+    "id": "adm_002_sys",
+    "name": "System Admin",
+    "email": "admin@talentbridge.cv",
+    "aliases": [
+      "admin@tb.com"
+    ],
+    "role": "Admin",
+    "password": "password123",
+    "passwordHash": "$2b$10$KtBeE6G6ogfFJDwaDNNsme7opnczOV2CCtZFB7Cg7oHCSGQCRfjxu",
+    "expiry": "7 Days (Sliding)",
+    "status": "Active",
+    "lastActive": "14m ago",
+    "isOwner": false,
+    "createdAt": "2026-09-18T10:56:06.672Z"
+  },
+  {
+    "id": "adm_003_mkt",
+    "name": "Marketing Lead",
+    "email": "marketing@tb.com",
+    "aliases": [
+      "marketing@talentbridge.cv"
+    ],
+    "role": "Marketing",
+    "password": "marketing123",
+    "passwordHash": "$2b$10$LhPhGedihOXkigI/fxZN/uKkKDzlrqusEoFyli/qcPDqcx6v.sQ2O",
+    "expiry": "7 Days (Sliding)",
+    "status": "Active",
+    "lastActive": "Just now",
+    "isOwner": false,
+    "createdAt": "2026-09-18T10:56:06.728Z"
+  },
+  {
+    "id": "adm_004_kwm",
+    "name": "Kwame Asante",
+    "email": "kwame.asante@talentbridge.cv",
+    "aliases": [
+      "analyst@tb.com",
+      "analyst@talentbridge.cv"
+    ],
+    "role": "Data Analyst",
+    "password": "analyst123",
+    "passwordHash": "$2b$10$HCsHl33kU7z9GaW8Xh3q8.weJ3HQlNQTYfwjLqo6oUwDgILsjYP5u",
+    "expiry": "24 Hours",
+    "status": "Active",
+    "lastActive": "2h ago",
+    "isOwner": false,
+    "createdAt": "2026-09-18T10:56:06.784Z"
+  },
+  {
+    "id": "adm_005_sar",
+    "name": "Sarah Jenkins",
+    "email": "sarah.jenkins@talentbridge.cv",
+    "aliases": [
+      "viewer@tb.com",
+      "viewer@talentbridge.cv"
+    ],
+    "role": "Viewer",
+    "password": "viewer123",
+    "passwordHash": "$2b$10$i0.OMbkgfSPMGtSMY8BIO.zoC7K4zXz4j6qERgAdPbzFOdJyJYRei",
+    "expiry": "24 Hours",
+    "status": "Active",
+    "lastActive": "Yesterday",
+    "isOwner": false,
+    "createdAt": "2026-09-18T10:56:06.839Z"
+  }
+]

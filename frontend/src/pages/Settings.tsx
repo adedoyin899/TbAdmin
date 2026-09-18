@@ -10,6 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useRbac } from '../utils/rbac';
 import { integrationsApi, type PostHogSchemaHealth } from '../api/integrationsApi';
+import { authApi, type TeamMemberAccount } from '../api/authApi';
 
 type TabKey = 'alerts' | 'email' | 'integrations' | 'security' | 'appearance';
 type ProviderKey = 'posthog' | 'mailgun' | 'linkedin' | 'reddit' | 'buffer' | 'redis' | 'postgres';
@@ -52,15 +53,7 @@ export const SettingsPage: React.FC = () => {
   const [schemaHealthLoading, setSchemaHealthLoading] = useState(false);
 
   // Team administration state (Maz as Super Admin Source of Truth)
-  const [teamUsers, setTeamUsers] = useState<Array<{
-    name: string;
-    email: string;
-    role: string;
-    expiry: string;
-    status: 'Active' | 'Suspended' | 'Invited';
-    lastActive?: string;
-    isOwner?: boolean;
-  }>>(() => {
+  const [teamUsers, setTeamUsers] = useState<TeamMemberAccount[]>(() => {
     const saved = localStorage.getItem('tbridge_team_users');
     if (saved) {
       try {
@@ -68,21 +61,26 @@ export const SettingsPage: React.FC = () => {
       } catch {}
     }
     return [
-      { name: 'Maz (Lead Admin)', email: 'maz@talentbridge.cv', role: 'Super Admin', expiry: '7 Days (Sliding)', status: 'Active', lastActive: 'Just now (Source of Truth)', isOwner: true },
-      { name: 'System Admin', email: 'admin@talentbridge.cv', role: 'Admin', expiry: '7 Days (Sliding)', status: 'Active', lastActive: '14m ago' },
-      { name: 'Kwame Asante', email: 'kwame.asante@talentbridge.cv', role: 'Data Analyst', expiry: '24 Hours', status: 'Active', lastActive: '2h ago' },
-      { name: 'Sarah Jenkins', email: 'sarah.jenkins@talentbridge.cv', role: 'Viewer', expiry: '24 Hours', status: 'Active', lastActive: 'Yesterday' },
-      { name: 'Test Operator', email: 'test@example.com', role: 'Viewer', expiry: '24 Hours', status: 'Active', lastActive: '3d ago' },
+      { id: 'adm_001', name: 'Maz (Lead Admin)', email: 'maz@talentbridge.cv', role: 'Super Admin', password: 'temp_password_123', expiry: '7 Days (Sliding)', status: 'Active', lastActive: 'Just now (Source of Truth)', isOwner: true },
+      { id: 'adm_002', name: 'System Admin', email: 'admin@talentbridge.cv', role: 'Admin', password: 'password123', expiry: '7 Days (Sliding)', status: 'Active', lastActive: '14m ago' },
+      { id: 'adm_003', name: 'Marketing Lead', email: 'marketing@tb.com', role: 'Marketing', password: 'marketing123', expiry: '7 Days (Sliding)', status: 'Active', lastActive: '1h ago' },
+      { id: 'adm_004', name: 'Kwame Asante', email: 'kwame.asante@talentbridge.cv', role: 'Data Analyst', password: 'analyst123', expiry: '24 Hours', status: 'Active', lastActive: '2h ago' },
+      { id: 'adm_005', name: 'Sarah Jenkins', email: 'sarah.jenkins@talentbridge.cv', role: 'Viewer', password: 'viewer123', expiry: '24 Hours', status: 'Active', lastActive: 'Yesterday' },
     ];
   });
+
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [editingPasswordUser, setEditingPasswordUser] = useState<{ email: string; name: string } | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState<string>('');
+  const [isSavingPassword, setIsSavingPassword] = useState<boolean>(false);
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [userActionMsg, setUserActionMsg] = useState<string | null>(null);
   const [newUserForm, setNewUserForm] = useState({
     name: '',
     email: '',
-    role: 'Admin',
-    tempPassword: 'temp_pass_2026',
+    role: 'Marketing',
+    tempPassword: 'password123',
   });
 
   const [credentials, setCredentials] = useState(() => {
@@ -212,30 +210,81 @@ export const SettingsPage: React.FC = () => {
     refreshSchemaHealth();
   }, []);
 
-  const handleAddAdminUser = () => {
-    if (!newUserForm.name || !newUserForm.email) return;
-    const newUser = {
-      name: newUserForm.name,
-      email: newUserForm.email,
-      role: newUserForm.role,
-      expiry: '7 Days (Sliding)',
-      status: 'Active' as const,
-      lastActive: 'Provisioned Just now',
-    };
-    setTeamUsers(prev => [...prev, newUser]);
-    setShowAddUserModal(false);
-    setNewUserForm({ name: '', email: '', role: 'Admin', tempPassword: 'temp_pass_2026' });
-    setUserActionMsg(`Successfully provisioned administrator account for ${newUser.name} (${newUser.email})`);
-    setTimeout(() => setUserActionMsg(null), 4000);
+  // Load synchronized team accounts from backend
+  useEffect(() => {
+    authApi.getTeamAccounts().then((accounts) => {
+      if (accounts && accounts.length > 0) {
+        setTeamUsers(accounts);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleToggleShowPassword = (email: string) => {
+    setShowPasswords(prev => ({ ...prev, [email]: !prev[email] }));
   };
 
-  const handleUpdateUserRole = (email: string, newRole: string) => {
+  const handleStartEditPassword = (email: string, name: string, currentPass?: string) => {
+    setEditingPasswordUser({ email, name });
+    setNewPasswordInput(currentPass || '');
+  };
+
+  const handleSavePassword = async () => {
+    if (!editingPasswordUser || !newPasswordInput || newPasswordInput.length < 4) return;
+    setIsSavingPassword(true);
+    try {
+      await authApi.changeUserPassword(editingPasswordUser.email, newPasswordInput);
+      setTeamUsers(prev => prev.map(u => u.email.toLowerCase() === editingPasswordUser.email.toLowerCase() ? { ...u, password: newPasswordInput } : u));
+      setUserActionMsg(`Password for ${editingPasswordUser.email} updated to "${newPasswordInput}". Previous password is no longer valid.`);
+      setEditingPasswordUser(null);
+      setNewPasswordInput('');
+      setTimeout(() => setUserActionMsg(null), 4000);
+    } catch (err: any) {
+      setUserActionMsg(err.message || 'Failed to update password.');
+      setTimeout(() => setUserActionMsg(null), 4000);
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
+
+  const handleAddAdminUser = async () => {
+    if (!newUserForm.name || !newUserForm.email) return;
+    try {
+      const created = await authApi.addTeamAccount({
+        name: newUserForm.name,
+        email: newUserForm.email,
+        role: newUserForm.role,
+        password: newUserForm.tempPassword,
+      });
+      const newAcc = created || {
+        name: newUserForm.name,
+        email: newUserForm.email,
+        role: newUserForm.role,
+        password: newUserForm.tempPassword,
+        expiry: newUserForm.role === 'Viewer' || newUserForm.role === 'Data Analyst' ? '24 Hours' : '7 Days (Sliding)',
+        status: 'Active' as const,
+        lastActive: 'Provisioned Just now',
+      };
+      setTeamUsers(prev => [...prev.filter(u => u.email.toLowerCase() !== newAcc.email.toLowerCase()), newAcc]);
+      setShowAddUserModal(false);
+      setNewUserForm({ name: '', email: '', role: 'Marketing', tempPassword: 'password123' });
+      setUserActionMsg(`Successfully provisioned administrator account for ${newAcc.name} (${newAcc.email}) with role ${newAcc.role}`);
+      setTimeout(() => setUserActionMsg(null), 4000);
+    } catch (err: any) {
+      setUserActionMsg(err.message || 'Failed to provision user.');
+      setTimeout(() => setUserActionMsg(null), 4000);
+    }
+  };
+
+  const handleUpdateUserRole = async (email: string, newRole: string) => {
     setTeamUsers(prev => prev.map(u => u.email === email ? { ...u, role: newRole } : u));
+    try {
+      await authApi.updateUserRole(email, newRole);
+    } catch {}
     setUserActionMsg(`Updated ${email} role permissions to ${newRole}`);
     setTimeout(() => setUserActionMsg(null), 3000);
   };
 
-  const handleToggleUserStatus = (email: string) => {
+  const handleToggleUserStatus = async (email: string) => {
     setTeamUsers(prev => prev.map(u => {
       if (u.email === email && !u.isOwner) {
         const nextStatus = u.status === 'Active' ? 'Suspended' : 'Active';
@@ -245,10 +294,16 @@ export const SettingsPage: React.FC = () => {
       }
       return u;
     }));
+    try {
+      await authApi.toggleUserStatus(email);
+    } catch {}
   };
 
-  const handleDeleteUser = (email: string) => {
+  const handleDeleteUser = async (email: string) => {
     setTeamUsers(prev => prev.filter(u => u.email !== email));
+    try {
+      await authApi.deleteTeamAccount(email);
+    } catch {}
     setUserActionMsg(`Administrator account ${email} has been revoked and removed.`);
     setTimeout(() => setUserActionMsg(null), 3000);
   };
@@ -2059,7 +2114,8 @@ export const SettingsPage: React.FC = () => {
                       className="input"
                       style={{ width: '100%', fontSize: 12 }}
                     >
-                      <option value="Admin">Admin (Full Telemetry & Exports)</option>
+                      <option value="Marketing">Marketing (Campaigns, Social &amp; Acquisition)</option>
+                      <option value="Admin">Admin (Full Telemetry &amp; Exports)</option>
                       <option value="Data Analyst">Data Analyst (Read-Only Analytics)</option>
                       <option value="Viewer">Viewer / Demo (Restricted Access)</option>
                       <option value="Super Admin">Super Admin (Full System Access)</option>
@@ -2118,13 +2174,13 @@ export const SettingsPage: React.FC = () => {
                   <table style={{ minWidth: 780 }}>
                     <thead>
                       <tr>
-                        <th style={{ minWidth: 180 }}>Admin Name</th>
-                        <th style={{ minWidth: 200 }}>Email</th>
+                        <th style={{ minWidth: 170 }}>Admin Name</th>
+                        <th style={{ minWidth: 190 }}>Email</th>
                         <th style={{ minWidth: 120 }}>Role Tier</th>
-                        <th style={{ minWidth: 130 }}>Session Policy</th>
+                        <th style={{ minWidth: 150 }}>Password</th>
                         <th style={{ minWidth: 110 }}>Last Active</th>
-                        <th style={{ minWidth: 100 }}>Status</th>
-                        <th style={{ textAlign: 'right', minWidth: 110 }}>Actions</th>
+                        <th style={{ minWidth: 90 }}>Status</th>
+                        <th style={{ textAlign: 'right', minWidth: 140 }}>Actions</th>
                       </tr>
                     </thead>
                   <tbody>
@@ -2182,13 +2238,56 @@ export const SettingsPage: React.FC = () => {
                           >
                             <option value="Super Admin">Super Admin</option>
                             <option value="Admin">Admin</option>
+                            <option value="Marketing">Marketing</option>
                             <option value="Data Analyst">Data Analyst</option>
                             <option value="Viewer">Viewer</option>
                           </select>
                         </td>
-                        <td style={{ fontFamily: 'Geist Mono, monospace', fontSize: 12, color: 'var(--dim)' }}>
-                          {u.expiry}
+
+                        {/* Password Column with Mask / Unmask and Edit */}
+                        <td>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <span
+                              style={{
+                                fontFamily: 'JetBrains Mono, monospace',
+                                fontSize: 12,
+                                color: showPasswords[u.email] ? 'var(--accent)' : 'var(--dim)',
+                                background: 'var(--panel-2)',
+                                padding: '3px 7px',
+                                borderRadius: 4,
+                                border: '1px solid var(--line)',
+                                minWidth: 80,
+                                display: 'inline-block',
+                              }}
+                            >
+                              {showPasswords[u.email] ? (u.password || 'password123') : '••••••••'}
+                            </span>
+                            {rbac.isSuperAdmin && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleShowPassword(u.email)}
+                                  className="btn-icon"
+                                  style={{ width: 24, height: 24, border: 'none', color: 'var(--dim)' }}
+                                  title={showPasswords[u.email] ? 'Hide password' : 'View plaintext password'}
+                                >
+                                  {showPasswords[u.email] ? <EyeOff size={13} /> : <Eye size={13} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditPassword(u.email, u.name, u.password)}
+                                  className="btn btn-ghost"
+                                  style={{ padding: '2px 6px', fontSize: 10.5, height: 24, gap: 4, color: 'var(--text-2)' }}
+                                  title="Change password"
+                                >
+                                  <Key size={11} />
+                                  Edit
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
+
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
                           {u.lastActive || 'Recently'}
                         </td>
@@ -2253,6 +2352,92 @@ export const SettingsPage: React.FC = () => {
                 </table>
               </div>
             </div>
+
+            {/* Change Password Modal for Master Admin */}
+            {editingPasswordUser && (
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(11, 14, 20, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 9999,
+                  padding: 16,
+                }}
+                className="animate-fade-in"
+              >
+                <div
+                  style={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 'var(--radius)',
+                    padding: '24px 28px',
+                    maxWidth: 440,
+                    width: '100%',
+                    boxShadow: 'var(--shadow-lg)',
+                  }}
+                  className="animate-slide-up"
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(20,184,166,0.12)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Key size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+                        Change Password
+                      </h3>
+                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
+                        Updating credentials for <strong style={{ color: 'var(--accent)' }}>{editingPasswordUser.email}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 16, background: 'var(--panel-2)', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)' }}>
+                    <p style={{ fontSize: 11.5, color: 'var(--dim)', margin: 0, lineHeight: 1.4 }}>
+                      Once saved, any previous sessions with the old password will be immediately invalidated. The team member will need to use this new password to sign in.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                      New Password
+                    </label>
+                    <input
+                      type="text"
+                      value={newPasswordInput}
+                      onChange={(e) => setNewPasswordInput(e.target.value)}
+                      placeholder="Enter new password (min 4 chars)"
+                      className="input"
+                      style={{ width: '100%', fontSize: 13, fontFamily: 'Geist Mono, monospace' }}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingPasswordUser(null); setNewPasswordInput(''); }}
+                      className="btn btn-ghost"
+                      style={{ fontSize: 12, padding: '7px 14px' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!newPasswordInput || newPasswordInput.length < 4 || isSavingPassword}
+                      onClick={handleSavePassword}
+                      className="btn btn-primary"
+                      style={{ fontSize: 12, padding: '7px 16px', gap: 6 }}
+                    >
+                      {isSavingPassword ? 'Updating…' : 'Save & Invalidate Old Password'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
             {/* Audit Logs & Security Summary */}

@@ -13,6 +13,7 @@ import tbLogolight from '../../assets/tbLogolight.svg';
 import tbicon from '../../assets/tbicon.svg';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
+import { useRbac, isRouteAllowed } from '../../utils/rbac';
 import { NotificationDrawer } from '../Notifications/NotificationDrawer';
 import { CommandPalette } from '../Common/CommandPalette';
 import type { LucideProps } from 'lucide-react';
@@ -118,6 +119,28 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+const getFilteredNavSections = (role?: string, email?: string): NavSection[] => {
+  return NAV_SECTIONS.map((section) => {
+    const filteredItems = section.items
+      .map((item) => {
+        if (item.subItems?.length) {
+          const filteredSub = item.subItems.filter((sub) => isRouteAllowed(sub.path, role, email));
+          return {
+            ...item,
+            subItems: filteredSub,
+          };
+        }
+        return item;
+      })
+      .filter((item) => isRouteAllowed(item.path, role, email));
+
+    return {
+      ...section,
+      items: filteredItems,
+    };
+  }).filter((section) => section.items.length > 0);
+};
+
 
 
 const getDisplayName = (email?: string) => {
@@ -150,8 +173,10 @@ export const Sidebar: React.FC<{
   onMobileClose,
 }) => {
   const { user, logout } = useAuth();
+  const rbac = useRbac();
   const navigate = useNavigate();
   const location = useLocation();
+  const navSections = getFilteredNavSections(user?.role, user?.email);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-mode') !== 'light'
@@ -277,7 +302,7 @@ export const Sidebar: React.FC<{
 
         {/* Scrollable Nav Sections */}
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '14px 10px' }}>
-          {NAV_SECTIONS.map((section, sIdx) => (
+          {navSections.map((section, sIdx) => (
             <div key={section.title} style={{ marginBottom: 18 }}>
               {!collapsed && (
                 <div
@@ -449,18 +474,20 @@ export const Sidebar: React.FC<{
                   </span>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    onMobileClose();
-                    navigate('/settings');
-                  }}
-                  className="btn btn-ghost"
-                  style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8 }}
-                >
-                  <Settings size={14} />
-                  Settings &amp; Alerts
-                </button>
+                {rbac.canModifySettings && (
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onMobileClose();
+                      navigate('/settings');
+                    }}
+                    className="btn btn-ghost"
+                    style={{ width: '100%', justifyContent: 'flex-start', padding: '7px 10px', fontSize: 12, gap: 8 }}
+                  >
+                    <Settings size={14} />
+                    Settings &amp; Alerts
+                  </button>
+                )}
 
                 <button
                   id="logout-btn"
@@ -544,6 +571,7 @@ export const Header: React.FC<{
   onOpenSearch: () => void;
 }> = ({ onMobileMenuClick, onOpenNotifications, onOpenSearch }) => {
   const { user, logout } = useAuth();
+  const rbac = useRbac();
   const { unreadCount } = useSettings();
   const navigate = useNavigate();
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
@@ -637,13 +665,17 @@ export const Header: React.FC<{
             <span className="badge badge-neutral" style={{ fontSize: 10.5, padding: '2px 8px' }}>
               🛠️ Admin
             </span>
-          ) : user?.role === 'Data Analyst' ? (
+          ) : user?.role === 'Marketing' || user?.role?.toLowerCase().includes('market') ? (
+            <span className="badge badge-sunset" style={{ fontSize: 10.5, padding: '2px 8px' }}>
+              🚀 Marketing
+            </span>
+          ) : user?.role === 'Data Analyst' || user?.role?.toLowerCase().includes('analyst') ? (
             <span className="badge" style={{ fontSize: 10.5, padding: '2px 8px', background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.22)' }}>
               📊 Data Analyst
             </span>
           ) : (
             <span className="badge" style={{ fontSize: 10.5, padding: '2px 8px', background: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.22)' }}>
-              👁️ Read-Only
+              👁️ Viewer
             </span>
           )}
         </div>
@@ -824,19 +856,21 @@ export const Header: React.FC<{
 
               {/* Actions */}
               <div style={{ padding: '6px 0' }}>
-                <button
-                  onClick={() => { setAvatarDropdownOpen(false); navigate('/settings'); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 16px', background: 'transparent', border: 'none',
-                    color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                  className="hover:bg-[var(--panel-2)] transition-colors"
-                >
-                  <Settings size={15} style={{ color: 'var(--dim)', flexShrink: 0 }} />
-                  Preferences &amp; Settings
-                </button>
+                {rbac.canModifySettings && (
+                  <button
+                    onClick={() => { setAvatarDropdownOpen(false); navigate('/settings'); }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '9px 16px', background: 'transparent', border: 'none',
+                      color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                    className="hover:bg-[var(--panel-2)] transition-colors"
+                  >
+                    <Settings size={15} style={{ color: 'var(--dim)', flexShrink: 0 }} />
+                    Preferences &amp; Settings
+                  </button>
+                )}
 
                 <button
                   onClick={toggleMode}
