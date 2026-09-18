@@ -147,10 +147,11 @@ export function isRouteAllowed(pathname: string, role?: string, email?: string):
 
   // Marketing Lead routes
   if (perms.isMarketing) {
-    // Marketing can access website analytics, funnel conversion, social media, campaigns, email, room insights, and platform guide
+    // Marketing can access website analytics, funnel conversion, channel breakdown, social media, campaigns, email, room insights, and platform guide
     const allowedPrefixes = [
       '/dashboard/website',
       '/dashboard/funnel',
+      '/dashboard/channels',
       '/dashboard/social-media',
       '/social-media',
       '/dashboard/campaigns',
@@ -165,7 +166,7 @@ export function isRouteAllowed(pathname: string, role?: string, email?: string):
 
   // Data Analyst routes
   if (perms.isAnalyst) {
-    // Analyst can access all analytics dashboards, media, and user lookup, but not system settings or errors
+    // Analyst can access all analytics dashboards, channels, media, and user lookup, but not system settings or errors
     return (
       !pathname.startsWith('/settings') &&
       !pathname.startsWith('/dashboard/errors')
@@ -177,6 +178,7 @@ export function isRouteAllowed(pathname: string, role?: string, email?: string):
     const viewerAllowed = [
       '/dashboard/website',
       '/dashboard/funnel',
+      '/dashboard/channels',
       '/dashboard/features',
       '/dashboard/retention',
       '/dashboard/rooms',

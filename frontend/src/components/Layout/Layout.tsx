@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
 
-  TrendingDown, Puzzle, RefreshCcw, Mail, Search, Sparkles,
+  TrendingDown, TrendingUp, Puzzle, RefreshCcw, Mail, Search, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, LogOut,
   Menu, X, Bell, Settings,
   ChevronsUpDown, Share2, Target, Globe,
@@ -21,6 +21,7 @@ import type { LucideProps } from 'lucide-react';
 // Icon map — keeps the sidebar config clean
 const ICON_MAP: Record<string, React.FC<LucideProps>> = {
   TrendingDown,
+  TrendingUp,
   Puzzle,
   RefreshCcw,
   Mail,
@@ -63,6 +64,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { path: '/dashboard/website', label: 'Website Analytics', icon: 'Globe', badge: 'Live', badgeType: 'teal' },
       { path: '/dashboard/funnel', label: 'Funnel Conversion', icon: 'TrendingDown' },
+      { path: '/dashboard/channels', label: 'Channel Breakdown', icon: 'TrendingUp', badge: 'New', badgeType: 'sunset' },
       { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle' },
       { path: '/dashboard/retention', label: 'Cohort Retention', icon: 'RefreshCcw' },
     ],

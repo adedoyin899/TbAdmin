@@ -12,6 +12,7 @@ import { EmailDashboard } from './components/Dashboard/EmailDashboard';
 import { RoomInsightsDashboard } from './components/Dashboard/RoomInsightsDashboard';
 import { WebsiteAnalyticsDashboard } from './components/Dashboard/WebsiteAnalyticsDashboard';
 import { ErrorMonitoringDashboard } from './components/Dashboard/ErrorMonitoringDashboard';
+import { ChannelBreakdownDashboard } from './components/Dashboard/ChannelBreakdownDashboard';
 
 import { SocialMediaOverview } from './components/SocialMedia/SocialMediaOverview';
 import { LinkedInDetailedView } from './components/SocialMedia/LinkedInDetailedView';
@@ -89,6 +90,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Layout><WebsiteAnalyticsDashboard /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              {/* Channel Breakdown — visible to ALL authenticated roles */}
+              <Route
+                path="/dashboard/channels"
+                element={
+                  <ProtectedRoute>
+                    <Layout><ChannelBreakdownDashboard /></Layout>
                   </ProtectedRoute>
                 }
               />

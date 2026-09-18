@@ -6,6 +6,7 @@ import {
   getEmailDashboard,
   getRoomsDashboard,
   getWebsiteDashboard,
+  getChannelsDashboard,
   getErrorMonitoringDashboard,
 } from '../controllers/dashboardController.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
@@ -32,6 +33,9 @@ dashboardRouter.get('/rooms', getRoomsDashboard);
 
 // GET /api/dashboard/website
 dashboardRouter.get('/website', getWebsiteDashboard);
+
+// GET /api/dashboard/channels — acquisition channel breakdown (visible to ALL roles)
+dashboardRouter.get('/channels', getChannelsDashboard);
 
 // GET /api/dashboard/errors
 dashboardRouter.get('/errors', getErrorMonitoringDashboard);

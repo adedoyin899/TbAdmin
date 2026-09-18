@@ -185,7 +185,117 @@ export async function getWebsiteDashboard(req: AuthenticatedRequest, res: Respon
 }
 
 /**
- * 7. GET /api/dashboard/errors
+ * 7. GET /api/dashboard/channels
+ * Returns acquisition channel breakdown from PostHog person properties.
+ * Visible to ALL authenticated roles — this is how we know where signups are coming from.
+ * Query Params: ?horizon=30d (24h | 7d | 30d | 90d | lifetime)
+ */
+export async function getChannelsDashboard(req: AuthenticatedRequest, res: Response) {
+  try {
+    const horizon = (req.query.horizon as string) || '30d';
+    const overview: any = await postHogService.fetchUserOverview(horizon);
+
+    const now = new Date();
+
+    // Channel color palette — consistent branding across all chart types
+    const CHANNEL_COLORS: Record<string, string> = {
+      'LinkedIn': '#0A66C2',
+      'WhatsApp': '#25D366',
+      'Direct Link': '#0D9488',
+      'Direct Traffic': '#0D9488',
+      'Organic Search (Google)': '#4285F4',
+      'Organic Search (Bing)': '#00809D',
+      'Organic Search (DuckDuckGo)': '#DE5833',
+      'Organic Search & Social': '#8B5CF6',
+      'Twitter / X': '#000000',
+      'Facebook': '#1877F2',
+      'Instagram': '#E1306C',
+      'Reddit': '#FF4500',
+      'Telegram': '#229ED9',
+      'Slack': '#4A154B',
+      'GitHub': '#181717',
+      'YouTube': '#FF0000',
+      'TikTok': '#010101',
+      'Product Hunt': '#DA552F',
+      'Email Campaigns': '#F59E0B',
+      'Paid Ads': '#EC4899',
+      'Creator Referrals': '#10B981',
+      'Google Ads (Paid)': '#4285F4',
+      'LinkedIn Ads (Paid)': '#0A66C2',
+      'Meta Ads (Facebook/Instagram)': '#1877F2',
+    };
+
+    const DEFAULT_COLORS = ['#0D9488', '#2DD4BF', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#10B981', '#FA520F', '#6366F1'];
+
+    const rawChannels: { name: string; count: string | number; percentage: number }[] = overview.acquisitionChannels || [];
+    const totalUsers = overview.lifetime?.totalRegisteredUsers || 0;
+
+    const channels = rawChannels.map((ch, idx) => ({
+      name: ch.name,
+      count: Number(ch.count),
+      percentage: ch.percentage,
+      color: CHANNEL_COLORS[ch.name] || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+    }));
+
+    // Categorize into groups for high-level view
+    const socialPlatforms = channels.filter(c =>
+      ['LinkedIn', 'WhatsApp', 'Twitter / X', 'Facebook', 'Instagram', 'Reddit',
+       'Telegram', 'Slack', 'TikTok', 'YouTube', 'GitHub', 'Product Hunt'].includes(c.name)
+    );
+    const searchChannels = channels.filter(c => c.name.startsWith('Organic Search'));
+    const paidChannels = channels.filter(c =>
+      c.name.includes('Paid') || c.name.includes('Ads')
+    );
+    const directChannels = channels.filter(c =>
+      c.name.includes('Direct') || c.name.includes('Referral') || c.name.includes('Email')
+    );
+
+    const responsePayload = {
+      horizon,
+      postHogConnected: overview.postHogConnected,
+      totalUsers,
+      totalChannels: channels.length,
+      channels,
+      groups: {
+        social: {
+          label: 'Social & Messaging',
+          count: socialPlatforms.reduce((sum, c) => sum + c.count, 0),
+          percentage: socialPlatforms.reduce((sum, c) => sum + c.percentage, 0),
+          channels: socialPlatforms,
+        },
+        search: {
+          label: 'Organic Search',
+          count: searchChannels.reduce((sum, c) => sum + c.count, 0),
+          percentage: searchChannels.reduce((sum, c) => sum + c.percentage, 0),
+          channels: searchChannels,
+        },
+        paid: {
+          label: 'Paid Campaigns',
+          count: paidChannels.reduce((sum, c) => sum + c.count, 0),
+          percentage: paidChannels.reduce((sum, c) => sum + c.percentage, 0),
+          channels: paidChannels,
+        },
+        direct: {
+          label: 'Direct, Referral & Email',
+          count: directChannels.reduce((sum, c) => sum + c.count, 0),
+          percentage: directChannels.reduce((sum, c) => sum + c.percentage, 0),
+          channels: directChannels,
+        },
+      },
+      lastSynced: overview.lastSynced || now.toISOString(),
+      cachedAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + 15 * 60 * 1000).toISOString(),
+    };
+
+    return sendSuccess(res, responsePayload, 200);
+  } catch (error: any) {
+    logger.error('Error in getChannelsDashboard:', error);
+    return sendError(res, error.message || 'Failed to fetch channel breakdown.', 500);
+  }
+}
+
+/**
+ * 8. GET /api/dashboard/errors
  * Query Params: ?dateRange=30d
  */
 export async function getErrorMonitoringDashboard(req: AuthenticatedRequest, res: Response) {

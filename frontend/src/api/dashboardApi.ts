@@ -118,9 +118,32 @@ export const dashboardApi = {
     return res;
   },
 
+
   deleteNotification: async (id: string) => {
     const res: any = await apiClient.delete(`/notifications/${id}`);
     return res;
+  },
+
+  getChannels: async (horizon: string = '30d') => {
+    try {
+      const res: any = await apiClient.get('/dashboard/channels', { params: { horizon } });
+      if (res && (res.channels || res.postHogConnected !== undefined)) return res;
+    } catch {}
+    // Minimal fallback when PostHog is offline
+    return {
+      horizon,
+      postHogConnected: false,
+      totalUsers: 0,
+      totalChannels: 0,
+      channels: [],
+      groups: {
+        social: { label: 'Social & Messaging', count: 0, percentage: 0, channels: [] },
+        search: { label: 'Organic Search', count: 0, percentage: 0, channels: [] },
+        paid: { label: 'Paid Campaigns', count: 0, percentage: 0, channels: [] },
+        direct: { label: 'Direct, Referral & Email', count: 0, percentage: 0, channels: [] },
+      },
+      lastSynced: new Date().toISOString(),
+    };
   },
 };
 
