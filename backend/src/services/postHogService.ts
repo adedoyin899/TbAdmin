@@ -860,11 +860,18 @@ class PostHogService {
     });
 
     const totalThemes = Object.values(themeCounts).reduce((a, b) => a + b, 0);
-    const themeDistribution = Object.entries(themeCounts).map(([theme, count]) => ({
-      theme: theme.charAt(0).toUpperCase() + theme.slice(1),
-      percentage: totalThemes > 0 ? Math.round((count / totalThemes) * 100) : 0,
-      count,
-    }));
+    const themeDistribution = Object.entries(themeCounts)
+      .map(([theme, count]) => {
+        const formatted = theme
+          .replace(/[_-]+/g, ' ')
+          .replace(/\b\w/g, char => char.toUpperCase());
+        return {
+          theme: formatted,
+          percentage: totalThemes > 0 ? Math.round((count / totalThemes) * 100) : 0,
+          count,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
 
     const result = {
       totalRoomsCreated: totalRooms,

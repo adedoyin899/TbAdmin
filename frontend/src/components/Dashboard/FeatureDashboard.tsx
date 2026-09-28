@@ -23,7 +23,11 @@ import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 import { useRbac } from '../../utils/rbac';
 
-const PIE_COLORS = ['#0F766E', '#2DD4BF', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#10B981'];
+const PIE_COLORS = [
+  '#0F766E', '#2DD4BF', '#3B82F6', '#8B5CF6', '#F59E0B',
+  '#EC4899', '#10B981', '#6366F1', '#14B8A6', '#F97316',
+  '#A855F7', '#06B6D4', '#84CC16', '#E11D48',
+];
 
 export interface BlockItemMeta {
   desc: string;
@@ -328,9 +332,14 @@ export const FeatureDashboard: React.FC = () => {
     return Array.isArray(data?.templateAdoption) ? data.templateAdoption : [];
   }, [data]);
 
-  // PostHog isn't tracking a theme/dark-mode property for talentbridge.cv visitors, so the
-  // backend honestly sends an empty array here — no fabricated Dark/Light split fallback.
+  // PostHog isn't tracking room themes for talentbridge.cv visitors yet, so the
+  // backend honestly sends an empty array here — no fabricated split fallback.
   const themeList: ThemeEntry[] = useMemo(() => data?.themeDistribution ?? [], [data]);
+  const topTheme = useMemo(() => {
+    if (!themeList.length) return null;
+    return [...themeList].sort((a, b) => b.count - a.count)[0];
+  }, [themeList]);
+  const hasThemeData = useMemo(() => themeList.length > 0 && themeList.some(t => t.count > 0), [themeList]);
 
   // Available categories for currently active tab
   const blockCategories = useMemo(() => {
@@ -558,12 +567,19 @@ export const FeatureDashboard: React.FC = () => {
             <Star size={16} color="#8B5CF6" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span className="mono-metric" style={{ fontSize: 20, fontWeight: 800, color: 'var(--dim)' }}>
-              Not tracked
+            <span className="mono-metric" style={{ fontSize: hasThemeData ? 22 : 20, fontWeight: 800, color: hasThemeData ? 'var(--text)' : 'var(--dim)' }}>
+              {hasThemeData && topTheme ? topTheme.theme : 'Not tracked'}
             </span>
+            {hasThemeData && topTheme && (
+              <span style={{ fontSize: 12, color: '#8B5CF6', fontWeight: 600 }}>
+                {formatPercentage(topTheme.percentage)}
+              </span>
+            )}
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            Dark / Light split not yet tracked — {data?.totalRoomsCreated ?? 0} total registered creators
+            {hasThemeData && topTheme
+              ? <>Top theme of {themeList.length} presets ({formatNumber(topTheme.count)} rooms)</>
+              : `13 curated presets not yet tracked — ${data?.totalRoomsCreated ?? 0} total registered creators`}
           </p>
         </div>
       </div>
@@ -824,7 +840,7 @@ export const FeatureDashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <Legend
-                      formatter={(value) => <span style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>{value} Mode</span>}
+                      formatter={(value) => <span style={{ color: 'var(--text)', fontSize: 12, fontWeight: 600 }}>{value} Theme</span>}
                     />
                     <Tooltip
                       formatter={(v: unknown) => [`${v}%`, 'Distribution']}
@@ -833,7 +849,7 @@ export const FeatureDashboard: React.FC = () => {
                   </PieChart>
                 </ResponsiveContainer>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto', paddingRight: 4 }}>
                   {themeList.map((t, i) => (
                     <div
                       key={t.theme || i}
@@ -848,8 +864,8 @@ export const FeatureDashboard: React.FC = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                        <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{t.theme} Theme Rooms</span>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{t.theme}</span>
                       </div>
                       <span style={{ fontWeight: 700, color: '#02ABAC', fontFamily: 'Geist, sans-serif', fontSize: 13 }}>
                         {formatPercentage(t.percentage)} ({formatNumber(t.count)} rooms)
@@ -862,7 +878,7 @@ export const FeatureDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '28px 12px', textAlign: 'center' }}>
                 <Star size={22} color="var(--dim)" />
                 <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-                  Dark / Light theme preference isn't tracked yet — PostHog doesn't record a room's theme choice as an event property.
+                  Room theme distribution (13 curated presets) isn't tracked yet — PostHog doesn't record a room's theme choice as an event property.
                 </p>
               </div>
             )}
