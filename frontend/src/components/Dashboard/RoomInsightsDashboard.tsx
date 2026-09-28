@@ -49,6 +49,8 @@ export const RoomInsightsDashboard: React.FC = () => {
         { header: 'Room Name', accessor: row => row.roomName },
         { header: 'Creator Name', accessor: row => row.ownerName },
         { header: 'Creator Email', accessor: row => row.ownerEmail },
+        { header: 'Status', accessor: row => (row.isPublished ? 'Published' : 'Draft') },
+        { header: 'Published At', accessor: row => row.publishedAt || '' },
         { header: 'Total Views', accessor: row => row.views },
         { header: 'Unique Views', accessor: row => row.uniqueViews },
         { header: 'Engagement Score (%)', accessor: row => `${row.engagement}%` },
@@ -300,6 +302,7 @@ export const RoomInsightsDashboard: React.FC = () => {
                   <tr>
                     <th style={{ minWidth: 180 }}>Room Name</th>
                     <th style={{ minWidth: 180 }}>Creator</th>
+                    <th style={{ minWidth: 90 }}>Status</th>
                     <th style={{ minWidth: 100 }}>Total Views</th>
                     <th style={{ minWidth: 110 }}>Unique Views</th>
                     <th style={{ minWidth: 120 }}>Engagement</th>
@@ -324,6 +327,17 @@ export const RoomInsightsDashboard: React.FC = () => {
                           </p>
                           <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{room.ownerEmail}</p>
                         </div>
+                      </td>
+                      <td>
+                        {room.isPublished ? (
+                          <span className="badge badge-success" style={{ fontSize: 10.5 }} title={room.publishedAt ? `room_published recorded ${new Date(room.publishedAt).toLocaleDateString()}` : undefined}>
+                            Published
+                          </span>
+                        ) : (
+                          <span className="badge badge-neutral" style={{ fontSize: 10.5 }} title="No room_published event recorded yet for this room">
+                            Draft
+                          </span>
+                        )}
                       </td>
                       <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.views)}</td>
                       <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.uniqueViews)}</td>

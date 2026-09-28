@@ -58,6 +58,7 @@ const INTERNAL_REFERRER_DOMAINS = ['talentbridge.cv', 'accounts.google.com'];
 const KNOWN_EVENT_NAMES = new Set([
   '$pageview', '$pageleave', '$autocapture', '$rageclick', '$identify', '$set', '$exception',
   'public_room_viewed', 'contact_clicked', 'user_signed_up', 'user_logged_in', 'room_saved',
+  'room_published',
 ]);
 const KNOWN_PROPERTY_NAMES = new Set([
   '$pathname', '$current_url', '$initial_pathname', '$initial_current_url',
@@ -256,6 +257,40 @@ class PostHogService {
       }
     } catch (err: any) {
       logger.warn('Error paginating PostHog events:', err.message);
+    }
+
+    return allEvents;
+  }
+
+  /**
+   * Fetch every occurrence of one specific event by name, filtered server-side.
+   *
+   * fetchEventsInRange's generic `/events?after=X` pagination is capped at a fixed number of
+   * pages and returns most-recent-first — for a low-volume event this can genuinely omit real
+   * occurrences that a direct `event=name` filter finds immediately (confirmed directly: a single
+   * room_published event from 2026-09-17 never appeared anywhere across all 3,178 events the
+   * generic 90-day pagination returned). Anything sparse should be fetched this way rather than
+   * assumed to be present in the generic dump.
+   */
+  private async fetchEventsByName(eventName: string, dateFrom: string): Promise<any[]> {
+    if (!this.hasApiKey) return [];
+    const allEvents: any[] = [];
+    let nextUrl: string | null = null;
+    const maxPages = 10;
+
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const res: any = nextUrl
+          ? await axios.get(nextUrl, { headers: { Authorization: `Bearer ${this.apiKey}` }, timeout: 15000 })
+          : await this.client.get('/events', { params: { event: eventName, after: dateFrom, limit: 250 } });
+
+        const results = res.data?.results || [];
+        allEvents.push(...results);
+        nextUrl = res.data?.next || null;
+        if (!nextUrl || results.length === 0) break;
+      }
+    } catch (err: any) {
+      logger.warn(`Error fetching PostHog "${eventName}" events:`, err.message);
     }
 
     return allEvents;
@@ -1203,6 +1238,10 @@ class PostHogService {
     // not positive engagement — tracked separately so it can't inflate `engagement`.
     rageClicks: number;
     publishedUrl: string;
+    // Real signal from the room_published event (shipped 2026-09-17) — a room only counts as
+    // published once we've actually seen that event for it, not just been visited.
+    isPublished: boolean;
+    publishedAt: string | null;
     country: string;
     countryCode: string;
     flag: string;
@@ -1212,7 +1251,7 @@ class PostHogService {
   }[] {
     const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string; ownerId?: string }>();
     for (const ev of roomEvents) {
-      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked') continue;
+      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked' && ev.event !== 'room_published') continue;
       const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
       const meta = roomMetaByPath.get(p) || {};
       if (ev.properties?.room_id !== undefined && ev.properties?.room_id !== null) {
@@ -1224,6 +1263,21 @@ class PostHogService {
         meta.ownerId = meta.ownerId ?? String(ev.properties.room_owner_id);
       }
       roomMetaByPath.set(p, meta);
+    }
+
+    // room_published (shipped 2026-09-17) is keyed by room_id directly rather than path, so a
+    // room counts as published as soon as we've seen this event for its room_id — regardless of
+    // which path it fired on.
+    const publishedAtByRoomId = new Map<string, string>();
+    for (const ev of roomEvents) {
+      if (ev.event !== 'room_published') continue;
+      const roomId = ev.properties?.room_id;
+      if (roomId === undefined || roomId === null) continue;
+      const key = String(roomId);
+      const existing = publishedAtByRoomId.get(key);
+      if (!existing || new Date(ev.timestamp).getTime() < new Date(existing).getTime()) {
+        publishedAtByRoomId.set(key, ev.timestamp);
+      }
     }
 
     const roomMap = new Map<string, {
@@ -1314,6 +1368,7 @@ class PostHogService {
       const ownerName = (ownerIdConfirmed && (ownerProps?.name || ownerProps?.$name)) || data.author || `Creator #${ownerDistinctId}`;
       const ownerEmail = (ownerIdConfirmed && (ownerProps?.email || ownerProps?.$email))
         || (ownerDistinctId.includes('@') ? ownerDistinctId : `creator_${ownerDistinctId}@talentbridge.cv`);
+      const publishedAt = data.roomId ? publishedAtByRoomId.get(data.roomId) ?? null : null;
 
       return {
         roomId: data.roomId || `room_${idx + 1}`,
@@ -1327,6 +1382,8 @@ class PostHogService {
         engagement: engagementPct,
         rageClicks: data.rageClicks,
         publishedUrl: data.url,
+        isPublished: publishedAt !== null,
+        publishedAt,
         country: data.country,
         countryCode: data.code,
         flag: data.flag,
@@ -1350,10 +1407,11 @@ class PostHogService {
     const nowMs = Date.now();
     const midpointMs = (dateFromMs + nowMs) / 2;
 
-    const [events, recordings, persons] = await Promise.all([
+    const [events, recordings, persons, roomPublishedEvents] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchRecordingsList(),
       this.fetchAllPersons(),
+      this.fetchEventsByName('room_published', dateFrom),
     ]);
     const personsByDistinctId = new Map<string, any>();
     for (const p of persons) {
@@ -1361,8 +1419,15 @@ class PostHogService {
       if (id) personsByDistinctId.set(id, p);
     }
 
-    // Filter room & showcase discovery events
-    const roomEvents = events.filter((e: any) => {
+    // Filter room & showcase discovery events. room_published is fetched separately above (see
+    // fetchEventsByName) since the generic pagination here can miss a low-volume event entirely —
+    // merged in here, deduped by event id, so buildRoomSummaries sees it like any other room event.
+    const seenEventIds = new Set<string>();
+    const roomEvents = [...events, ...roomPublishedEvents].filter((e: any) => {
+      if (e.id) {
+        if (seenEventIds.has(e.id)) return false;
+        seenEventIds.add(e.id);
+      }
       const p = e.properties?.$pathname || e.properties?.$current_url || '';
       return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory') || p.includes('/dashboard');
     });
@@ -1531,7 +1596,7 @@ class PostHogService {
       dateRange,
       summary: {
         totalRooms: topPerformingRooms.length,
-        publishedRooms: topPerformingRooms.length,
+        publishedRooms: topPerformingRooms.filter((r) => r.isPublished).length,
         totalViews: { count: totalViewsCount, change: totalViewsChange },
         uniqueViews: { count: uniqueViewsCount, change: uniqueViewsChange },
         avgTimeSpent: { value: avgTimeSpentStr, change: avgTimeSpentChange },
@@ -1571,13 +1636,21 @@ class PostHogService {
     const lookbackDateFrom = new Date(nowMs - 90 * 86400000).toISOString();
     const dateFromMs = new Date(lookbackDateFrom).getTime();
 
-    const [events, recordings, persons] = await Promise.all([
+    const [events, recordings, persons, roomPublishedEvents] = await Promise.all([
       this.fetchEventsInRange(lookbackDateFrom),
       this.fetchRecordingsList(),
       this.fetchAllPersons(),
+      this.fetchEventsByName('room_published', lookbackDateFrom),
     ]);
 
-    const roomEvents = events.filter((e: any) => {
+    // room_published fetched separately — see the comment in fetchRoomsAnalytics on why the
+    // generic pagination above can't be trusted to surface a low-volume event on its own.
+    const seenEventIds = new Set<string>();
+    const roomEvents = [...events, ...roomPublishedEvents].filter((e: any) => {
+      if (e.id) {
+        if (seenEventIds.has(e.id)) return false;
+        seenEventIds.add(e.id);
+      }
       const p = e.properties?.$pathname || e.properties?.$current_url || '';
       return p.includes('/r/') || p.includes('/assets-room/');
     });
@@ -1761,7 +1834,8 @@ class PostHogService {
       return {
         roomId: r.roomId,
         roomName: r.roomName,
-        isPublished: true,
+        isPublished: r.isPublished,
+        publishedAt: r.publishedAt,
         publishedUrl: r.publishedUrl,
         createdAt: r.firstSeenAt,
         totalViews: { count: pageviews.length, change: totalViewsChange },

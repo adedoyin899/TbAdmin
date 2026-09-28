@@ -208,6 +208,9 @@ export interface RoomInsight {
   roomId: string;
   roomName: string;
   isPublished: boolean;
+  // Real timestamp of the room_published event (shipped 2026-09-17) — null when the room hasn't
+  // fired that event yet, even if it has traffic (e.g. older rooms predating the event).
+  publishedAt?: string | null;
   publishedUrl?: string;
   createdAt: string;
   totalViews: { count: number; change: number };
@@ -255,6 +258,8 @@ export interface RoomsDashboardResponse {
     uniqueViews: number;
     engagement: number;
     rageClicks?: number;
+    isPublished?: boolean;
+    publishedAt?: string | null;
   }[];
 }
 

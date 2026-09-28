@@ -115,7 +115,7 @@ export const RoomInsightsDetailView: React.FC<{
               Insights for <span style={{ color: 'var(--accent)' }}>{room?.roomName || 'Showcase Room'}</span>
             </h2>
             {room?.isPublished ? (
-              <span className="badge badge-success" style={{ gap: 4 }}>
+              <span className="badge badge-success" style={{ gap: 4 }} title={room?.publishedAt ? `room_published event recorded ${formatDate(room.publishedAt)}` : undefined}>
                 <CheckCircle2 size={11} /> Published
               </span>
             ) : (
@@ -129,6 +129,11 @@ export const RoomInsightsDetailView: React.FC<{
             {room?.createdAt && (
               <span title="Earliest activity PostHog has recorded for this room — not a true creation timestamp, since no room_created event exists yet">
                 First seen {formatDate(room.createdAt)}
+              </span>
+            )}
+            {room?.publishedAt && (
+              <span title="Real timestamp of the room_published event">
+                · Published {formatDate(room.publishedAt)}
               </span>
             )}
             {room?.ownerConfidence === 'inferred' && (
