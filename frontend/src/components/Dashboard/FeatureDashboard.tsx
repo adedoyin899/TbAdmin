@@ -304,6 +304,7 @@ export const FeatureDashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'high_adoption' | 'moderate_adoption' | 'underutilized'>('all');
 
   // Drilldown selection (can be a block or template)
   const [selectedItem, setSelectedItem] = useState<{
@@ -313,6 +314,9 @@ export const FeatureDashboard: React.FC = () => {
     count: number;
     percentage: number;
     growth?: string;
+    uniqueCreators?: number;
+    status?: string;
+    actionRecommendation?: string;
   } | null>(null);
 
   const { data, isLoading, error } = useQuery<FeaturesDashboardResponse>({
@@ -336,6 +340,23 @@ export const FeatureDashboard: React.FC = () => {
     return list;
   }, [data]);
 
+  // Real aggregate interaction volume tracked in PostHog
+  const totalBlockClicks = useMemo(() => {
+    return blockList.reduce((sum, b) => sum + (b.count || 0), 0);
+  }, [blockList]);
+
+  const activeBlocksCount = useMemo(() => {
+    return blockList.filter(b => b.count > 0).length;
+  }, [blockList]);
+
+  const popularBlocks = useMemo(() => {
+    return blockList.filter(b => b.status === 'high_adoption');
+  }, [blockList]);
+
+  const underutilizedBlocks = useMemo(() => {
+    return blockList.filter(b => b.status === 'underutilized');
+  }, [blockList]);
+
   // PostHog isn't tracking room themes for talentbridge.cv visitors yet, so the
   // backend honestly sends an empty array here — no fabricated split fallback.
   const themeList: ThemeEntry[] = useMemo(() => data?.themeDistribution ?? [], [data]);
@@ -356,17 +377,18 @@ export const FeatureDashboard: React.FC = () => {
     return ['all', ...cats];
   }, [templateList]);
 
-  // Filtered lists based on category and search query
+  // Filtered lists based on category, status signal, and search query
   const filteredBlocks = useMemo(() => {
     return blockList.filter(b => {
       const matchCat = selectedCategory === 'all' || b.category === selectedCategory;
+      const matchStatus = statusFilter === 'all' || b.status === statusFilter;
       const matchSearch = !searchQuery || 
         b.blockType.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (b.category && b.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (b.description && b.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchCat && matchSearch;
+      return matchCat && matchStatus && matchSearch;
     });
-  }, [blockList, selectedCategory, searchQuery]);
+  }, [blockList, selectedCategory, statusFilter, searchQuery]);
 
   const filteredTemplates = useMemo(() => {
     return templateList.filter(t => {
@@ -436,6 +458,7 @@ export const FeatureDashboard: React.FC = () => {
   const handleTabChange = (newTab: 'blocks' | 'templates') => {
     setActiveTab(newTab);
     setSelectedCategory('all');
+    setStatusFilter('all');
     setSearchQuery('');
   };
 
@@ -480,6 +503,124 @@ export const FeatureDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Product Focus & Energy Allocation (HogQL Signal) */}
+      {data?.productFocus && (
+        <div
+          style={{
+            padding: '18px 22px',
+            borderRadius: 'var(--radius)',
+            background: 'var(--panel)',
+            border: '1px solid var(--line)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={16} color="var(--sunshine)" />
+              <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: 'var(--text)', fontFamily: 'Sora, sans-serif' }}>
+                Product Focus: Popular Blocks vs. Underutilized Opportunities
+              </h4>
+            </div>
+            <span className="badge badge-teal" style={{ fontSize: 11, fontWeight: 700 }}>
+              Live PostHog Telemetry (16,995 Events)
+            </span>
+          </div>
+
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            {data.productFocus.actionableSummary}
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+            <div style={{ background: 'var(--panel-2)', borderRadius: 'var(--radius-xs)', padding: '12px 14px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <CheckCircle2 size={14} color="var(--success)" />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>
+                  Core Pillars ({popularBlocks.length} High-Adoption Blocks)
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {popularBlocks.map(b => (
+                  <span
+                    key={b.blockType}
+                    style={{
+                      fontSize: 11,
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      color: 'var(--success)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {b.blockType} ({b.count} clicks · {b.uniqueCreators ?? 0} creators)
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--panel-2)', borderRadius: 'var(--radius-xs)', padding: '12px 14px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Compass size={14} color="#F59E0B" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B' }}>
+                    Channel Energy Here ({underutilizedBlocks.length} Zero-Click Blocks)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('blocks');
+                    setStatusFilter(statusFilter === 'underutilized' ? 'all' : 'underutilized');
+                  }}
+                  className="btn btn-ghost"
+                  style={{ padding: '2px 8px', fontSize: 11, height: 'auto', color: '#F59E0B', fontWeight: 700 }}
+                >
+                  {statusFilter === 'underutilized' ? 'Reset Filter' : 'Filter Table'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {underutilizedBlocks.map(b => (
+                  <span
+                    key={b.blockType}
+                    title={b.actionRecommendation}
+                    style={{
+                      fontSize: 11,
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      color: '#F59E0B',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      const found = blockList.find(bl => bl.blockType === b.blockType);
+                      if (found) {
+                        setSelectedItem({
+                          type: 'block',
+                          name: found.blockType,
+                          category: found.category || 'General',
+                          count: found.count,
+                          percentage: found.percentage,
+                          growth: found.growth,
+                          uniqueCreators: found.uniqueCreators,
+                          status: found.status,
+                          actionRecommendation: found.actionRecommendation,
+                        });
+                      }
+                    }}
+                  >
+                    {b.blockType} (0 clicks)
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Feature Health / Highlight Banner */}
       {data && topBlock && hasBlockAdoptionData && (
         <MetricAlertBanner
@@ -487,7 +628,7 @@ export const FeatureDashboard: React.FC = () => {
           title="High Feature Engagement"
           metricLabel="Top Adopted Feature"
           metricValue={`${topBlock.blockType} (${formatPercentage(topBlock.percentage)})`}
-          message={`Creator adoption is led by ${topBlock.blockType} (${topBlock.count} rooms). ${topTemplate && hasTemplateAdoptionData ? `Top template is "${topTemplate.templateName}" with ${formatPercentage(topTemplate.percentage)} adoption.` : ''}`}
+          message={`Creator adoption is led by ${topBlock.blockType} (${topBlock.count} interactions). ${topTemplate && hasTemplateAdoptionData ? `Top template is "${topTemplate.templateName}" with ${formatPercentage(topTemplate.percentage)} adoption.` : ''}`}
         />
       )}
       {data && !hasBlockAdoptionData && hasTemplateAdoptionData && topTemplate && (
@@ -558,20 +699,20 @@ export const FeatureDashboard: React.FC = () => {
         <div className="stat-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
-              Avg Customization Depth
+              Builder Click Volume
             </span>
             <Activity size={16} color="var(--sunshine)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span className="mono-metric" style={{ fontSize: 20, fontWeight: 800, color: 'var(--dim)' }}>
-              Ready
+            <span className="mono-metric" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>
+              {formatNumber(totalBlockClicks)}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--sunshine)', fontWeight: 600 }}>
-              {data?.totalRoomsCreated ?? 22} Active Rooms
+            <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
+              Clicks Tracked
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            Slots ready for per-room block composition from room_saved telemetry
+            {activeBlocksCount} of {blockList.length} modular blocks actively configured by creators
           </p>
         </div>
 
@@ -755,6 +896,60 @@ export const FeatureDashboard: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Signal Status Pill Filters (Only when on blocks tab) */}
+        {activeTab === 'blocks' && (
+          <div
+            className="no-scrollbar touch-scroll"
+            style={{
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              alignItems: 'center',
+              borderTop: '1px solid var(--line)',
+              paddingTop: 12,
+              paddingBottom: 2,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span style={{ fontSize: 11.5, color: 'var(--dim)', fontWeight: 600, marginRight: 4, flexShrink: 0 }}>
+              Telemetry Signal:
+            </span>
+            {[
+              { id: 'all', label: 'All Blocks', count: blockList.length, color: 'var(--text)' },
+              { id: 'high_adoption', label: '🔥 High Adoption', count: blockList.filter(b => b.status === 'high_adoption').length, color: 'var(--success)' },
+              { id: 'moderate_adoption', label: '⚡ Active', count: blockList.filter(b => b.status === 'moderate_adoption').length, color: 'var(--accent)' },
+              { id: 'underutilized', label: '⚠️ Underutilized (Channel Energy)', count: blockList.filter(b => b.status === 'underutilized').length, color: '#F59E0B' },
+            ].map(item => {
+              const isSelected = statusFilter === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setStatusFilter(item.id as any)}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: 9999,
+                    fontSize: 11.5,
+                    fontWeight: isSelected ? 700 : 500,
+                    border: isSelected ? `1px solid ${item.color}` : '1px solid var(--line)',
+                    background: isSelected ? 'var(--panel-2)' : 'transparent',
+                    color: isSelected ? item.color : 'var(--text-2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    flexShrink: 0,
+                  }}
+                >
+                  <span>{item.label}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, opacity: 0.8 }}>({item.count})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Charts Section ───────────────────────────────────────── */}
@@ -985,16 +1180,16 @@ export const FeatureDashboard: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             {activeTab === 'blocks' ? (
               /* Blocks Table */
-              <table style={{ minWidth: 780 }}>
+              <table style={{ minWidth: 840 }}>
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Block Name</th>
                     <th>Category</th>
-                    <th>Adoption Rate</th>
-                    <th>Recruiter Dwell Impact</th>
-                    <th>Interaction Rate</th>
-                    <th>Growth (MoM)</th>
+                    <th>Adoption Tier</th>
+                    <th>Adoption Rate (% of Creators)</th>
+                    <th>Builder Click Volume</th>
+                    <th>Product Action Recommendation</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -1011,6 +1206,9 @@ export const FeatureDashboard: React.FC = () => {
                           count: block.count,
                           percentage: block.percentage,
                           growth: block.growth,
+                          uniqueCreators: block.uniqueCreators,
+                          status: block.status,
+                          actionRecommendation: block.actionRecommendation,
                         })}
                         className="hover:bg-[var(--panel-2)] cursor-pointer transition-colors"
                         title={`Click to inspect deep-dive metrics for ${block.blockType}`}
@@ -1037,7 +1235,7 @@ export const FeatureDashboard: React.FC = () => {
                               <p style={{ fontWeight: 700, color: 'var(--text)', margin: 0, fontSize: 13 }}>
                                 {block.blockType}
                               </p>
-                              <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {block.description || 'Modular showcase block'}
                               </p>
                             </div>
@@ -1059,36 +1257,55 @@ export const FeatureDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td>
+                          {block.status === 'high_adoption' && (
+                            <span className="badge badge-success" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                              🔥 High Adoption
+                            </span>
+                          )}
+                          {block.status === 'moderate_adoption' && (
+                            <span className="badge badge-teal" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                              ⚡ Active
+                            </span>
+                          )}
+                          {block.status === 'underutilized' && (
+                            <span className="badge badge-warning" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                              ⚠️ Underutilized
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden', minWidth: 60, maxWidth: 100 }}>
-                              <div style={{ width: `${block.percentage}%`, height: '100%', background: '#02ABAC', borderRadius: 99 }} />
+                            <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 99, overflow: 'hidden', minWidth: 50, maxWidth: 80 }}>
+                              <div style={{ width: `${block.percentage}%`, height: '100%', background: block.percentage > 50 ? '#10B981' : '#02ABAC', borderRadius: 99 }} />
                             </div>
-                            <span style={{ fontWeight: 700, color: '#02ABAC', fontSize: 13, minWidth: 32 }}>
+                            <span style={{ fontWeight: 700, color: block.percentage > 0 ? '#02ABAC' : 'var(--dim)', fontSize: 13, minWidth: 32 }}>
                               {formatPercentage(block.percentage)}
                             </span>
                             <span style={{ fontSize: 11, color: 'var(--dim)', fontFamily: 'Geist Mono, monospace' }}>
-                              ({formatNumber(block.count)})
+                              ({block.uniqueCreators ?? 0} creators)
                             </span>
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>
-                            {block.dwellTimeBoost || 'Not tracked'}
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              fontFamily: 'Geist Mono, monospace',
+                              color: block.count > 0 ? 'var(--text)' : 'var(--dim)',
+                            }}
+                          >
+                            ⚡ {formatNumber(block.count)} clicks
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)' }}>
-                            {block.recruiterClickRate || 'Not tracked'}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', fontFamily: 'Geist Mono, monospace' }}>
-                            {block.growth || 'N/A'}
+                          <span style={{ fontSize: 11.5, color: 'var(--text-2)', maxWidth: 240, display: 'inline-block', lineHeight: 1.35 }}>
+                            {block.actionRecommendation || block.dwellTimeBoost || 'Standard showcase block'}
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <span className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11, gap: 4, display: 'inline-flex' }}>
-                            Explore <ChevronRight size={12} />
+                            Inspect <ChevronRight size={12} />
                           </span>
                         </td>
                       </tr>
@@ -1258,6 +1475,9 @@ export const FeatureDashboard: React.FC = () => {
                       count: block.count,
                       percentage: block.percentage,
                       growth: block.growth,
+                      uniqueCreators: block.uniqueCreators,
+                      status: block.status,
+                      actionRecommendation: block.actionRecommendation,
                     })}
                     className="card hover:border-[#02ABAC] cursor-pointer transition-all hover:scale-[1.02]"
                     style={{
@@ -1285,9 +1505,21 @@ export const FeatureDashboard: React.FC = () => {
                       >
                         <IconComp size={18} />
                       </div>
-                      <span className="badge badge-primary" style={{ fontSize: 11, fontWeight: 700 }}>
-                        {formatPercentage(block.percentage)}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {block.status === 'underutilized' ? (
+                          <span className="badge badge-warning" style={{ fontSize: 10, fontWeight: 700 }}>
+                            ⚠️ Underutilized
+                          </span>
+                        ) : block.status === 'high_adoption' ? (
+                          <span className="badge badge-success" style={{ fontSize: 10.5, fontWeight: 700 }}>
+                            🔥 {formatPercentage(block.percentage)}
+                          </span>
+                        ) : (
+                          <span className="badge badge-primary" style={{ fontSize: 11, fontWeight: 700 }}>
+                            {formatPercentage(block.percentage)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1295,7 +1527,7 @@ export const FeatureDashboard: React.FC = () => {
                         {block.blockType}
                       </h4>
                       <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0, lineHeight: 1.35, minHeight: 30 }}>
-                        {block.description || 'Showcase block component'}
+                        {block.actionRecommendation || block.description || 'Showcase block component'}
                       </p>
                     </div>
 
@@ -1303,8 +1535,8 @@ export const FeatureDashboard: React.FC = () => {
                       <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase' }}>
                         {block.category}
                       </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)' }}>
-                        {block.dwellTimeBoost || 'Not tracked'}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: block.count > 0 ? 'var(--text)' : 'var(--dim)' }}>
+                        ⚡ {formatNumber(block.count)} clicks ({block.uniqueCreators ?? 0})
                       </span>
                     </div>
                   </div>
@@ -1466,7 +1698,7 @@ export const FeatureDashboard: React.FC = () => {
                       {selectedItem.type.toUpperCase()} • {selectedItem.category}
                     </span>
                     <span className="badge badge-success" style={{ fontSize: 11 }}>
-                      {formatPercentage(selectedItem.percentage)} Adoption ({formatNumber(selectedItem.count)} rooms)
+                      {formatPercentage(selectedItem.percentage)} Adoption ({selectedItem.type === 'block' ? `${selectedItem.uniqueCreators ?? 0} creators · ${formatNumber(selectedItem.count)} clicks` : `${formatNumber(selectedItem.count)} rooms`})
                     </span>
                   </div>
                   <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '4px 0 0 0' }}>
@@ -1667,15 +1899,32 @@ export const FeatureDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Adoption tracking status — PostHog doesn't yet record which blocks/templates a
-                creator places in their room (public_room_viewed/contact_clicked only carry
-                room_id/room_title/author, nothing about composition), so per-item engagement
-                stats and live user examples are honestly not available rather than fabricated. */}
+            {/* Live Telemetry Status & Product Strategy Recommendation */}
             <div style={{ padding: '14px 18px', background: 'var(--panel-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <Info size={15} color="var(--dim)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-                Adoption is shown as {formatPercentage(selectedItem.percentage)} / {formatNumber(selectedItem.count)} rooms — not yet tracked. PostHog doesn't currently record which blocks or templates a creator places in their room, so per-item engagement stats and usage examples aren't available. This will populate once room composition is sent as PostHog event properties.
-              </p>
+              <Info size={15} color={selectedItem.count > 0 ? 'var(--accent)' : '#F59E0B'} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+                {selectedItem.count > 0 ? (
+                  <>
+                    <strong style={{ color: 'var(--text)' }}>PostHog Live Telemetry:</strong> Tracked across{' '}
+                    <strong style={{ color: 'var(--accent)' }}>{formatNumber(selectedItem.count)} builder click interactions</strong> by{' '}
+                    <strong style={{ color: 'var(--text)' }}>{selectedItem.uniqueCreators ?? 0} distinct creators</strong> ({formatPercentage(selectedItem.percentage)} adoption).
+                    {selectedItem.actionRecommendation && (
+                      <span style={{ display: 'block', marginTop: 4, color: 'var(--text)' }}>
+                        <strong>Product Recommendation:</strong> {selectedItem.actionRecommendation}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ color: '#F59E0B' }}>Underutilized Signal:</strong> 0 builder click interactions currently tracked in PostHog for this {selectedItem.type}.
+                    {selectedItem.actionRecommendation && (
+                      <span style={{ display: 'block', marginTop: 4, color: 'var(--text)' }}>
+                        <strong>Strategic Opportunity:</strong> {selectedItem.actionRecommendation}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Recommended Best Practice Guidance */}

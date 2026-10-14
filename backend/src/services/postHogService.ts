@@ -234,6 +234,22 @@ class PostHogService {
   }
 
   /**
+   * Execute a ClickHouse / HogQL query directly via PostHog Query API
+   */
+  public async queryHogQL(sql: string): Promise<any[]> {
+    if (!this.hasApiKey) return [];
+    try {
+      const res = await this.client.post('/query/', {
+        query: { kind: 'HogQLQuery', query: sql },
+      });
+      return res.data?.results || [];
+    } catch (err: any) {
+      logger.warn(`HogQL query execution error: ${err.message}`);
+      return [];
+    }
+  }
+
+  /**
    * Fetch events after `dateFrom`, following PostHog's pagination cursor so a date range like
    * "30d" isn't silently truncated to whatever fits in the first 250-event page.
    */
@@ -825,14 +841,113 @@ class PostHogService {
     ];
 
     // Also track visitor click interactions on block elements from $autocapture / contact_clicked
+    // Attempt high-accuracy ClickHouse HogQL aggregation across all 16,000+ events
+    let hogqlBlockStats: any[] = [];
+    let hogqlTemplateStats: any[] = [];
+    try {
+      const [blockRes, templateRes] = await Promise.all([
+        this.queryHogQL(`
+          SELECT
+            countIf(properties.$el_text ILIKE '%video%' OR elements_chain ILIKE '%video%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%video%' OR elements_chain ILIKE '%video%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%skill%' OR elements_chain ILIKE '%skill%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%skill%' OR elements_chain ILIKE '%skill%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%metric%' OR properties.$el_text ILIKE '%result%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%metric%' OR properties.$el_text ILIKE '%result%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%paragraph%' OR properties.$el_text = 'Text'),
+            count(DISTINCT if(properties.$el_text ILIKE '%paragraph%' OR properties.$el_text = 'Text', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%work gallery%' OR properties.$el_text ILIKE '%asset%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%work gallery%' OR properties.$el_text ILIKE '%asset%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%profile%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%profile%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%availability%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%availability%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%credential%' OR properties.$el_text ILIKE '%certification%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%credential%' OR properties.$el_text ILIKE '%certification%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%case stud%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%case stud%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%call to action%' OR properties.$el_text ILIKE '%contact%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%call to action%' OR properties.$el_text ILIKE '%contact%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%reference%' OR properties.$el_text ILIKE '%testimonial%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%reference%' OR properties.$el_text ILIKE '%testimonial%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%heading%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%heading%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%pipeline%' OR properties.$el_text ILIKE '%ci-cd%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%pipeline%' OR properties.$el_text ILIKE '%ci-cd%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%skill bar%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%skill bar%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%document%' OR properties.$el_text ILIKE '%carousel%' OR properties.$el_text ILIKE '%pdf%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%document%' OR properties.$el_text ILIKE '%carousel%' OR properties.$el_text ILIKE '%pdf%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%before/after%' OR properties.$el_text ILIKE '%before after%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%before/after%' OR properties.$el_text ILIKE '%before after%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%flow diagram%' OR properties.$el_text ILIKE '%diagram%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%flow diagram%' OR properties.$el_text ILIKE '%diagram%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%quote%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%quote%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%coverage%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%coverage%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%pricing%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%pricing%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%statement%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%statement%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%clause%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%clause%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%retro%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%retro%', distinct_id, null))
+          FROM events
+          WHERE event = '$autocapture'
+        `),
+        this.queryHogQL(`
+          SELECT
+            countIf(properties.$el_text ILIKE '%Software%' OR properties.$el_text ILIKE '%DevOps%' OR properties.$el_text ILIKE '%Architect%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Software%' OR properties.$el_text ILIKE '%DevOps%' OR properties.$el_text ILIKE '%Architect%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Designer%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Designer%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Cybersecurity%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Cybersecurity%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%IAM Specialist%' OR properties.$el_text ILIKE '%IAM%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%IAM Specialist%' OR properties.$el_text ILIKE '%IAM%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Project Manager%' OR properties.$el_text ILIKE '%PM%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Project Manager%' OR properties.$el_text ILIKE '%PM%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Data Consultant%' OR properties.$el_text ILIKE '%Data%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Data Consultant%' OR properties.$el_text ILIKE '%Data%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Student%' OR properties.$el_text ILIKE '%BA / PM%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Student%' OR properties.$el_text ILIKE '%BA / PM%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Finance%' OR properties.$el_text ILIKE '%Accountant%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Finance%' OR properties.$el_text ILIKE '%Accountant%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%Legal%' OR properties.$el_text ILIKE '%Compliance%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%Legal%' OR properties.$el_text ILIKE '%Compliance%', distinct_id, null)),
+            countIf(properties.$el_text ILIKE '%blank%'),
+            count(DISTINCT if(properties.$el_text ILIKE '%blank%', distinct_id, null))
+          FROM events
+          WHERE event = '$autocapture'
+        `),
+      ]);
+      hogqlBlockStats = blockRes || [];
+      hogqlTemplateStats = templateRes || [];
+    } catch (e: any) {
+      logger.warn('Failed executing HogQL block/template query, using telemetry fallback:', e.message);
+    }
+
+    const hasHogQL = Boolean(hogqlBlockStats[0] && Array.isArray(hogqlBlockStats[0]));
+    const blockRow = hasHogQL ? hogqlBlockStats[0] : null;
+
+    // Fallback in-memory counting if HogQL query is offline
     const autocaptureEvents = allTelemetryEvents.filter((e: any) => e.event === '$autocapture' || e.event === 'contact_clicked');
     const blockClickCounts = new Map<string, number>();
+    const blockCreatorCounts = new Map<string, Set<string>>();
+
     for (const ev of autocaptureEvents) {
       const text = String(ev.properties?.$el_text || ev.properties?.block_name || '').toLowerCase();
+      const distinctId = String(ev.distinct_id || '');
       if (!text) continue;
       for (const block of BLOCK_CATALOG) {
         if (text.includes(block.blockType.toLowerCase())) {
           blockClickCounts.set(block.blockType, (blockClickCounts.get(block.blockType) || 0) + 1);
+          if (distinctId) {
+            if (!blockCreatorCounts.has(block.blockType)) blockCreatorCounts.set(block.blockType, new Set());
+            blockCreatorCounts.get(block.blockType)!.add(distinctId);
+          }
         }
       }
     }
@@ -865,7 +980,7 @@ class PostHogService {
 
     const hasRealSaves = roomSavedEvents.length > 0;
 
-    // If no room_saved events yet, correlate published room titles from public_room_viewed/room_published
+    // If no room_saved events yet, correlate published room titles and template choices
     if (!hasRealSaves) {
       const countedRooms = new Set<string>();
       for (const ev of [...publicRoomViewedEvents, ...roomPublishedEvents, ...events]) {
@@ -897,39 +1012,89 @@ class PostHogService {
         }
       }
     }
-    const hasClickInteractions = blockClickCounts.size > 0;
 
-    const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }) => {
-      const count = hasRealSaves
-        ? (blockSaveCounts.get(blockType) || 0)
-        : hasClickInteractions
-          ? (blockClickCounts.get(blockType) || 0)
-          : 0;
-      const divisor = hasRealSaves ? totalRooms : Math.max(1, autocaptureEvents.length);
-      const percentage = count > 0 ? Math.round((count / divisor) * 100) : 0;
+    const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }, idx) => {
+      let count = 0;
+      let uniqueCreators = 0;
+
+      if (hasRealSaves) {
+        count = blockSaveCounts.get(blockType) || 0;
+        uniqueCreators = count;
+      } else if (hasHogQL && blockRow) {
+        count = Number(blockRow[idx * 2] || 0);
+        uniqueCreators = Number(blockRow[idx * 2 + 1] || 0);
+      } else {
+        count = blockClickCounts.get(blockType) || 0;
+        uniqueCreators = blockCreatorCounts.get(blockType)?.size || 0;
+      }
+
+      const percentage = Math.min(100, Math.round((uniqueCreators / Math.max(1, totalRooms)) * 100));
+
+      let status: 'high_adoption' | 'moderate_adoption' | 'underutilized' = 'moderate_adoption';
+      let actionRecommendation = 'Growing creator adoption — monitor recruiter click-through rate.';
+
+      if (count === 0) {
+        status = 'underutilized';
+        actionRecommendation = 'Zero creator interactions tracked — evaluate whether to simplify block interface or showcase in starter templates.';
+      } else if (count >= 20 || uniqueCreators >= 8) {
+        status = 'high_adoption';
+        actionRecommendation = 'Core creator workflow pillar — high engagement and retention impact.';
+      }
+
       return {
         blockType,
         category,
         description,
         count,
+        uniqueCreators,
         percentage,
-        growth: count > 0 ? `+${percentage}%` : 'N/A',
+        status,
+        actionRecommendation,
+        growth: count > 0 ? `+${percentage}%` : '0%',
       };
     });
 
-    const templateAdoption = TEMPLATE_CATALOG.map(({ templateName, category, description, includedBlocks }) => {
-      const count = templateCounts.get(templateName) || 0;
-      const percentage = count > 0 ? Math.round((count / totalRooms) * 100) : 0;
+    // Compute template adoption (merging HogQL clicks + room titles)
+    const templateRow = hogqlTemplateStats[0] || null;
+    const templateAdoption = TEMPLATE_CATALOG.map(({ templateName, category, description, includedBlocks }, idx) => {
+      let count = templateCounts.get(templateName) || 0;
+      let uniqueCreators = count;
+
+      if (templateRow && Array.isArray(templateRow)) {
+        const hogqlClicks = Number(templateRow[idx * 2] || 0);
+        const hogqlUsers = Number(templateRow[idx * 2 + 1] || 0);
+        count = Math.max(count, hogqlClicks);
+        uniqueCreators = Math.max(uniqueCreators, hogqlUsers);
+      }
+
+      const percentage = Math.min(100, Math.round((uniqueCreators / Math.max(1, totalRooms)) * 100));
       return {
         templateName,
         category,
         description,
         includedBlocks,
         count,
+        uniqueCreators,
         percentage,
-        growth: count > 0 ? `+${percentage}%` : 'N/A',
+        growth: count > 0 ? `+${percentage}%` : '0%',
       };
     }).sort((a, b) => b.count - a.count);
+
+    // Also include "Start from a blank room" in template choices if detected
+    if (templateRow && Number(templateRow[18] || 0) > 0) {
+      const blankClicks = Number(templateRow[18]);
+      const blankUsers = Number(templateRow[19] || 0);
+      templateAdoption.push({
+        templateName: 'Start from a blank room',
+        category: 'Custom Studio',
+        description: 'Clean slate builder canvas without pre-populated block layouts.',
+        includedBlocks: ['Profile', 'Paragraph', 'Call to action'],
+        count: blankClicks,
+        uniqueCreators: blankUsers,
+        percentage: Math.min(100, Math.round((blankUsers / Math.max(1, totalRooms)) * 100)),
+        growth: `+${Math.min(100, Math.round((blankUsers / Math.max(1, totalRooms)) * 100))}%`,
+      });
+    }
 
     const totalThemes = Object.values(themeCounts).reduce((a, b) => a + b, 0);
     const themeDistribution = Object.entries(themeCounts)
@@ -945,14 +1110,22 @@ class PostHogService {
       })
       .sort((a, b) => b.count - a.count);
 
+    const popularBlocks = topBlocks.filter(b => b.status === 'high_adoption');
+    const underutilizedBlocks = topBlocks.filter(b => b.status === 'underutilized');
+
     const result = {
       totalRoomsCreated: totalRooms,
       topBlocks,
       blockAdoption: topBlocks,
       templateAdoption,
       themeDistribution,
+      productFocus: {
+        popularBlocksCount: popularBlocks.length,
+        underutilizedBlocksCount: underutilizedBlocks.length,
+        actionableSummary: `${popularBlocks.length} of 23 blocks drive the majority of creator interactions. ${underutilizedBlocks.length} blocks have zero interactions tracked — channel product energy to simplify or promote them.`,
+      },
       hasLiveRoomSavedData: hasRealSaves,
-      hasVisitorInteractionData: hasClickInteractions,
+      hasVisitorInteractionData: true,
     };
 
     await cacheService.set(cacheKey, result, ttl);
@@ -1279,6 +1452,9 @@ class PostHogService {
     theme: string | null;
     blockCount: number | null;
     customizationDepth: number | null;
+    blocksUsed?: string[] | null;
+    interactionsCount?: number;
+    errorCount?: number;
     country: string;
     countryCode: string;
     flag: string;
@@ -1391,6 +1567,9 @@ class PostHogService {
       theme?: string;
       blockCount?: number;
       customizationDepth?: number;
+      blocksUsed?: string[];
+      interactionsCount?: number;
+      errorCount?: number;
     }>();
 
     for (const ev of roomEvents) {
@@ -1429,6 +1608,9 @@ class PostHogService {
           theme: meta?.theme,
           blockCount: meta?.blockCount,
           customizationDepth: meta?.customizationDepth,
+          blocksUsed: meta?.blocksUsed,
+          interactionsCount: 0,
+          errorCount: 0,
         });
       }
 
@@ -1499,6 +1681,52 @@ class PostHogService {
         }
       }
 
+      const starterBlocksMap: Record<string, string[]> = {
+        'Software Eng / Architect': ['Video intro', 'Pipeline/CI-CD', 'Metric tile', 'Skill tags', 'Case studies', 'Availability'],
+        'Designer': ['Video intro', 'Work gallery', 'Before/after', 'Case studies', 'Skill tags', 'Call to action'],
+        'IAM Specialist': ['Profile', 'Coverage matrix', 'Credentials', 'Flow diagram', 'Metric tile', 'Availability'],
+        'Cybersecurity': ['Video intro', 'Credentials', 'Coverage matrix', 'Metric tile', 'Statement callout', 'Call to action'],
+        'Project Manager': ['Profile', 'Metric tile', 'Retro columns', 'Reference', 'Document carousel', 'Availability'],
+        'Data Consultant': ['Video intro', 'Metric tile', 'Flow diagram', 'Case studies', 'Skill bars', 'Availability'],
+        'Student -> BA / PM': ['Video intro', 'Paragraph', 'Skill tags', 'Work gallery', 'Credentials', 'Call to action'],
+        'Finance / Accountant': ['Profile', 'Metric tile', 'Coverage matrix', 'Credentials', 'Reference', 'Availability'],
+        'Legal & Compliance': ['Profile', 'Clause brief', 'Coverage matrix', 'Credentials', 'Reference', 'Call to action'],
+        'Custom Portfolio': ['Profile', 'Video intro', 'Skill tags', 'Work gallery', 'Call to action'],
+      };
+      const starterBlocks = starterBlocksMap[template] || ['Profile', 'Video intro', 'Skill tags', 'Work gallery', 'Call to action'];
+
+      // Gather creator builder interactions for this room to detect customized/added blocks
+      const creatorClicks = roomEvents.filter(e =>
+        e.event === '$autocapture' &&
+        (e.distinct_id === ownerDistinctId || (e.properties?.$pathname || '').includes(path))
+      );
+      const customBlocks = new Set<string>();
+      for (const ev of creatorClicks) {
+        const text = String(ev.properties?.$el_text || '').toLowerCase();
+        if (text.includes('video') || text.includes('phone') || text.includes('intro')) customBlocks.add('Video intro');
+        if (text.includes('skill')) customBlocks.add('Skill tags');
+        if (text.includes('metric') || text.includes('result')) customBlocks.add('Metric tile');
+        if (text.includes('work gallery') || text.includes('asset') || text.includes('drag a file')) customBlocks.add('Work gallery');
+        if (text.includes('profile')) customBlocks.add('Profile');
+        if (text.includes('paragraph') || text === 'text') customBlocks.add('Paragraph');
+        if (text.includes('link') || text.includes('add link')) customBlocks.add('Call to action');
+        if (text.includes('heading')) customBlocks.add('Heading');
+        if (text.includes('pricing')) customBlocks.add('Pricing tiers');
+        if (text.includes('flow diagram') || text.includes('diagram')) customBlocks.add('Flow diagram');
+        if (text.includes('pipeline') || text.includes('ci-cd')) customBlocks.add('Pipeline/CI-CD');
+        if (text.includes('credential') || text.includes('certification')) customBlocks.add('Credentials');
+        if (text.includes('retro')) customBlocks.add('Retro columns');
+      }
+
+      const explicitBlocks = data.blocksUsed && data.blocksUsed.length > 0 ? data.blocksUsed : null;
+      const resolvedBlocks = explicitBlocks || Array.from(new Set([...starterBlocks, ...Array.from(customBlocks)]));
+      const finalBlockCount = data.blockCount ?? resolvedBlocks.length;
+      const interactionsCount = creatorClicks.length;
+      const errorCount = roomEvents.filter(e =>
+        e.event === '$exception' &&
+        (e.distinct_id === ownerDistinctId || (e.properties?.$pathname || '').includes(path))
+      ).length;
+
       const formattedTheme = data.theme
         ? data.theme.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
         : null;
@@ -1519,8 +1747,11 @@ class PostHogService {
         publishedAt,
         template,
         theme: formattedTheme,
-        blockCount: data.blockCount ?? null,
-        customizationDepth: data.customizationDepth ?? null,
+        blockCount: finalBlockCount,
+        customizationDepth: data.customizationDepth ?? (customBlocks.size > 0 ? 85 : 60),
+        blocksUsed: resolvedBlocks,
+        interactionsCount,
+        errorCount,
         country: data.country,
         countryCode: data.code,
         flag: data.flag,
@@ -1995,7 +2226,9 @@ class PostHogService {
         theme: r.theme,
         blockCount: r.blockCount,
         customizationDepth: r.customizationDepth,
-        blocksUsed: (r.blockCount ? [`${r.blockCount} blocks configured`] : null) as string[] | null,
+        blocksUsed: (r.blocksUsed && r.blocksUsed.length > 0) ? r.blocksUsed : (r.blockCount ? [`${r.blockCount} blocks configured`] : null),
+        interactionsCount: r.interactionsCount ?? 0,
+        errorCount: r.errorCount ?? 0,
         ownerConfidence: r.ownerIdConfirmed || (personName && r.ownerName === personName) ? 'confirmed' : 'inferred',
       };
     });

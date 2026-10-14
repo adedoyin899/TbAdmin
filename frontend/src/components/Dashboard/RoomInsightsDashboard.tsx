@@ -9,6 +9,7 @@ import {
   Sparkles, ArrowUpRight,
   ArrowDownRight, Trophy, Download,
   Palette, LayoutTemplate, Clock,
+  Search, X, Layers, ExternalLink,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RoomsDashboardResponse } from '../../types';
@@ -17,6 +18,20 @@ import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelec
 import { exportToCsv } from '../../utils/exportCsv';
 import { MetricAlertBanner } from '../Common/MetricAlertBanner';
 import { useRbac } from '../../utils/rbac';
+
+const ALL_BLOCK_TYPES = [
+  'Video intro', 'Skill tags', 'Metric tile', 'Paragraph', 'Work gallery', 'Profile',
+  'Availability', 'Credentials', 'Case studies', 'Call to action', 'Reference',
+  'Heading', 'Pipeline/CI-CD', 'Skill bars', 'Document carousel', 'Before/after',
+  'Flow diagram', 'Pull quote', 'Coverage matrix', 'Pricing tiers', 'Statement callout',
+  'Clause brief', 'Retro columns',
+];
+
+const ALL_TEMPLATES = [
+  'Software Eng / Architect', 'Designer', 'IAM Specialist', 'Cybersecurity',
+  'Project Manager', 'Data Consultant', 'Student -> BA / PM', 'Finance / Accountant',
+  'Legal & Compliance', 'Custom Portfolio', 'Start from a blank room',
+];
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const TIME_SLOTS = [
@@ -68,10 +83,40 @@ export const RoomInsightsDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   const navigate = useNavigate();
 
+  // Filter states for showcase rooms table
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('all');
+  const [selectedBlock, setSelectedBlock] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'published' | 'draft'>('all');
+  const [inspectingRoom, setInspectingRoom] = useState<any | null>(null);
+
   const { data, isLoading, error } = useQuery<RoomsDashboardResponse>({
     queryKey: ['roomsDashboard', dateRange.preset, dateRange.startDate, dateRange.endDate],
     queryFn: () => dashboardApi.getRoomsDashboard(dateRange.preset) as Promise<RoomsDashboardResponse>,
   });
+
+  const filteredRooms = useMemo(() => {
+    if (!data?.topPerformingRooms) return [];
+    return data.topPerformingRooms.filter(room => {
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        const matchesName = (room.roomName || '').toLowerCase().includes(q);
+        const matchesOwner = (room.ownerName || '').toLowerCase().includes(q);
+        const matchesEmail = (room.ownerEmail || '').toLowerCase().includes(q);
+        if (!matchesName && !matchesOwner && !matchesEmail) return false;
+      }
+      if (selectedTemplate !== 'all' && (room.template || 'Custom Portfolio') !== selectedTemplate) {
+        return false;
+      }
+      if (selectedBlock !== 'all') {
+        const hasBlock = (room.blocksUsed || []).some(b => b.toLowerCase() === selectedBlock.toLowerCase());
+        if (!hasBlock) return false;
+      }
+      if (selectedStatus === 'published' && !room.isPublished) return false;
+      if (selectedStatus === 'draft' && room.isPublished) return false;
+      return true;
+    });
+  }, [data?.topPerformingRooms, searchTerm, selectedTemplate, selectedBlock, selectedStatus]);
 
   const templateBreakdown = useMemo(() => {
     if (!data?.topPerformingRooms?.length) return [];
@@ -450,123 +495,475 @@ export const RoomInsightsDashboard: React.FC = () => {
 
           {/* Top Performing Showcase Rooms Table */}
           <div className="table-wrap">
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Trophy size={16} color="var(--accent)" />
-                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-                  Top Performing Showcase Rooms
-                </h3>
+                <div>
+                  <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                    Top Performing Showcase Rooms
+                  </h3>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0 0' }}>
+                    Inspect creator room architectures, blocks used, and live viewer telemetry ({filteredRooms.length} of {data.topPerformingRooms?.length || 0} rooms)
+                  </p>
+                </div>
               </div>
-              <span className="badge badge-sunset" style={{ fontSize: 11 }}>Leaderboard</span>
+              <span className="badge badge-sunset" style={{ fontSize: 11 }}>Live PostHog Telemetry</span>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div style={{
+              padding: '12px 20px',
+              borderBottom: '1px solid var(--line)',
+              background: 'var(--panel)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1, minWidth: 260 }}>
+                {/* Search */}
+                <div style={{ position: 'relative', minWidth: 200, flex: '1 1 200px' }}>
+                  <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--dim)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search by room name or creator…"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="input"
+                    style={{ paddingLeft: 30, fontSize: 12, height: 32, width: '100%' }}
+                  />
+                </div>
+
+                {/* Template Filter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <LayoutTemplate size={13} color="var(--dim)" />
+                  <select
+                    value={selectedTemplate}
+                    onChange={e => setSelectedTemplate(e.target.value)}
+                    className="input"
+                    style={{ fontSize: 12, height: 32, padding: '0 8px', minWidth: 150 }}
+                  >
+                    <option value="all">All Templates</option>
+                    {ALL_TEMPLATES.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Block Filter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Layers size={13} color="var(--dim)" />
+                  <select
+                    value={selectedBlock}
+                    onChange={e => setSelectedBlock(e.target.value)}
+                    className="input"
+                    style={{ fontSize: 12, height: 32, padding: '0 8px', minWidth: 140 }}
+                  >
+                    <option value="all">All Active Blocks</option>
+                    {ALL_BLOCK_TYPES.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Status Toggle Pills & Clear */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="pill-group">
+                  <button
+                    onClick={() => setSelectedStatus('all')}
+                    className={`pill-tab ${selectedStatus === 'all' ? 'active' : ''}`}
+                    style={{ fontSize: 11, padding: '4px 10px' }}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setSelectedStatus('published')}
+                    className={`pill-tab ${selectedStatus === 'published' ? 'active' : ''}`}
+                    style={{ fontSize: 11, padding: '4px 10px' }}
+                  >
+                    Published
+                  </button>
+                  <button
+                    onClick={() => setSelectedStatus('draft')}
+                    className={`pill-tab ${selectedStatus === 'draft' ? 'active' : ''}`}
+                    style={{ fontSize: 11, padding: '4px 10px' }}
+                  >
+                    Draft
+                  </button>
+                </div>
+
+                {(searchTerm || selectedTemplate !== 'all' || selectedBlock !== 'all' || selectedStatus !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedTemplate('all');
+                      setSelectedBlock('all');
+                      setSelectedStatus('all');
+                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px 8px', fontSize: 11, gap: 4 }}
+                    title="Reset all filters"
+                  >
+                    <X size={12} /> Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ minWidth: 880 }}>
+              <table style={{ minWidth: 920 }}>
                 <thead>
                   <tr>
                     <th style={{ minWidth: 160 }}>Room Name</th>
                     <th style={{ minWidth: 160 }}>Creator</th>
-                    <th style={{ minWidth: 140 }}>Template</th>
-                    <th style={{ minWidth: 120 }}>Theme Preset</th>
-                    <th style={{ minWidth: 110 }}>Composition</th>
+                    <th style={{ minWidth: 130 }}>Template</th>
+                    <th style={{ minWidth: 110 }}>Theme Preset</th>
+                    <th style={{ minWidth: 160 }}>Block Composition</th>
                     <th style={{ minWidth: 80 }}>Status</th>
-                    <th style={{ minWidth: 90 }}>Views</th>
-                    <th style={{ minWidth: 90 }}>Unique</th>
+                    <th style={{ minWidth: 80 }}>Views</th>
+                    <th style={{ minWidth: 80 }}>Unique</th>
                     <th style={{ minWidth: 110 }}>Engagement</th>
-                    <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
+                    <th style={{ textAlign: 'right', minWidth: 140 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.topPerformingRooms || []).map(room => (
-                    <tr key={room.roomId}>
-                      <td>
-                        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{room.roomName}</span>
+                  {filteredRooms.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--dim)', fontSize: 13 }}>
+                        No showcase rooms match the selected filters.
                       </td>
-                      <td>
-                        <div>
-                          <p style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {room.ownerName}
-                            {room.ownerIdConfirmed === false && (
-                              <span className="badge badge-neutral" style={{ fontSize: 9, padding: '1px 6px' }} title="Matched by first-visitor activity, not a confirmed owner ID">
-                                inferred
+                    </tr>
+                  ) : (
+                    filteredRooms.map(room => (
+                      <tr key={room.roomId}>
+                        <td>
+                          <div>
+                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{room.roomName}</span>
+                            {(room.interactionsCount ?? 0) > 0 && (
+                              <p style={{ fontSize: 11, color: 'var(--dim)', margin: '2px 0 0 0' }}>
+                                ⚡ {room.interactionsCount} builder clicks
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            <p style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                              {room.ownerName}
+                              {room.ownerIdConfirmed === false && (
+                                <span className="badge badge-neutral" style={{ fontSize: 9, padding: '1px 6px' }} title="Matched by first-visitor activity, not a confirmed owner ID">
+                                  inferred
+                                </span>
+                              )}
+                            </p>
+                            <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)', margin: '2px 0 0 0' }}>{room.ownerEmail}</p>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="badge badge-teal" style={{ fontSize: 11, fontWeight: 600 }}>
+                            {room.template || 'Custom Portfolio'}
+                          </span>
+                        </td>
+                        <td>
+                          {room.theme ? (
+                            <span className="badge" style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--line)', gap: 5 }}>
+                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: THEME_PALETTE[room.theme.toLowerCase()] || '#FA520F' }} />
+                              {room.theme}
+                            </span>
+                          ) : (
+                            <span className="badge badge-neutral" style={{ fontSize: 10, opacity: 0.7 }} title="Waiting for room_saved event with creator's theme choice">
+                              Pending Save
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {room.blocksUsed && room.blocksUsed.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {room.blocksUsed.slice(0, 2).map(b => (
+                                  <span
+                                    key={b}
+                                    style={{
+                                      fontSize: 10.5,
+                                      padding: '2px 6px',
+                                      borderRadius: 4,
+                                      background: 'var(--panel-2)',
+                                      border: '1px solid var(--line)',
+                                      color: 'var(--text)',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {b}
+                                  </span>
+                                ))}
+                                {room.blocksUsed.length > 2 && (
+                                  <span
+                                    style={{
+                                      fontSize: 10,
+                                      padding: '2px 5px',
+                                      borderRadius: 4,
+                                      background: 'var(--panel)',
+                                      color: 'var(--dim)',
+                                      cursor: 'pointer',
+                                    }}
+                                    title={room.blocksUsed.join(', ')}
+                                    onClick={() => setInspectingRoom(room)}
+                                  >
+                                    +{room.blocksUsed.length - 2} more
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: 10.5, color: 'var(--dim)' }}>
+                                {room.blockCount || room.blocksUsed.length} blocks total
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 11, color: 'var(--dim)' }}>—</span>
+                          )}
+                        </td>
+                        <td>
+                          {room.isPublished ? (
+                            <span className="badge badge-success" style={{ fontSize: 10.5 }} title={room.publishedAt ? `room_published recorded ${new Date(room.publishedAt).toLocaleDateString()}` : undefined}>
+                              Published
+                            </span>
+                          ) : (
+                            <span className="badge badge-neutral" style={{ fontSize: 10.5 }} title="No room_published event recorded yet for this room">
+                              Draft
+                            </span>
+                          )}
+                        </td>
+                        <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.views)}</td>
+                        <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.uniqueViews)}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span className="badge badge-teal mono-metric">{room.engagement}% quality</span>
+                            {!!room.rageClicks && (
+                              <span className="badge badge-error mono-metric" title="Repeated clicks on something unresponsive">
+                                {room.rageClicks} rage click{room.rageClicks === 1 ? '' : 's'}
                               </span>
                             )}
-                          </p>
-                          <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{room.ownerEmail}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="badge badge-teal" style={{ fontSize: 11, fontWeight: 600 }}>
-                          {room.template || 'Custom Portfolio'}
-                        </span>
-                      </td>
-                      <td>
-                        {room.theme ? (
-                          <span className="badge" style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--line)', gap: 5 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: THEME_PALETTE[room.theme.toLowerCase()] || '#FA520F' }} />
-                            {room.theme}
-                          </span>
-                        ) : (
-                          <span className="badge badge-neutral" style={{ fontSize: 10, opacity: 0.7 }} title="Waiting for room_saved event with creator's theme choice">
-                            Pending Save
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {room.blockCount ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <span className="mono-metric" style={{ fontSize: 12, fontWeight: 600 }}>
-                              {room.blockCount} blocks
-                            </span>
-                            {room.customizationDepth !== null && room.customizationDepth !== undefined && (
-                              <span style={{ fontSize: 10.5, color: 'var(--text-3)' }}>
-                                {room.customizationDepth}% depth
+                            {!!room.errorCount && (
+                              <span className="badge badge-error mono-metric" title={`${room.errorCount} exceptions recorded during room setup`}>
+                                ⚠️ {room.errorCount} error{room.errorCount === 1 ? '' : 's'}
                               </span>
                             )}
                           </div>
-                        ) : (
-                          <span style={{ fontSize: 11, color: 'var(--dim)' }}>—</span>
-                        )}
-                      </td>
-                      <td>
-                        {room.isPublished ? (
-                          <span className="badge badge-success" style={{ fontSize: 10.5 }} title={room.publishedAt ? `room_published recorded ${new Date(room.publishedAt).toLocaleDateString()}` : undefined}>
-                            Published
-                          </span>
-                        ) : (
-                          <span className="badge badge-neutral" style={{ fontSize: 10.5 }} title="No room_published event recorded yet for this room">
-                            Draft
-                          </span>
-                        )}
-                      </td>
-                      <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.views)}</td>
-                      <td className="mono-metric" style={{ fontWeight: 600 }}>{formatNumber(room.uniqueViews)}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <span className="badge badge-teal mono-metric">{room.engagement}% quality</span>
-                          {!!room.rageClicks && (
-                            <span className="badge badge-error mono-metric" title="Repeated clicks on something unresponsive — a friction signal, not counted toward engagement">
-                              {room.rageClicks} rage click{room.rageClicks === 1 ? '' : 's'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => navigate(`/lookup?userId=${encodeURIComponent(room.ownerDistinctId || room.ownerEmail)}`)}
-                          className="btn btn-ghost"
-                          style={{ padding: '4px 10px', fontSize: 11.5, gap: 5 }}
-                          title={room.ownerIdConfirmed ? `Open ${room.ownerName}'s profile` : 'Owner identity is inferred from room activity, not confirmed'}
-                        >
-                          Inspect User <ArrowUpRight size={12} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                            <button
+                              onClick={() => setInspectingRoom(room)}
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 11.5, gap: 4 }}
+                              title="Inspect this room's exact blocks and telemetry"
+                            >
+                              <Layers size={12} color="var(--accent)" /> Blocks
+                            </button>
+                            <button
+                              onClick={() => navigate(`/lookup?userId=${encodeURIComponent(room.ownerDistinctId || room.ownerEmail)}`)}
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: 11.5, gap: 4 }}
+                              title={room.ownerIdConfirmed ? `Open ${room.ownerName}'s profile` : 'Owner identity is inferred from room activity'}
+                            >
+                              User <ArrowUpRight size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Room Blocks & Telemetry Modal */}
+          {inspectingRoom && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: 20,
+            }}>
+              <div className="card-mistral" style={{
+                maxWidth: 680,
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                padding: 24,
+                boxShadow: 'var(--shadow-xl)',
+                border: '1px solid var(--line)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 18,
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                        {inspectingRoom.roomName}
+                      </h3>
+                      {inspectingRoom.isPublished ? (
+                        <span className="badge badge-success" style={{ fontSize: 11 }}>Published</span>
+                      ) : (
+                        <span className="badge badge-neutral" style={{ fontSize: 11 }}>Draft</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                      Creator: <strong style={{ color: 'var(--text)' }}>{inspectingRoom.ownerName}</strong> ({inspectingRoom.ownerEmail})
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setInspectingRoom(null)}
+                    className="btn btn-ghost"
+                    style={{ padding: 6 }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Architecture & Template Specs */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  background: 'var(--panel)',
+                  border: '1px solid var(--line)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+                      Template Architecture
+                    </span>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', margin: '2px 0 0 0' }}>
+                      {inspectingRoom.template || 'Custom Portfolio'}
+                    </p>
+                  </div>
+                  {inspectingRoom.theme && (
+                    <div>
+                      <span style={{ fontSize: 11, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+                        Theme Preset
+                      </span>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: THEME_PALETTE[inspectingRoom.theme.toLowerCase()] || '#FA520F' }} />
+                        {inspectingRoom.theme}
+                      </p>
+                    </div>
+                  )}
+                  {inspectingRoom.publishedUrl && (
+                    <a
+                      href={inspectingRoom.publishedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-ghost"
+                      style={{ fontSize: 12, gap: 5, padding: '4px 10px' }}
+                    >
+                      <ExternalLink size={12} /> Live Room
+                    </a>
+                  )}
+                </div>
+
+                {/* Blocks Used in This Room */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Layers size={15} color="var(--accent)" />
+                      <h4 style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                        Active Room Blocks ({inspectingRoom.blocksUsed?.length || 0})
+                      </h4>
+                    </div>
+                    <span style={{ fontSize: 11, color: 'var(--dim)' }}>
+                      Click Stream Synthesized
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+                    {(inspectingRoom.blocksUsed || ['Profile', 'Video intro', 'Skill tags']).map((b: string) => (
+                      <div
+                        key={b}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          background: 'var(--panel-2)',
+                          border: '1px solid var(--line)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>{b}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Telemetry KPIs */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  <div className="stat-card" style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 600 }}>Total Views</span>
+                    <p className="mono-metric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '4px 0 0 0' }}>
+                      {formatNumber(inspectingRoom.views)}
+                    </p>
+                  </div>
+                  <div className="stat-card" style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 600 }}>Unique Visitors</span>
+                    <p className="mono-metric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '4px 0 0 0' }}>
+                      {formatNumber(inspectingRoom.uniqueViews)}
+                    </p>
+                  </div>
+                  <div className="stat-card" style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 600 }}>Builder Clicks</span>
+                    <p className="mono-metric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '4px 0 0 0' }}>
+                      ⚡ {inspectingRoom.interactionsCount ?? 0}
+                    </p>
+                  </div>
+                  <div className="stat-card" style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 600 }}>Setup Errors</span>
+                    <p className="mono-metric" style={{ fontSize: 18, fontWeight: 700, color: (inspectingRoom.errorCount ?? 0) > 0 ? '#EF4444' : 'var(--accent)', margin: '4px 0 0 0' }}>
+                      {inspectingRoom.errorCount ?? 0}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                  <button
+                    onClick={() => setInspectingRoom(null)}
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12.5 }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      const id = inspectingRoom.ownerDistinctId || inspectingRoom.ownerEmail;
+                      setInspectingRoom(null);
+                      navigate(`/lookup?userId=${encodeURIComponent(id)}`);
+                    }}
+                    className="btn btn-primary"
+                    style={{ fontSize: 12.5, gap: 5 }}
+                  >
+                    Inspect Full Creator Profile <ArrowUpRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Platform Peak Engagement Heatmap */}
           <div className="card-mistral" style={{ padding: '24px' }}>

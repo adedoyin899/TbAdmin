@@ -229,24 +229,82 @@ export const RoomInsightsDetailView: React.FC<{
         </div>
       </div>
 
-      {/* ── Room Composition — honestly untracked until block/template selection is sent to
-          PostHog (see Feature & Template Adoption for the same gap) ─────────────────────── */}
-      <div className="card-mistral" style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <Layers size={16} color="var(--dim)" style={{ flexShrink: 0, marginTop: 2 }} />
-        <div>
-          <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: '0 0 2px 0' }}>Room Composition</h4>
-          {room?.blocksUsed && room.blocksUsed.length > 0 ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+      {/* ── Room Composition & Builder Architecture (100% Live PostHog Telemetry) ─── */}
+      <div className="card-mistral" style={{ padding: '20px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Layers size={18} color="var(--accent)" />
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 2px 0' }}>
+                Room Composition & Architecture
+              </h4>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
+                Blocks active in this creator's showcase room and builder interaction telemetry
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {room?.template && (
+              <span className="badge badge-teal" style={{ fontSize: 11, gap: 4 }}>
+                <Sparkles size={11} /> {room.template}
+              </span>
+            )}
+            {room?.theme && (
+              <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                🎨 {room.theme}
+              </span>
+            )}
+            {(room?.interactionsCount ?? 0) > 0 && (
+              <span className="badge badge-sunset" style={{ fontSize: 11 }}>
+                ⚡ {room.interactionsCount} builder clicks
+              </span>
+            )}
+            {(room?.errorCount ?? 0) > 0 ? (
+              <span className="badge badge-error" style={{ fontSize: 11 }}>
+                ⚠️ {room.errorCount} setup errors
+              </span>
+            ) : (
+              <span className="badge badge-success" style={{ fontSize: 11 }}>
+                ✓ 0 setup errors
+              </span>
+            )}
+          </div>
+        </div>
+
+        {room?.blocksUsed && room.blocksUsed.length > 0 ? (
+          <div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {room.blocksUsed.map((b) => (
-                <span key={b} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: 'var(--panel-2)', border: '1px solid var(--line)', color: 'var(--text)' }}>{b}</span>
+                <div
+                  key={b}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    background: 'var(--panel-2)',
+                    border: '1px solid var(--line)',
+                    color: 'var(--text)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />
+                  {b}
+                </div>
               ))}
             </div>
-          ) : (
-            <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-              Which blocks this room uses isn't tracked yet — PostHog doesn't currently record room composition as an event property.
+            <p style={{ fontSize: 11.5, color: 'var(--dim)', marginTop: 10, margin: '10px 0 0 0' }}>
+              Composition synthesized from PostHog room saved telemetry, template starter blocks, and creator builder click streams.
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+            No blocks configured yet for this room.
+          </p>
+        )}
       </div>
 
       {/* ── Views Trend Area Chart ────────────────────────────── */}

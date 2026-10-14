@@ -64,6 +64,7 @@ export async function getFeatureDashboard(req: AuthenticatedRequest, res: Respon
       blockAdoption: featureData.blockAdoption || featureData.topBlocks,
       templateAdoption: featureData.templateAdoption || [],
       themeDistribution: featureData.themeDistribution,
+      productFocus: featureData.productFocus,
       cachedAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
     };

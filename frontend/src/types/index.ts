@@ -33,8 +33,11 @@ export interface BlockAdoption {
   category?: string;
   description?: string;
   count: number;
+  uniqueCreators?: number;
   percentage: number;
   growth?: string;
+  status?: 'high_adoption' | 'moderate_adoption' | 'underutilized';
+  actionRecommendation?: string;
   recruiterClickRate?: string;
   dwellTimeBoost?: string;
 }
@@ -44,6 +47,7 @@ export interface TemplateAdoption {
   category?: string;
   description?: string;
   count: number;
+  uniqueCreators?: number;
   percentage: number;
   growth?: string;
   includedBlocks?: string[];
@@ -63,6 +67,11 @@ export interface FeaturesDashboardResponse {
   blockAdoption: BlockAdoption[];
   templateAdoption?: TemplateAdoption[];
   themeDistribution: ThemeEntry[];
+  productFocus?: {
+    popularBlocksCount: number;
+    underutilizedBlocksCount: number;
+    actionableSummary: string;
+  };
   cachedAt?: string;
   expiresAt?: string;
 }
@@ -224,11 +233,13 @@ export interface RoomInsight {
   heatmap: HeatmapCell[];
   geoTraffic: CountryTraffic[];
   recommendations: SmartRecommendation[];
-  // Not derivable: PostHog doesn't record which content blocks a creator placed in a room.
+  template?: string;
+  theme?: string | null;
+  blockCount?: number | null;
+  customizationDepth?: number | null;
   blocksUsed?: string[] | null;
-  // Whether ownership was matched by an explicit author-name signal ("confirmed") or only by
-  // this person being the room's first-ever recorded visitor ("inferred") — there's no stable
-  // room_owner_id in PostHog yet, so this is a best-effort signal, not a guarantee.
+  interactionsCount?: number;
+  errorCount?: number;
   ownerConfidence?: 'confirmed' | 'inferred';
 }
 
@@ -264,6 +275,9 @@ export interface RoomsDashboardResponse {
     theme?: string | null;
     blockCount?: number | null;
     customizationDepth?: number | null;
+    blocksUsed?: string[];
+    interactionsCount?: number;
+    errorCount?: number;
   }[];
 }
 
