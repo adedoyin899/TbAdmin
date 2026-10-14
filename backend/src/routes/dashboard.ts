@@ -9,6 +9,7 @@ import {
   getChannelsDashboard,
   getErrorMonitoringDashboard,
 } from '../controllers/dashboardController.js';
+import { queryAiAssistant } from '../controllers/aiAssistantController.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
 
 export const dashboardRouter = Router();
@@ -39,3 +40,7 @@ dashboardRouter.get('/channels', getChannelsDashboard);
 
 // GET /api/dashboard/errors
 dashboardRouter.get('/errors', getErrorMonitoringDashboard);
+
+// POST & GET /api/dashboard/ai-query — live telemetry AI query assistant
+dashboardRouter.post('/ai-query', queryAiAssistant);
+dashboardRouter.get('/ai-query', queryAiAssistant);

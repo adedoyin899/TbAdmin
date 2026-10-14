@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -8,15 +9,15 @@ import {
   Download, X, Sparkles, Layers,
   ChevronRight, CheckCircle2, Search,
   LayoutTemplate, Video, AlignLeft, Tags, Type,
-  User, Quote, BarChart2, GitCompare, Grid,
+  User, Users, Quote, BarChart2, GitCompare, Grid,
   GitBranch, Sliders, MessageSquare, Image, FileText,
   Briefcase, Network, Scale, Clock, Award,
   DollarSign, ShieldCheck, Calendar, Eye,
-  ArrowUpRight, Check, Star,
+  ArrowUpRight, ArrowRight, ExternalLink, Check, Star,
   Info, Compass, Activity, Play, Lock, CheckCircle,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
-import type { FeaturesDashboardResponse, BlockAdoption, TemplateAdoption, ThemeEntry } from '../../types';
+import type { FeaturesDashboardResponse, BlockAdoption, TemplateAdoption, ThemeEntry, FeatureCreator } from '../../types';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
 import { DateRangeSelector, type DateRangeValue } from '../Common/DateRangeSelector';
 import { exportToCsv } from '../../utils/exportCsv';
@@ -297,6 +298,7 @@ const getTemplateIcon = (templateName: string) => {
 
 export const FeatureDashboard: React.FC = () => {
   const rbac = useRbac();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
   
   // Tab Switcher: 'blocks' or 'templates'
@@ -317,6 +319,7 @@ export const FeatureDashboard: React.FC = () => {
     uniqueCreators?: number;
     status?: string;
     actionRecommendation?: string;
+    creators?: FeatureCreator[];
   } | null>(null);
 
   const { data, isLoading, error } = useQuery<FeaturesDashboardResponse>({
@@ -608,6 +611,7 @@ export const FeatureDashboard: React.FC = () => {
                           uniqueCreators: found.uniqueCreators,
                           status: found.status,
                           actionRecommendation: found.actionRecommendation,
+                          creators: found.creators || [],
                         });
                       }
                     }}
@@ -986,6 +990,10 @@ export const FeatureDashboard: React.FC = () => {
                       count: item.count,
                       percentage: item.percentage,
                       growth: item.growth,
+                      uniqueCreators: item.uniqueCreators,
+                      status: item.status,
+                      actionRecommendation: item.actionRecommendation,
+                      creators: item.creators || [],
                     });
                   }
                 }}
@@ -1209,6 +1217,7 @@ export const FeatureDashboard: React.FC = () => {
                           uniqueCreators: block.uniqueCreators,
                           status: block.status,
                           actionRecommendation: block.actionRecommendation,
+                          creators: block.creators || [],
                         })}
                         className="hover:bg-[var(--panel-2)] cursor-pointer transition-colors"
                         title={`Click to inspect deep-dive metrics for ${block.blockType}`}
@@ -1341,6 +1350,8 @@ export const FeatureDashboard: React.FC = () => {
                           count: tpl.count,
                           percentage: tpl.percentage,
                           growth: tpl.growth,
+                          uniqueCreators: tpl.uniqueCreators,
+                          creators: tpl.creators || [],
                         })}
                         className="hover:bg-[var(--panel-2)] cursor-pointer transition-colors"
                         title={`Click to inspect deep-dive metrics for ${tpl.templateName}`}
@@ -1478,6 +1489,7 @@ export const FeatureDashboard: React.FC = () => {
                       uniqueCreators: block.uniqueCreators,
                       status: block.status,
                       actionRecommendation: block.actionRecommendation,
+                      creators: block.creators || [],
                     })}
                     className="card hover:border-[#02ABAC] cursor-pointer transition-all hover:scale-[1.02]"
                     style={{
@@ -1556,6 +1568,8 @@ export const FeatureDashboard: React.FC = () => {
                       count: tpl.count,
                       percentage: tpl.percentage,
                       growth: tpl.growth,
+                      uniqueCreators: tpl.uniqueCreators,
+                      creators: tpl.creators || [],
                     })}
                     className="card hover:border-[#02ABAC] cursor-pointer transition-all hover:scale-[1.02]"
                     style={{
@@ -1897,6 +1911,151 @@ export const FeatureDashboard: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* ── Creators Drill-Down Section ───────────────────────── */}
+            <div
+              style={{
+                borderRadius: 12,
+                border: '1px solid var(--line)',
+                background: 'var(--panel)',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  padding: '12px 16px',
+                  background: 'var(--panel-2)',
+                  borderBottom: '1px solid var(--line)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Users size={16} color="var(--accent)" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                    Creators Using This {selectedItem.type === 'block' ? 'Block' : 'Template'}
+                  </span>
+                  <span
+                    className="badge badge-primary"
+                    style={{ fontSize: 11, padding: '2px 8px' }}
+                  >
+                    {selectedItem.creators?.length || 0} Identified
+                  </span>
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--dim)' }}>
+                  PostHog Live Creator Telemetry
+                </span>
+              </div>
+
+              <div style={{ padding: '12px 16px', maxHeight: 240, overflowY: 'auto' }}>
+                {selectedItem.creators && selectedItem.creators.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {selectedItem.creators.map((c, idx) => (
+                      <div
+                        key={`${c.distinctId}-${idx}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          background: 'var(--panel-2)',
+                          border: '1px solid var(--line)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                          <div
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, rgba(2,171,172,0.2), rgba(13,148,136,0.3))',
+                              border: '1px solid rgba(2,171,172,0.3)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: 'var(--accent)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {(c.name || 'C').charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                                {c.name}
+                              </span>
+                              {c.isPublished ? (
+                                <span className="badge badge-success" style={{ fontSize: 9.5, padding: '1px 5px' }}>
+                                  Published
+                                </span>
+                              ) : (
+                                <span className="badge badge-neutral" style={{ fontSize: 9.5, padding: '1px 5px' }}>
+                                  Draft
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: 11.5, color: 'var(--dim)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {c.email} • Room: <strong style={{ color: 'var(--text-2)' }}>{c.roomName || 'Showcase'}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <div style={{ textAlign: 'right', marginRight: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>
+                              {formatNumber(c.views ?? 0)} views
+                            </span>
+                            <span style={{ display: 'block', fontSize: 10, color: 'var(--dim)' }}>
+                              ⚡ {c.clicks ?? 0} clicks
+                            </span>
+                          </div>
+
+                          {c.publishedUrl && (
+                            <a
+                              href={c.publishedUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-ghost"
+                              style={{ padding: '5px 8px', fontSize: 11, gap: 4 }}
+                              title="Open live room preview"
+                            >
+                              <ExternalLink size={12} /> Live
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedItem(null);
+                              navigate(`/lookup?userId=${encodeURIComponent(c.distinctId || c.email)}`);
+                            }}
+                            className="btn btn-primary"
+                            style={{ padding: '5px 10px', fontSize: 11.5, gap: 4 }}
+                            title="Inspect candidate timeline in User Directory"
+                          >
+                            Profile <ArrowRight size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '16px 8px', color: 'var(--dim)' }}>
+                    <p style={{ fontSize: 12.5, margin: '0 0 4px 0', color: 'var(--text-2)' }}>
+                      No creators actively deployed this {selectedItem.type} in live rooms yet.
+                    </p>
+                    <span style={{ fontSize: 11 }}>
+                      Try highlighting this component in onboarding walkthroughs or template presets.
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Live Telemetry Status & Product Strategy Recommendation */}

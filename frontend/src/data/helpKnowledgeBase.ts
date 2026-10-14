@@ -40,7 +40,7 @@ export interface BotQuickPrompt {
   id: string;
   label: string;
   query: string;
-  category: 'basics' | 'calculations' | 'email' | 'strategy';
+  category: 'basics' | 'calculations' | 'email' | 'strategy' | 'telemetry';
 }
 
 export const GLOSSARY_TERMS: GlossaryTerm[] = [
@@ -350,6 +350,42 @@ export const PLAYBOOKS: PlaybookItem[] = [
 ];
 
 export const BOT_QUICK_PROMPTS: BotQuickPrompt[] = [
+  {
+    id: 'qp_new_users',
+    label: 'How many people joined this week vs last week?',
+    query: 'How many people joined this week vs last week?',
+    category: 'telemetry',
+  },
+  {
+    id: 'qp_recent_accounts',
+    label: 'Who just created an account?',
+    query: 'Who just created an account and what rooms did they create?',
+    category: 'telemetry',
+  },
+  {
+    id: 'qp_features_performance',
+    label: 'What feature is doing well vs not doing well?',
+    query: 'What feature is doing well and what is not doing well?',
+    category: 'telemetry',
+  },
+  {
+    id: 'qp_blocks_used',
+    label: 'What blocks are creators using most?',
+    query: 'What blocks did creators use in their showcase rooms?',
+    category: 'telemetry',
+  },
+  {
+    id: 'qp_room_query',
+    label: 'How many users are using test room?',
+    query: 'How many users are using test room?',
+    category: 'telemetry',
+  },
+  {
+    id: 'qp_templates_breakdown',
+    label: 'What templates are creators choosing?',
+    query: 'What templates are creators choosing for their rooms?',
+    category: 'telemetry',
+  },
   {
     id: 'qp_er',
     label: 'What is a good engagement rate?',

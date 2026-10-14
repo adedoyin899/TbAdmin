@@ -16,6 +16,7 @@
     "test:cache": "tsx src/tests/cache.test.ts",
     "test:funnel": "tsx src/tests/funnel.test.ts",
     "test:dashboards": "tsx src/tests/dashboards.test.ts",
+    "test:ai": "tsx src/tests/aiAssistant.test.ts",
     "test:notifications": "tsx src/tests/notifications.test.ts",
     "test:users": "tsx src/tests/users.test.ts",
     "test:integrations": "tsx src/tests/integrations.test.ts",

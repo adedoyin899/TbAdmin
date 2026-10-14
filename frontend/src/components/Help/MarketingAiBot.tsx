@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
+import { dashboardApi } from '../../api/dashboardApi';
 import {
   BOT_QUICK_PROMPTS,
   answerHelpBotQuery,
@@ -56,7 +57,7 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = (textToSend || inputVal).trim();
     if (!query) return;
 
@@ -72,25 +73,36 @@ export const MarketingAiBot: React.FC<{ initialQuery?: string }> = ({ initialQue
     setInputVal('');
     setIsTyping(true);
 
-    // Simulate conversational response processing
-    setTimeout(() => {
-      const response = answerHelpBotQuery(query);
-      messageSeqRef.current += 1;
+    try {
+      const res: any = await dashboardApi.queryAiAssistant(query);
+      const data = res?.data || res;
 
+      messageSeqRef.current += 1;
       const botMsg: ChatMessage = {
         id: `bot_${messageSeqRef.current}`,
         sender: 'bot',
-        text: response.answer,
+        text: data?.answer || answerHelpBotQuery(query).answer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        relatedTerms: response.relatedTerms,
-        suggestedAction: response.suggestedAction,
+        relatedTerms: data?.relatedQueries || answerHelpBotQuery(query).relatedTerms,
+        suggestedAction: data?.suggestedAction || answerHelpBotQuery(query).suggestedAction,
       };
 
-
-
       setMessages((prev) => [...prev, botMsg]);
+    } catch {
+      const fallback = answerHelpBotQuery(query);
+      messageSeqRef.current += 1;
+      const botMsg: ChatMessage = {
+        id: `bot_${messageSeqRef.current}`,
+        sender: 'bot',
+        text: fallback.answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        relatedTerms: fallback.relatedTerms,
+        suggestedAction: fallback.suggestedAction,
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } finally {
       setIsTyping(false);
-    }, 450);
+    }
   };
 
   const handleQuickPrompt = (prompt: BotQuickPrompt) => {

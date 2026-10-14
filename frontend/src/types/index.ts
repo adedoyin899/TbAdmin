@@ -28,6 +28,18 @@ export interface FunnelDashboardResponse {
   expiresAt: string;
 }
 
+export interface FeatureCreator {
+  name: string;
+  email: string;
+  distinctId: string;
+  roomName?: string;
+  roomPath?: string;
+  publishedUrl?: string;
+  views?: number;
+  clicks?: number;
+  isPublished?: boolean;
+}
+
 export interface BlockAdoption {
   blockType: string;
   category?: string;
@@ -40,6 +52,7 @@ export interface BlockAdoption {
   actionRecommendation?: string;
   recruiterClickRate?: string;
   dwellTimeBoost?: string;
+  creators?: FeatureCreator[];
 }
 
 export interface TemplateAdoption {
@@ -53,6 +66,7 @@ export interface TemplateAdoption {
   includedBlocks?: string[];
   recruiterClickRate?: string;
   dwellTimeBoost?: string;
+  creators?: FeatureCreator[];
 }
 
 export interface ThemeEntry {

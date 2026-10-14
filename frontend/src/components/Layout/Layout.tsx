@@ -16,6 +16,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useRbac, isRouteAllowed } from '../../utils/rbac';
 import { NotificationDrawer } from '../Notifications/NotificationDrawer';
 import { CommandPalette } from '../Common/CommandPalette';
+import { FloatingAiAssistant } from '../Common/FloatingAiAssistant';
 import type { LucideProps } from 'lucide-react';
 
 // Icon map — keeps the sidebar config clean
@@ -65,12 +66,18 @@ const NAV_SECTIONS: NavSection[] = [
       { path: '/dashboard/website', label: 'Website Analytics', icon: 'Globe', badge: 'Live', badgeType: 'teal' },
       { path: '/dashboard/funnel', label: 'Funnel Conversion', icon: 'TrendingDown' },
       { path: '/dashboard/channels', label: 'Channel Breakdown', icon: 'TrendingUp', badge: 'New', badgeType: 'sunset' },
-      { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle' },
       { path: '/dashboard/retention', label: 'Cohort Retention', icon: 'RefreshCcw' },
     ],
   },
   {
-    title: 'Engagement & Media',
+    title: 'Product & Showcase',
+    items: [
+      { path: '/dashboard/rooms', label: 'Showcase Rooms', icon: 'Sparkles', badge: '3D', badgeType: 'sunset' },
+      { path: '/dashboard/features', label: 'Feature Adoption', icon: 'Puzzle', badge: 'Live', badgeType: 'teal' },
+    ],
+  },
+  {
+    title: 'Growth & Media',
     items: [
       {
         path: '/dashboard/social-media',
@@ -94,13 +101,10 @@ const NAV_SECTIONS: NavSection[] = [
           { path: '/email/detailed', label: 'Timing & Heatmap' },
         ],
       },
-      { path: '/dashboard/rooms', label: 'Room Insights', icon: 'Sparkles', badge: '3D', badgeType: 'sunset' },
     ],
   },
-
-
   {
-    title: 'Directory & Admin',
+    title: 'Talent & Systems',
     items: [
       { path: '/lookup', label: 'User Directory', icon: 'Search' },
       { path: '/dashboard/errors', label: 'Error Monitoring', icon: 'Bug' },
@@ -108,7 +112,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Help & Learning',
+    title: 'AI & Learning',
     items: [
       {
         path: '/help/guide',
@@ -1000,6 +1004,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
       />
+
+      {/* Floating AI Marketing & Platform Assistant with Live PostHog Telemetry */}
+      <FloatingAiAssistant />
     </div>
   );
 };

@@ -1013,6 +1013,15 @@ class PostHogService {
       }
     }
 
+    const personsByDistinctId = new Map<string, any>();
+    for (const p of persons) {
+      for (const id of (p.distinct_ids || [])) {
+        personsByDistinctId.set(String(id), p);
+      }
+      if (p.id) personsByDistinctId.set(String(p.id), p);
+    }
+    const rooms = this.buildRoomSummaries(allTelemetryEvents, personsByDistinctId);
+
     const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }, idx) => {
       let count = 0;
       let uniqueCreators = 0;
@@ -1041,6 +1050,47 @@ class PostHogService {
         actionRecommendation = 'Core creator workflow pillar — high engagement and retention impact.';
       }
 
+      const blockCreatorsMap = new Map<string, any>();
+      rooms
+        .filter(r => (r.blocksUsed || []).some(b => b.toLowerCase() === blockType.toLowerCase() || b.toLowerCase().includes(blockType.toLowerCase())))
+        .forEach(r => {
+          const key = r.ownerDistinctId || r.ownerEmail || r.roomName;
+          blockCreatorsMap.set(key, {
+            name: r.ownerName,
+            email: r.ownerEmail,
+            distinctId: r.ownerDistinctId,
+            roomName: r.roomName,
+            roomPath: r.path,
+            publishedUrl: r.publishedUrl,
+            views: r.views,
+            clicks: r.interactionsCount ?? 0,
+            isPublished: r.isPublished,
+          });
+        });
+
+      const clickUserIds = blockCreatorCounts.get(blockType);
+      if (clickUserIds) {
+        for (const uid of clickUserIds) {
+          if (!blockCreatorsMap.has(uid)) {
+            const p = personsByDistinctId.get(uid);
+            const userRoom = rooms.find(r => r.ownerDistinctId === uid);
+            blockCreatorsMap.set(uid, {
+              name: p?.properties?.name || (p?.properties?.email ? p.properties.email.split('@')[0] : `Creator ${uid.slice(0, 6)}`),
+              email: p?.properties?.email || 'telemetry-id',
+              distinctId: uid,
+              roomName: userRoom?.roomName || 'Showcase Room',
+              roomPath: userRoom?.path || '',
+              publishedUrl: userRoom?.publishedUrl || '',
+              views: userRoom?.views || 0,
+              clicks: 1,
+              isPublished: userRoom?.isPublished || false,
+            });
+          }
+        }
+      }
+
+      const creators = Array.from(blockCreatorsMap.values());
+
       return {
         blockType,
         category,
@@ -1050,6 +1100,7 @@ class PostHogService {
         percentage,
         status,
         actionRecommendation,
+        creators,
         growth: count > 0 ? `+${percentage}%` : '0%',
       };
     });
@@ -1068,6 +1119,21 @@ class PostHogService {
       }
 
       const percentage = Math.min(100, Math.round((uniqueCreators / Math.max(1, totalRooms)) * 100));
+
+      const creators = rooms
+        .filter(r => r.template.toLowerCase() === templateName.toLowerCase() || (templateName === 'Start from a blank room' && r.template === 'Custom Portfolio'))
+        .map(r => ({
+          name: r.ownerName,
+          email: r.ownerEmail,
+          distinctId: r.ownerDistinctId,
+          roomName: r.roomName,
+          roomPath: r.path,
+          publishedUrl: r.publishedUrl,
+          views: r.views,
+          clicks: r.interactionsCount ?? 0,
+          isPublished: r.isPublished,
+        }));
+
       return {
         templateName,
         category,
@@ -1076,6 +1142,7 @@ class PostHogService {
         count,
         uniqueCreators,
         percentage,
+        creators,
         growth: count > 0 ? `+${percentage}%` : '0%',
       };
     }).sort((a, b) => b.count - a.count);
@@ -1084,6 +1151,20 @@ class PostHogService {
     if (templateRow && Number(templateRow[18] || 0) > 0) {
       const blankClicks = Number(templateRow[18]);
       const blankUsers = Number(templateRow[19] || 0);
+      const blankCreators = rooms
+        .filter(r => r.template === 'Custom Portfolio' || r.template.toLowerCase().includes('blank'))
+        .map(r => ({
+          name: r.ownerName,
+          email: r.ownerEmail,
+          distinctId: r.ownerDistinctId,
+          roomName: r.roomName,
+          roomPath: r.path,
+          publishedUrl: r.publishedUrl,
+          views: r.views,
+          clicks: r.interactionsCount ?? 0,
+          isPublished: r.isPublished,
+        }));
+
       templateAdoption.push({
         templateName: 'Start from a blank room',
         category: 'Custom Studio',
@@ -1092,6 +1173,7 @@ class PostHogService {
         count: blankClicks,
         uniqueCreators: blankUsers,
         percentage: Math.min(100, Math.round((blankUsers / Math.max(1, totalRooms)) * 100)),
+        creators: blankCreators,
         growth: `+${Math.min(100, Math.round((blankUsers / Math.max(1, totalRooms)) * 100))}%`,
       });
     }

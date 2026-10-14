@@ -145,5 +145,10 @@ export const dashboardApi = {
       lastSynced: new Date().toISOString(),
     };
   },
+
+  queryAiAssistant: async (query: string) => {
+    const res: any = await apiClient.post('/dashboard/ai-query', { query });
+    return res;
+  },
 };
 
