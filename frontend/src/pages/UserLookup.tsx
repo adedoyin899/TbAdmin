@@ -12,7 +12,7 @@ import {
   Zap, ChevronDown, ChevronUp, Sparkles, Filter,
   ArrowRight, Users, UserCheck, ArrowUpRight, Download,
   Copy, Check, Eye, MousePointer, Code, Key,
-  Activity, Play, Layers, Monitor, Terminal, Video, Radio,
+  Activity, Play, Layers, Monitor, Terminal, Video, Radio, ArrowUpDown,
 } from 'lucide-react';
 import { userApi } from '../api/userApi';
 import { formatDate, formatDateTime, formatRelativeTime, formatNumber } from '../utils/formatters';
@@ -21,6 +21,32 @@ import { RoomInsightsDetailView } from '../components/Rooms/RoomInsightsDetailVi
 import { SessionReplayModal } from '../components/Users/SessionReplayModal';
 import { exportToCsv } from '../utils/exportCsv';
 import { useRbac } from '../utils/rbac';
+
+// ── Display Name & Hash Formatting Helpers ────────────────────
+
+const formatCreatorDisplayName = (firstName?: string, lastName?: string, fallbackId?: string): string => {
+  const full = `${firstName || ''} ${lastName || ''}`.trim();
+  if (!full || full.startsWith('Creator ') || full.startsWith('Creator #')) {
+    const rawId = full.replace(/^Creator\s*#?/, '').trim() || fallbackId || '';
+    if (rawId.length > 12) {
+      return `Creator #${rawId.slice(0, 6)}…${rawId.slice(-4)}`;
+    }
+    if (rawId) return `Creator #${rawId}`;
+    return 'Creator';
+  }
+  return full;
+};
+
+const formatEmailDisplayName = (email: string): string => {
+  if (!email) return '—';
+  if (email.startsWith('creator_') && email.includes('@talentbridge.cv')) {
+    const rawHash = email.replace('creator_', '').replace('@talentbridge.cv', '');
+    if (rawHash.length > 12) {
+      return `creator_${rawHash.slice(0, 6)}…@talentbridge.cv`;
+    }
+  }
+  return email;
+};
 
 // ── Event Icon & Color Config ─────────────────────────────────
 
@@ -1316,9 +1342,110 @@ export const UserLookupPage: React.FC = () => {
     setSearchParams(id ? { userId: id } : {}, { replace: true });
   };
 
-  const filteredUsers = (usersData?.results as User[] | undefined)?.filter(u => {
-    return sourceFilter === 'all' || u.signupSource === sourceFilter;
-  }) || [];
+  // User Filtering & Sorting States
+  const [uniqueOnly, setUniqueOnly] = useState<boolean>(true);
+  const [accountTypeFilter, setAccountTypeFilter] = useState<'verified' | 'all' | 'test'>('verified');
+  const [sortField, setSortField] = useState<'lastActive' | 'signupDate' | 'name' | 'events'>('lastActive');
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const toggleSort = (field: 'lastActive' | 'signupDate' | 'name' | 'events') => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const { filteredUsers, totalRaw, testAccountCount } = useMemo(() => {
+    const rawList = (usersData?.results as User[] | undefined) || [];
+    const totalRaw = rawList.length;
+
+    // Helper to identify test accounts
+    const isTest = (u: User) => {
+      if (u.isTestAccount) return true;
+      const email = (u.email || '').toLowerCase();
+      const first = (u.firstName || '').toLowerCase();
+      const last = (u.lastName || '').toLowerCase();
+      const distinct = (u.distinctId || u.userId || '').toLowerCase();
+      return (
+        email.includes('test') ||
+        email.includes('example.com') ||
+        email.includes('cypress') ||
+        email.includes('admin@') ||
+        first.includes('test') ||
+        last.includes('test') ||
+        distinct.includes('test')
+      );
+    };
+
+    let list = [...rawList];
+
+    // Count test accounts
+    const testAccountCount = list.filter(isTest).length;
+
+    // 1. Account type filter
+    if (accountTypeFilter === 'verified') {
+      list = list.filter(u => !isTest(u));
+    } else if (accountTypeFilter === 'test') {
+      list = list.filter(isTest);
+    }
+
+    // 2. Signup source filter
+    if (sourceFilter !== 'all') {
+      list = list.filter(u => u.signupSource === sourceFilter);
+    }
+
+    // 3. Deduplicate unique users
+    if (uniqueOnly) {
+      const seen = new Map<string, User>();
+      for (const u of list) {
+        const normEmail = u.email && !u.email.includes('@talentbridge.cv') ? u.email.toLowerCase().trim() : '';
+        const normName = u.firstName && u.lastName && !u.firstName.startsWith('Creator') ? `${u.firstName} ${u.lastName}`.toLowerCase().trim() : '';
+        const dedupKey = normEmail || normName || u.distinctId || u.userId;
+
+        const existing = seen.get(dedupKey);
+        if (!existing) {
+          seen.set(dedupKey, u);
+        } else {
+          // Keep the record with the most recent lastActive
+          const existingTime = new Date(existing.lastActive || existing.signupDate || 0).getTime();
+          const newTime = new Date(u.lastActive || u.signupDate || 0).getTime();
+          if (newTime >= existingTime) {
+            seen.set(dedupKey, {
+              ...u,
+              totalEvents: Math.max(u.totalEvents || 0, existing.totalEvents || 0),
+            });
+          }
+        }
+      }
+      list = Array.from(seen.values());
+    }
+
+    // 4. Sort
+    list.sort((a, b) => {
+      let diff = 0;
+      if (sortField === 'lastActive') {
+        const timeA = new Date(a.lastActive || a.signupDate || 0).getTime();
+        const timeB = new Date(b.lastActive || b.signupDate || 0).getTime();
+        diff = timeB - timeA;
+      } else if (sortField === 'signupDate') {
+        const timeA = new Date(a.signupDate || 0).getTime();
+        const timeB = new Date(b.signupDate || 0).getTime();
+        diff = timeB - timeA;
+      } else if (sortField === 'name') {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase();
+        diff = nameA.localeCompare(nameB);
+      } else if (sortField === 'events') {
+        diff = (b.totalEvents || 0) - (a.totalEvents || 0);
+      }
+      return sortDirection === 'desc' ? diff : -diff;
+    });
+
+    return { filteredUsers: list, totalRaw, testAccountCount };
+  }, [usersData?.results, accountTypeFilter, sourceFilter, uniqueOnly, sortField, sortDirection]);
 
   const recordingsList = recordingsData?.results || [];
 
@@ -1472,47 +1599,197 @@ export const UserLookupPage: React.FC = () => {
       {/* ── Tab View A: Registered Creators Directory Table ──── */}
       {activeMainTab === 'users' && (
         <div className="table-wrap">
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
                 Registered Creator Records
               </span>
               {usersFetching && <div className="spinner" style={{ width: 12, height: 12 }} />}
+              <span className="badge badge-neutral" style={{ fontSize: 11 }}>
+                {filteredUsers.length} shown {totalRaw > filteredUsers.length ? `(of ${totalRaw} total)` : ''}
+              </span>
             </div>
-            <span className="badge badge-neutral" style={{ fontSize: 11 }}>
-              {filteredUsers.length} creators found
-            </span>
+
+            {/* FAANG UX Controls: Account Type Scope & Unique Deduplication Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--panel-2)',
+                  borderRadius: 8,
+                  padding: 2,
+                  border: '1px solid var(--line)',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setAccountTypeFilter('verified')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: 'none',
+                    background: accountTypeFilter === 'verified' ? '#02ABAC' : 'transparent',
+                    color: accountTypeFilter === 'verified' ? '#FFFFFF' : 'var(--text-2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Show verified creator accounts (filters out test accounts and synthetic tester entries)"
+                >
+                  Verified Creators
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountTypeFilter('all')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: 'none',
+                    background: accountTypeFilter === 'all' ? '#02ABAC' : 'transparent',
+                    color: accountTypeFilter === 'all' ? '#FFFFFF' : 'var(--text-2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Show all accounts including test accounts"
+                >
+                  All Accounts ({totalRaw})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountTypeFilter('test')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: 'none',
+                    background: accountTypeFilter === 'test' ? '#02ABAC' : 'transparent',
+                    color: accountTypeFilter === 'test' ? '#FFFFFF' : 'var(--text-2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Show only test and feature verification accounts"
+                >
+                  Test Accounts ({testAccountCount})
+                </button>
+              </div>
+
+              {/* Deduplicate Unique Users Toggle */}
+              <button
+                type="button"
+                onClick={() => setUniqueOnly(!uniqueOnly)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 11px',
+                  borderRadius: 8,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: uniqueOnly ? 'rgba(2, 171, 172, 0.12)' : 'var(--panel-2)',
+                  color: uniqueOnly ? '#02ABAC' : 'var(--dim)',
+                  border: `1px solid ${uniqueOnly ? '#02ABAC' : 'var(--line)'}`,
+                  transition: 'all 0.15s ease',
+                }}
+                title="Deduplicate repeated candidate names/accounts"
+              >
+                <UserCheck size={13} color={uniqueOnly ? '#02ABAC' : 'var(--dim)'} />
+                <span>{uniqueOnly ? '✓ Unique Users Only' : 'Allow Duplicates'}</span>
+              </button>
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ minWidth: 840 }}>
+            <table style={{ minWidth: 920 }}>
               <thead>
                 <tr>
-                  <th style={{ minWidth: 210 }}>User</th>
+                  <th
+                    style={{ minWidth: 220, cursor: 'pointer' }}
+                    onClick={() => toggleSort('name')}
+                    title="Click to sort by User Name"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>User</span>
+                      {sortField === 'name' ? (
+                        sortDirection === 'desc' ? <ChevronDown size={13} color="#02ABAC" /> : <ChevronUp size={13} color="#02ABAC" />
+                      ) : (
+                        <ArrowUpDown size={11} color="var(--dim)" />
+                      )}
+                    </div>
+                  </th>
                   <th style={{ minWidth: 120 }}>Country</th>
-                  <th style={{ minWidth: 120 }}>Signup Source</th>
-                  <th style={{ minWidth: 100 }}>Plan Tier</th>
-                  <th style={{ minWidth: 110 }}>Telemetry</th>
-                  <th style={{ minWidth: 110 }}>Joined Date</th>
-                  <th style={{ textAlign: 'right', minWidth: 180 }}>Actions</th>
+                  <th style={{ minWidth: 110 }}>Signup Source</th>
+                  <th style={{ minWidth: 90 }}>Plan Tier</th>
+                  <th
+                    style={{ minWidth: 110, cursor: 'pointer' }}
+                    onClick={() => toggleSort('events')}
+                    title="Click to sort by Telemetry Events"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>Telemetry</span>
+                      {sortField === 'events' ? (
+                        sortDirection === 'desc' ? <ChevronDown size={13} color="#02ABAC" /> : <ChevronUp size={13} color="#02ABAC" />
+                      ) : (
+                        <ArrowUpDown size={11} color="var(--dim)" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    style={{ minWidth: 135, cursor: 'pointer' }}
+                    onClick={() => toggleSort('lastActive')}
+                    title="Click to sort by Last Visit / Checked"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>Last Visit</span>
+                      {sortField === 'lastActive' ? (
+                        sortDirection === 'desc' ? <ChevronDown size={13} color="#02ABAC" /> : <ChevronUp size={13} color="#02ABAC" />
+                      ) : (
+                        <ArrowUpDown size={11} color="var(--dim)" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    style={{ minWidth: 120, cursor: 'pointer' }}
+                    onClick={() => toggleSort('signupDate')}
+                    title="Click to sort by Joined Date"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>Joined Date</span>
+                      {sortField === 'signupDate' ? (
+                        sortDirection === 'desc' ? <ChevronDown size={13} color="#02ABAC" /> : <ChevronUp size={13} color="#02ABAC" />
+                      ) : (
+                        <ArrowUpDown size={11} color="var(--dim)" />
+                      )}
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'right', minWidth: 160 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {usersLoading ? (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: 40 }}>
                       <div className="spinner" style={{ margin: '0 auto' }} />
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: 30, color: 'var(--dim)' }}>
                       No creators match your query. Try searching another term or resetting filters.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map(user => {
                     const ext = user as User & { countryCode?: string; city?: string; browser?: string; os?: string; initialUrl?: string; totalEvents?: number };
+                    const rawDistinctId = user.distinctId || user.userId;
+                    const diffMs = Date.now() - new Date(user.lastActive || user.signupDate).getTime();
+                    const isActiveToday = diffMs <= 86400000;
+
                     return (
                       <tr
                         key={user.userId}
@@ -1533,16 +1810,66 @@ export const UserLookupPage: React.FC = () => {
                                 {(user?.lastName?.[0] || '').toUpperCase()}
                               </span>
                             </div>
-                            <div>
+                            <div style={{ minWidth: 0, maxWidth: 260 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 13.5 }}>
-                                  {user?.firstName || 'Creator'} {user?.lastName || ''}
+                                <p
+                                  style={{
+                                    fontWeight: 700,
+                                    color: 'var(--text)',
+                                    fontSize: 13.5,
+                                    margin: 0,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: 170,
+                                  }}
+                                  title={`${user?.firstName || 'Creator'} ${user?.lastName || ''}`}
+                                >
+                                  {formatCreatorDisplayName(user?.firstName, user?.lastName, rawDistinctId)}
                                 </p>
-                                <span className="badge badge-neutral mono-metric" style={{ fontSize: 10, padding: '1px 5px' }}>
-                                  ID: {user.distinctId || user.userId}
+                                <span
+                                  className="badge badge-neutral mono-metric"
+                                  style={{
+                                    fontSize: 10,
+                                    padding: '1px 5px',
+                                    maxWidth: 125,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                  }}
+                                  title={`Click to copy ID: ${rawDistinctId}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(rawDistinctId);
+                                    setCopiedId(rawDistinctId);
+                                    setTimeout(() => setCopiedId(null), 2000);
+                                  }}
+                                >
+                                  ID: {rawDistinctId.length > 14
+                                    ? `${rawDistinctId.slice(0, 6)}…${rawDistinctId.slice(-4)}`
+                                    : rawDistinctId}
+                                  {copiedId === rawDistinctId ? <Check size={10} color="#10B981" /> : <Copy size={9} />}
                                 </span>
                               </div>
-                              <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{user?.email || `creator_${user.userId}@talentbridge.cv`}</p>
+                              <p
+                                className="mono-metric"
+                                style={{
+                                  fontSize: 11.5,
+                                  color: 'var(--text-2)',
+                                  margin: 0,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  maxWidth: 240,
+                                }}
+                                title={user?.email || `creator_${user.userId}@talentbridge.cv`}
+                              >
+                                {formatEmailDisplayName(user?.email || `creator_${user.userId}@talentbridge.cv`)}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -1577,6 +1904,30 @@ export const UserLookupPage: React.FC = () => {
                           ) : (
                             <span style={{ fontSize: 12, color: 'var(--dim)' }} title="Event count not available in the directory listing — open the profile for a full timeline">—</span>
                           )}
+                        </td>
+
+                        {/* Last Visit / Last Active Column */}
+                        <td style={{ fontSize: 12.5 }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <p style={{ fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+                                {formatRelativeTime(user.lastActive || user.signupDate)}
+                              </p>
+                              {isActiveToday && (
+                                <span
+                                  className="badge badge-success"
+                                  style={{ fontSize: 9.5, padding: '1px 5px', gap: 3 }}
+                                  title="Active within the last 24 hours"
+                                >
+                                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                                  Today
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: 11, color: 'var(--dim)', margin: '2px 0 0 0' }}>
+                              {formatDate(user.lastActive || user.signupDate)}
+                            </p>
+                          </div>
                         </td>
 
                         <td style={{ fontSize: 12.5, color: 'var(--text-2)' }}>

@@ -363,6 +363,7 @@ export interface User {
   roomsCreated?: number;
   roomsPublished?: number;
   totalEvents?: number;
+  isTestAccount?: boolean;
 }
 
 export interface UserEvent {

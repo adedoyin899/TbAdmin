@@ -1285,8 +1285,9 @@ class PostHogService {
       const props = p.properties || {};
       const country = props.$geoip_country_name || 'Unknown';
       const code = props.$geoip_country_code || '';
-      const email = props.email || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
-      const name = props.name || `Creator #${distinctId}`;
+      const shortId = distinctId.length > 12 ? `${distinctId.slice(0, 6)}…${distinctId.slice(-4)}` : distinctId;
+      const email = props.email || (distinctId.includes('@') ? distinctId : `creator_${shortId}@talentbridge.cv`);
+      const name = props.name || `Creator #${shortId}`;
       const personEvents = eventsByPerson.get(distinctId) || [];
       const lastEvent = personEvents.slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
       return {
@@ -2720,9 +2721,16 @@ class PostHogService {
             const countryCode = props.$geoip_country_code || props.country_code || '';
             const initialPath = props.$initial_pathname || props.$pathname || '/';
 
-            const firstName = rawName.split(' ')[0] || (rawEmail ? rawEmail.split('@')[0] : `Creator ${distinctId}`);
+            const shortId = distinctId.length > 12 ? `${distinctId.slice(0, 6)}…${distinctId.slice(-4)}` : distinctId;
+            const firstName = rawName.split(' ')[0] || (rawEmail ? rawEmail.split('@')[0] : `Creator #${shortId}`);
             const lastName = rawName.split(' ')[1] || (rawName ? '' : '');
-            const email = rawEmail || (distinctId.includes('@') ? distinctId : `creator_${distinctId}@talentbridge.cv`);
+            const email = rawEmail || (distinctId.includes('@') ? distinctId : `creator_${shortId}@talentbridge.cv`);
+
+            const isTestAccount = Boolean(
+              (rawEmail && (rawEmail.toLowerCase().includes('test') || rawEmail.toLowerCase().includes('example.com') || rawEmail.toLowerCase().includes('cypress'))) ||
+              (rawName && (rawName.toLowerCase().includes('test') || rawName.toLowerCase().includes('dummy') || rawName.toLowerCase().includes('cypress'))) ||
+              (distinctId.toLowerCase().includes('test') || distinctId.toLowerCase().includes('cypress'))
+            );
 
             return {
               userId: p.id || distinctId,
@@ -2747,6 +2755,7 @@ class PostHogService {
               // merge-count, not an event count — neither is a trustworthy proxy, so this is left
               // unset rather than guessed. The profile view (fetchUserProfile) reports a real count.
               totalEvents: p.properties?.total_events ?? undefined,
+              isTestAccount,
             };
           });
 

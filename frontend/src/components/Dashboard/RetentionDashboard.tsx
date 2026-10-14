@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, Filter, Download, X, ExternalLink,
-  ChevronRight, Activity, Calendar, Sparkles,
+  ChevronRight, Activity, Calendar, Sparkles, ArrowUpDown,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RetentionDashboardResponse } from '../../types';
@@ -59,11 +59,21 @@ export const RetentionDashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: 'all' });
   const [signupSource, setSignupSource] = useState('all');
   const [selectedCohort, setSelectedCohort] = useState<CohortDetail | null>(null);
+  const [cohortSortOrder, setCohortSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const { data, isLoading, error } = useQuery<RetentionDashboardResponse>({
     queryKey: ['retention', dateRange.preset, dateRange.startDate, dateRange.endDate, signupSource],
     queryFn: () => dashboardApi.getRetention(dateRange.preset || 'all', signupSource) as Promise<RetentionDashboardResponse>,
   });
+
+  const orderedCohortTrends = useMemo(() => {
+    if (!data?.trend) return [];
+    const list = [...data.trend];
+    if (cohortSortOrder === 'newest') {
+      return list.reverse();
+    }
+    return list;
+  }, [data?.trend, cohortSortOrder]);
 
   const mapTrendToDetail = (t: any, idx?: number): CohortDetail => {
     const weekLabel = t.week || (idx !== undefined ? `Week ${idx + 1}` : 'Cohort');
@@ -314,9 +324,28 @@ export const RetentionDashboard: React.FC = () => {
                   Click any cohort week row to inspect active returning users, top actions, and retention curves
                 </p>
               </div>
-              <span className="badge badge-sunset" style={{ fontSize: 11 }}>
-                100% Live Telemetry
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setCohortSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')}
+                  className="btn btn-ghost"
+                  style={{
+                    padding: '5px 12px',
+                    fontSize: 12,
+                    gap: 6,
+                    border: '1px solid var(--line)',
+                    background: 'var(--panel-2)',
+                    fontWeight: 600,
+                  }}
+                  title="Click to toggle cohort order between Current/Newest first and Oldest first"
+                >
+                  <ArrowUpDown size={13} color="var(--accent)" />
+                  <span>{cohortSortOrder === 'newest' ? 'Current Week First' : 'Oldest Week First'}</span>
+                </button>
+                <span className="badge badge-sunset" style={{ fontSize: 11 }}>
+                  100% Live Telemetry
+                </span>
+              </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ minWidth: 700 }}>
@@ -333,7 +362,7 @@ export const RetentionDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.trend || []).map((t: any, idx) => {
+                  {orderedCohortTrends.map((t: any, idx) => {
                     const rowDetail = mapTrendToDetail(t, idx);
                     const primaryDateLabel = t.dateRangeFormatted || t.week || `Week ${idx + 1}`;
                     const weekSubLabel = t.week || `Week ${idx + 1}`;
@@ -573,21 +602,55 @@ export const RetentionDashboard: React.FC = () => {
                       >
                         {u.flag || '👤'}
                       </div>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <p style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--text)', margin: 0 }}>
+                      <div style={{ minWidth: 0, maxWidth: 360 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <p
+                            style={{
+                              fontWeight: 700,
+                              fontSize: 13.5,
+                              color: 'var(--text)',
+                              margin: 0,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: 180,
+                            }}
+                            title={u.name || `Creator #${u.userId}`}
+                          >
                             {u.name || `Creator #${u.userId}`}
                           </p>
-                          <span className="badge badge-teal mono-metric" style={{ fontSize: 10 }}>
-                            ID: {u.userId || '82'}
+                          <span
+                            className="badge badge-teal mono-metric"
+                            style={{
+                              fontSize: 10,
+                              maxWidth: 130,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={`Full Distinct ID: ${u.userId || '82'}`}
+                          >
+                            ID: {(u.userId || '82').length > 14 ? `${(u.userId || '82').slice(0, 6)}…${(u.userId || '82').slice(-4)}` : (u.userId || '82')}
                           </span>
                           {u.country && (
-                            <span style={{ fontSize: 11.5, color: 'var(--text-2)' }}>
+                            <span style={{ fontSize: 11.5, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
                               • {u.country}
                             </span>
                           )}
                         </div>
-                        <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--dim)', margin: '3px 0 0 0' }}>
+                        <p
+                          className="mono-metric"
+                          style={{
+                            fontSize: 11.5,
+                            color: 'var(--dim)',
+                            margin: '3px 0 0 0',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: 320,
+                          }}
+                          title={u.email}
+                        >
                           {u.email} • {u.sessions || 1} sessions logged • Last active {u.lastActive || 'recently'}
                         </p>
                       </div>
