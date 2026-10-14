@@ -51,10 +51,10 @@ export const dashboardApi = {
         geoTraffic: MOCK_ROOMS.platformGeoTraffic,
         topRecommendations: MOCK_ROOMS.platformRecommendations,
         topPerformingRooms: [
-          { roomId: 'room_alice_01', roomName: "Alice's Portfolio", ownerName: 'Alice Chen', ownerEmail: 'alice@example.com', views: 1247, uniqueViews: 1092, engagement: 68.5 },
-          { roomId: 'room_kwame_01', roomName: 'Kwame Asante — Dev', ownerName: 'Kwame Asante', ownerEmail: 'kwame@example.com', views: 2840, uniqueViews: 1845, engagement: 82.4 },
-          { roomId: 'room_priya_01', roomName: 'Priya Sharma — UX', ownerName: 'Priya Sharma', ownerEmail: 'priya@example.com', views: 980, uniqueViews: 720, engagement: 74.1 },
-          { roomId: 'room_sarah_01', roomName: 'Sarah Jenkins — Creative', ownerName: 'Sarah Jenkins', ownerEmail: 'sarah.jenkins@example.com', views: 1650, uniqueViews: 1210, engagement: 79.3 },
+          { roomId: 'room_alice_01', roomName: "Alice's Portfolio", ownerName: 'Alice Chen', ownerEmail: 'alice@example.com', views: 1247, uniqueViews: 1092, engagement: 68.5, template: 'Designer', theme: 'Emerald', blockCount: 6, customizationDepth: 80 },
+          { roomId: 'room_kwame_01', roomName: 'Kwame Asante — Dev', ownerName: 'Kwame Asante', ownerEmail: 'kwame@example.com', views: 2840, uniqueViews: 1845, engagement: 82.4, template: 'Software Eng / Architect', theme: 'Midnight', blockCount: 7, customizationDepth: 85 },
+          { roomId: 'room_priya_01', roomName: 'Priya Sharma — UX', ownerName: 'Priya Sharma', ownerEmail: 'priya@example.com', views: 980, uniqueViews: 720, engagement: 74.1, template: 'Designer', theme: 'Sunset', blockCount: 5, customizationDepth: 70 },
+          { roomId: 'room_sarah_01', roomName: 'Sarah Jenkins — Creative', ownerName: 'Sarah Jenkins', ownerEmail: 'sarah.jenkins@example.com', views: 1650, uniqueViews: 1210, engagement: 79.3, template: 'Cybersecurity', theme: 'Cyberpunk', blockCount: 6, customizationDepth: 75 },
         ],
       };
     }

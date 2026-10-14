@@ -260,6 +260,10 @@ export interface RoomsDashboardResponse {
     rageClicks?: number;
     isPublished?: boolean;
     publishedAt?: string | null;
+    template?: string;
+    theme?: string | null;
+    blockCount?: number | null;
+    customizationDepth?: number | null;
   }[];
 }
 

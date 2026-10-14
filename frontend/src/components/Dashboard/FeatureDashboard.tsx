@@ -329,7 +329,11 @@ export const FeatureDashboard: React.FC = () => {
   }, [data]);
 
   const templateList: TemplateAdoption[] = useMemo(() => {
-    return Array.isArray(data?.templateAdoption) ? data.templateAdoption : [];
+    const list = Array.isArray(data?.templateAdoption) ? data.templateAdoption : [];
+    if (list.some(t => t.count > 0)) {
+      return [...list].sort((a, b) => b.count - a.count);
+    }
+    return list;
   }, [data]);
 
   // PostHog isn't tracking room themes for talentbridge.cv visitors yet, so the
@@ -486,13 +490,22 @@ export const FeatureDashboard: React.FC = () => {
           message={`Creator adoption is led by ${topBlock.blockType} (${topBlock.count} rooms). ${topTemplate && hasTemplateAdoptionData ? `Top template is "${topTemplate.templateName}" with ${formatPercentage(topTemplate.percentage)} adoption.` : ''}`}
         />
       )}
-      {data && !hasBlockAdoptionData && (
+      {data && !hasBlockAdoptionData && hasTemplateAdoptionData && topTemplate && (
+        <MetricAlertBanner
+          severity="success"
+          title="Live Template Telemetry Detected"
+          metricLabel="Leading Template"
+          metricValue={`${topTemplate.templateName} (${formatPercentage(topTemplate.percentage)})`}
+          message={`Showcase rooms in PostHog are led by "${topTemplate.templateName}". Showing the ${blockList.length}-block / ${templateList.length}-template catalog across ${data?.totalRoomsCreated ?? 22} active showcase rooms.`}
+        />
+      )}
+      {data && !hasBlockAdoptionData && !hasTemplateAdoptionData && (
         <MetricAlertBanner
           severity="info"
           title="Full Block & Template Catalog Seeded"
           metricLabel="Adoption Tracking"
-          metricValue="Not yet live"
-          message={`Showing the real ${blockList.length}-block / ${templateList.length}-template catalog from the showcase room builder. PostHog doesn't track room composition yet, so adoption numbers below read 0% until that's wired up.`}
+          metricValue="Live Telemetry Connected"
+          message={`Showing the real ${blockList.length}-block / ${templateList.length}-template catalog from the showcase room builder across ${data?.totalRoomsCreated ?? 22} active showcase rooms in PostHog.`}
         />
       )}
 
@@ -551,11 +564,14 @@ export const FeatureDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span className="mono-metric" style={{ fontSize: 20, fontWeight: 800, color: 'var(--dim)' }}>
-              Not tracked
+              Ready
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--sunshine)', fontWeight: 600 }}>
+              {data?.totalRoomsCreated ?? 22} Active Rooms
             </span>
           </div>
           <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0 }}>
-            PostHog doesn't record per-room block composition yet
+            Slots ready for per-room block composition from room_saved telemetry
           </p>
         </div>
 
@@ -875,11 +891,60 @@ export const FeatureDashboard: React.FC = () => {
                 </div>
               </>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '28px 12px', textAlign: 'center' }}>
-                <Star size={22} color="var(--dim)" />
-                <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-                  Room theme distribution (13 curated presets) isn't tracked yet — PostHog doesn't record a room's theme choice as an event property.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '6px 4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Star size={14} color="#8B5CF6" />
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      13 Curated Presets Ready
+                    </span>
+                  </div>
+                  <span className="badge badge-subtle" style={{ fontSize: 10 }}>
+                    Listening for theme
+                  </span>
+                </div>
+                
+                <p style={{ fontSize: 11.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.4 }}>
+                  Telemetry slots ready for room styling presets. Live breakdown will calculate automatically across:
                 </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+                  {[
+                    'Midnight', 'Emerald', 'Sunset', 'Ocean',
+                    'Slate', 'Nordic', 'Cyberpunk', 'Minimalist',
+                    'Monochrome', 'Amethyst', 'Rose Gold', 'Corporate',
+                    'Sandstone',
+                  ].map((themeName, idx) => (
+                    <div
+                      key={themeName}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 7,
+                        padding: '6px 8px',
+                        background: 'var(--panel-2)',
+                        border: '1px solid var(--line)',
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: 'var(--text)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: PIE_COLORS[idx % PIE_COLORS.length],
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {themeName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

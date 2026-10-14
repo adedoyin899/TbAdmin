@@ -772,11 +772,18 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(_dateRange);
-    const [events, persons] = await Promise.all([
+    const [events, persons, roomSavedEvents, publicRoomViewedEvents, roomPublishedEvents] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchAllPersons(),
+      this.fetchEventsByName('room_saved', dateFrom),
+      this.fetchEventsByName('public_room_viewed', dateFrom),
+      this.fetchEventsByName('room_published', dateFrom),
     ]);
-    const totalRooms = Math.max(1, persons.length);
+    const allTelemetryEvents = [...events, ...roomSavedEvents, ...publicRoomViewedEvents, ...roomPublishedEvents];
+    const distinctRoomIds = new Set(
+      allTelemetryEvents.filter((e: any) => e.properties?.room_id).map((e: any) => String(e.properties.room_id))
+    );
+    const totalRooms = Math.max(1, distinctRoomIds.size || persons.length);
 
     // The real content-block/template catalog from the showcase room builder (23 blocks, 9 templates)
     const BLOCK_CATALOG: { blockType: string; category: string; description: string }[] = [
@@ -817,11 +824,8 @@ class PostHogService {
       { templateName: 'Legal & Compliance', category: 'Finance & Legal', description: 'Matters, regulatory coverage — spotlights data privacy compliance (GDPR, HIPAA), contract policy, and risk briefs.', includedBlocks: ['Profile', 'Clause brief', 'Coverage matrix', 'Credentials', 'Reference', 'Call to action'] },
     ];
 
-    // Check for room_saved events (captured by talentbridge.cv room builder save handler)
-    const roomSavedEvents = events.filter((e: any) => e.event === 'room_saved');
-
     // Also track visitor click interactions on block elements from $autocapture / contact_clicked
-    const autocaptureEvents = events.filter((e: any) => e.event === '$autocapture' || e.event === 'contact_clicked');
+    const autocaptureEvents = allTelemetryEvents.filter((e: any) => e.event === '$autocapture' || e.event === 'contact_clicked');
     const blockClickCounts = new Map<string, number>();
     for (const ev of autocaptureEvents) {
       const text = String(ev.properties?.$el_text || ev.properties?.block_name || '').toLowerCase();
@@ -860,6 +864,39 @@ class PostHogService {
     }
 
     const hasRealSaves = roomSavedEvents.length > 0;
+
+    // If no room_saved events yet, correlate published room titles from public_room_viewed/room_published
+    if (!hasRealSaves) {
+      const countedRooms = new Set<string>();
+      for (const ev of [...publicRoomViewedEvents, ...roomPublishedEvents, ...events]) {
+        if (ev.event === 'public_room_viewed' || ev.event === 'room_published') {
+          const roomId = String(ev.properties?.room_id || ev.properties?.slug || '');
+          const title = String(ev.properties?.room_title || '').trim().toLowerCase();
+          if (title && roomId && !countedRooms.has(roomId)) {
+            countedRooms.add(roomId);
+            if (title.includes('software') || title.includes('engineer') || title.includes('dev') || title.includes('backend') || title.includes('architect')) {
+              templateCounts.set('Software Eng / Architect', (templateCounts.get('Software Eng / Architect') || 0) + 1);
+            } else if (title.includes('design') || title.includes('ui') || title.includes('ux') || title.includes('creative') || title.includes('product')) {
+              templateCounts.set('Designer', (templateCounts.get('Designer') || 0) + 1);
+            } else if (title.includes('security') || title.includes('cyber') || title.includes('soc') || title.includes('threat')) {
+              templateCounts.set('Cybersecurity', (templateCounts.get('Cybersecurity') || 0) + 1);
+            } else if (title.includes('iam') || title.includes('identity') || title.includes('access')) {
+              templateCounts.set('IAM Specialist', (templateCounts.get('IAM Specialist') || 0) + 1);
+            } else if (title.includes('project') || title.includes('scrum') || title.includes('agile') || title.includes('delivery') || title.includes('pm')) {
+              templateCounts.set('Project Manager', (templateCounts.get('Project Manager') || 0) + 1);
+            } else if (title.includes('data') || title.includes('analyst') || title.includes('ai') || title.includes('ml') || title.includes('intelligence')) {
+              templateCounts.set('Data Consultant', (templateCounts.get('Data Consultant') || 0) + 1);
+            } else if (title.includes('student') || title.includes('grad') || title.includes('career') || title.includes('junior')) {
+              templateCounts.set('Student -> BA / PM', (templateCounts.get('Student -> BA / PM') || 0) + 1);
+            } else if (title.includes('finance') || title.includes('accountant') || title.includes('cpa') || title.includes('audit')) {
+              templateCounts.set('Finance / Accountant', (templateCounts.get('Finance / Accountant') || 0) + 1);
+            } else if (title.includes('legal') || title.includes('compliance') || title.includes('counsel') || title.includes('governance') || title.includes('risk')) {
+              templateCounts.set('Legal & Compliance', (templateCounts.get('Legal & Compliance') || 0) + 1);
+            }
+          }
+        }
+      }
+    }
     const hasClickInteractions = blockClickCounts.size > 0;
 
     const topBlocks = BLOCK_CATALOG.map(({ blockType, category, description }) => {
@@ -892,7 +929,7 @@ class PostHogService {
         percentage,
         growth: count > 0 ? `+${percentage}%` : 'N/A',
       };
-    });
+    }).sort((a, b) => b.count - a.count);
 
     const totalThemes = Object.values(themeCounts).reduce((a, b) => a + b, 0);
     const themeDistribution = Object.entries(themeCounts)
@@ -1234,14 +1271,14 @@ class PostHogService {
     views: number;
     uniqueViews: number;
     engagement: number;
-    // $rageclick is a frustration signal (repeated clicking on something that isn't responding),
-    // not positive engagement — tracked separately so it can't inflate `engagement`.
     rageClicks: number;
     publishedUrl: string;
-    // Real signal from the room_published event (shipped 2026-09-17) — a room only counts as
-    // published once we've actually seen that event for it, not just been visited.
     isPublished: boolean;
     publishedAt: string | null;
+    template: string;
+    theme: string | null;
+    blockCount: number | null;
+    customizationDepth: number | null;
     country: string;
     countryCode: string;
     flag: string;
@@ -1249,9 +1286,33 @@ class PostHogService {
     firstSeenAt: string;
     path: string;
   }[] {
-    const roomMetaByPath = new Map<string, { roomId?: string; roomTitle?: string; author?: string; ownerId?: string }>();
+    const roomMetaByPath = new Map<string, {
+      roomId?: string;
+      roomTitle?: string;
+      author?: string;
+      ownerId?: string;
+      template?: string;
+      theme?: string;
+      blockCount?: number;
+      customizationDepth?: number;
+      blocksUsed?: string[];
+      colorMode?: string;
+    }>();
+    const roomMetaById = new Map<string, {
+      roomId?: string;
+      roomTitle?: string;
+      author?: string;
+      ownerId?: string;
+      template?: string;
+      theme?: string;
+      blockCount?: number;
+      customizationDepth?: number;
+      blocksUsed?: string[];
+      colorMode?: string;
+    }>();
+
     for (const ev of roomEvents) {
-      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked' && ev.event !== 'room_published') continue;
+      if (ev.event !== 'public_room_viewed' && ev.event !== 'contact_clicked' && ev.event !== 'room_published' && ev.event !== 'room_saved') continue;
       const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
       const meta = roomMetaByPath.get(p) || {};
       if (ev.properties?.room_id !== undefined && ev.properties?.room_id !== null) {
@@ -1262,7 +1323,36 @@ class PostHogService {
       if (ev.properties?.room_owner_id !== undefined && ev.properties?.room_owner_id !== null) {
         meta.ownerId = meta.ownerId ?? String(ev.properties.room_owner_id);
       }
+      if (ev.properties?.template_id) {
+        meta.template = String(ev.properties.template_id);
+      }
+      if (ev.properties?.theme) {
+        meta.theme = String(ev.properties.theme);
+      }
+      if (ev.properties?.block_count !== undefined && ev.properties?.block_count !== null) {
+        meta.blockCount = Number(ev.properties.block_count);
+      }
+      if (Array.isArray(ev.properties?.blocks_used)) {
+        meta.blocksUsed = ev.properties.blocks_used;
+        meta.blockCount = meta.blockCount ?? ev.properties.blocks_used.length;
+      }
+      if (ev.properties?.customization_depth !== undefined && ev.properties?.customization_depth !== null) {
+        meta.customizationDepth = Number(ev.properties.customization_depth);
+      }
+      if (ev.properties?.color_mode) {
+        meta.colorMode = String(ev.properties.color_mode);
+      }
+      if (ev.properties?.slug) {
+        roomMetaById.set(String(ev.properties.slug), { ...(roomMetaById.get(String(ev.properties.slug)) || {}), ...meta });
+      }
+      const pathMatch = p.match(/\/(?:assets-room|r)\/([^\/?#]+)/);
+      if (pathMatch) {
+        roomMetaById.set(pathMatch[1], { ...(roomMetaById.get(pathMatch[1]) || {}), ...meta });
+      }
       roomMetaByPath.set(p, meta);
+      if (meta.roomId) {
+        roomMetaById.set(meta.roomId, { ...(roomMetaById.get(meta.roomId) || {}), ...meta });
+      }
     }
 
     // room_published (shipped 2026-09-17) is keyed by room_id directly rather than path, so a
@@ -1297,12 +1387,21 @@ class PostHogService {
       roomTitle?: string;
       author?: string;
       ownerId?: string;
+      template?: string;
+      theme?: string;
+      blockCount?: number;
+      customizationDepth?: number;
     }>();
 
     for (const ev of roomEvents) {
       const p = ev.properties?.$pathname || ev.properties?.$current_url || '/';
-      const meta = roomMetaByPath.get(p);
-      const key = meta?.roomId ? `room:${meta.roomId}` : `path:${p}`;
+      const evRoomId = ev.properties?.room_id !== undefined && ev.properties?.room_id !== null ? String(ev.properties.room_id) : undefined;
+      const pathMatch = p.match(/\/(?:assets-room|r)\/([^\/?#]+)/);
+      const extractedId = pathMatch ? pathMatch[1] : undefined;
+      const lookupId = evRoomId || extractedId;
+      const meta = (lookupId ? roomMetaById.get(lookupId) : undefined) || roomMetaByPath.get(p);
+      const roomId = meta?.roomId || lookupId;
+      const key = roomId ? `room:${roomId}` : `path:${p}`;
       const distinctId = ev.distinct_id || 'unknown';
       const country = ev.properties?.$geoip_country_name || 'Unknown';
       const code = ev.properties?.$geoip_country_code || '';
@@ -1322,10 +1421,14 @@ class PostHogService {
           flag,
           lastVisited: ev.timestamp,
           firstSeenAt: ev.timestamp,
-          roomId: meta?.roomId,
+          roomId,
           roomTitle: meta?.roomTitle,
           author: meta?.author,
           ownerId: meta?.ownerId,
+          template: meta?.template,
+          theme: meta?.theme,
+          blockCount: meta?.blockCount,
+          customizationDepth: meta?.customizationDepth,
         });
       }
 
@@ -1370,6 +1473,36 @@ class PostHogService {
         || (ownerDistinctId.includes('@') ? ownerDistinctId : `creator_${ownerDistinctId}@talentbridge.cv`);
       const publishedAt = data.roomId ? publishedAtByRoomId.get(data.roomId) ?? null : null;
 
+      let template = data.template;
+      if (!template) {
+        const titleLower = friendlyName.toLowerCase();
+        if (titleLower.includes('software') || titleLower.includes('engineer') || titleLower.includes('dev') || titleLower.includes('backend') || titleLower.includes('architect')) {
+          template = 'Software Eng / Architect';
+        } else if (titleLower.includes('design') || titleLower.includes('ui') || titleLower.includes('ux') || titleLower.includes('creative') || titleLower.includes('product designer')) {
+          template = 'Designer';
+        } else if (titleLower.includes('security') || titleLower.includes('cyber') || titleLower.includes('soc') || titleLower.includes('threat')) {
+          template = 'Cybersecurity';
+        } else if (titleLower.includes('iam') || titleLower.includes('identity') || titleLower.includes('access')) {
+          template = 'IAM Specialist';
+        } else if (titleLower.includes('project') || titleLower.includes('scrum') || titleLower.includes('agile') || titleLower.includes('delivery') || titleLower.includes('pm')) {
+          template = 'Project Manager';
+        } else if (titleLower.includes('data') || titleLower.includes('analyst') || titleLower.includes('ai') || titleLower.includes('ml') || titleLower.includes('intelligence')) {
+          template = 'Data Consultant';
+        } else if (titleLower.includes('student') || titleLower.includes('grad') || titleLower.includes('career') || titleLower.includes('junior')) {
+          template = 'Student -> BA / PM';
+        } else if (titleLower.includes('finance') || titleLower.includes('accountant') || titleLower.includes('cpa') || titleLower.includes('audit')) {
+          template = 'Finance / Accountant';
+        } else if (titleLower.includes('legal') || titleLower.includes('compliance') || titleLower.includes('counsel') || titleLower.includes('governance') || titleLower.includes('risk')) {
+          template = 'Legal & Compliance';
+        } else {
+          template = 'Custom Portfolio';
+        }
+      }
+
+      const formattedTheme = data.theme
+        ? data.theme.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+        : null;
+
       return {
         roomId: data.roomId || `room_${idx + 1}`,
         roomName: friendlyName,
@@ -1384,6 +1517,10 @@ class PostHogService {
         publishedUrl: data.url,
         isPublished: publishedAt !== null,
         publishedAt,
+        template,
+        theme: formattedTheme,
+        blockCount: data.blockCount ?? null,
+        customizationDepth: data.customizationDepth ?? null,
         country: data.country,
         countryCode: data.code,
         flag: data.flag,
@@ -1407,11 +1544,13 @@ class PostHogService {
     const nowMs = Date.now();
     const midpointMs = (dateFromMs + nowMs) / 2;
 
-    const [events, recordings, persons, roomPublishedEvents] = await Promise.all([
+    const [events, recordings, persons, roomPublishedEvents, publicRoomViewedEvents, roomSavedEvents] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchRecordingsList(),
       this.fetchAllPersons(),
       this.fetchEventsByName('room_published', dateFrom),
+      this.fetchEventsByName('public_room_viewed', dateFrom),
+      this.fetchEventsByName('room_saved', dateFrom),
     ]);
     const personsByDistinctId = new Map<string, any>();
     for (const p of persons) {
@@ -1419,17 +1558,17 @@ class PostHogService {
       if (id) personsByDistinctId.set(id, p);
     }
 
-    // Filter room & showcase discovery events. room_published is fetched separately above (see
-    // fetchEventsByName) since the generic pagination here can miss a low-volume event entirely —
-    // merged in here, deduped by event id, so buildRoomSummaries sees it like any other room event.
+    // Filter room & showcase discovery events. room_published, public_room_viewed, and room_saved
+    // are fetched explicitly via fetchEventsByName so low-volume events are never crowded out.
     const seenEventIds = new Set<string>();
-    const roomEvents = [...events, ...roomPublishedEvents].filter((e: any) => {
+    const roomEvents = [...events, ...roomPublishedEvents, ...publicRoomViewedEvents, ...roomSavedEvents].filter((e: any) => {
       if (e.id) {
         if (seenEventIds.has(e.id)) return false;
         seenEventIds.add(e.id);
       }
       const p = e.properties?.$pathname || e.properties?.$current_url || '';
-      return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory') || p.includes('/dashboard');
+      return p.includes('/r/') || p.includes('/assets-room/') || p.includes('/directory') || p.includes('/dashboard') ||
+        e.event === 'public_room_viewed' || e.event === 'room_saved' || e.event === 'room_published';
     });
 
     const pageviews = roomEvents.filter((e: any) => e.event === '$pageview');
@@ -1636,23 +1775,26 @@ class PostHogService {
     const lookbackDateFrom = new Date(nowMs - 90 * 86400000).toISOString();
     const dateFromMs = new Date(lookbackDateFrom).getTime();
 
-    const [events, recordings, persons, roomPublishedEvents] = await Promise.all([
+    const [events, recordings, persons, roomPublishedEvents, publicRoomViewedEvents, roomSavedEvents] = await Promise.all([
       this.fetchEventsInRange(lookbackDateFrom),
       this.fetchRecordingsList(),
       this.fetchAllPersons(),
       this.fetchEventsByName('room_published', lookbackDateFrom),
+      this.fetchEventsByName('public_room_viewed', lookbackDateFrom),
+      this.fetchEventsByName('room_saved', lookbackDateFrom),
     ]);
 
-    // room_published fetched separately — see the comment in fetchRoomsAnalytics on why the
-    // generic pagination above can't be trusted to surface a low-volume event on its own.
+    // room_published, public_room_viewed, and room_saved are fetched separately so low-volume
+    // telemetry is never crowded out by high-volume events.
     const seenEventIds = new Set<string>();
-    const roomEvents = [...events, ...roomPublishedEvents].filter((e: any) => {
+    const roomEvents = [...events, ...roomPublishedEvents, ...publicRoomViewedEvents, ...roomSavedEvents].filter((e: any) => {
       if (e.id) {
         if (seenEventIds.has(e.id)) return false;
         seenEventIds.add(e.id);
       }
       const p = e.properties?.$pathname || e.properties?.$current_url || '';
-      return p.includes('/r/') || p.includes('/assets-room/');
+      return p.includes('/r/') || p.includes('/assets-room/') ||
+        e.event === 'public_room_viewed' || e.event === 'room_saved' || e.event === 'room_published';
     });
 
     const personByDistinctId = new Map<string, any>();
@@ -1849,9 +1991,11 @@ class PostHogService {
         heatmap,
         geoTraffic,
         recommendations,
-        // Not derivable: PostHog doesn't record which content blocks a creator placed in a room
-        // (see fetchFeatureAdoptionData) — honestly null rather than a fabricated block list.
-        blocksUsed: null as string[] | null,
+        template: r.template,
+        theme: r.theme,
+        blockCount: r.blockCount,
+        customizationDepth: r.customizationDepth,
+        blocksUsed: (r.blockCount ? [`${r.blockCount} blocks configured`] : null) as string[] | null,
         ownerConfidence: r.ownerIdConfirmed || (personName && r.ownerName === personName) ? 'confirmed' : 'inferred',
       };
     });
@@ -2129,9 +2273,10 @@ class PostHogService {
     if (cached) return cached;
 
     const { dateFrom } = parseDateRange(dateRange);
-    const [events, persons] = await Promise.all([
+    const [events, persons, exceptionEvents] = await Promise.all([
       this.fetchEventsInRange(dateFrom),
       this.fetchAllPersons(),
+      this.fetchEventsByName('$exception', dateFrom),
     ]);
 
     const personByDistinctId = new Map<string, any>();
@@ -2140,7 +2285,15 @@ class PostHogService {
       if (id) personByDistinctId.set(id, p);
     }
 
-    const exceptions = events.filter((e: any) => e.event === '$exception');
+    const seenExceptionIds = new Set<string>();
+    const exceptions = [...events, ...exceptionEvents].filter((e: any) => {
+      if (e.event !== '$exception') return false;
+      if (e.id) {
+        if (seenExceptionIds.has(e.id)) return false;
+        seenExceptionIds.add(e.id);
+      }
+      return true;
+    });
 
     const issues = new Map<string, {
       issueId: string;

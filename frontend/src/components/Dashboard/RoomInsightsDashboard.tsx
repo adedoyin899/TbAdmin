@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,6 +8,7 @@ import {
 import {
   Sparkles, ArrowUpRight,
   ArrowDownRight, Trophy, Download,
+  Palette, LayoutTemplate, Clock,
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import type { RoomsDashboardResponse } from '../../types';
@@ -30,6 +31,38 @@ const HEATMAP_BG: Record<number, string> = {
   4: '#0F766E',
 };
 
+const THEME_PALETTE: Record<string, string> = {
+  'midnight': '#1E1B4B',
+  'emerald': '#059669',
+  'sunset': '#EA580C',
+  'ocean': '#0284C7',
+  'slate': '#475569',
+  'nordic': '#0D9488',
+  'cyberpunk': '#D946EF',
+  'minimalist': '#71717A',
+  'monochrome': '#18181B',
+  'amethyst': '#9333EA',
+  'rose gold': '#F43F5E',
+  'corporate': '#2563EB',
+  'sandstone': '#D97706',
+};
+
+const CURATED_THEMES = [
+  { name: 'Midnight', key: 'midnight', color: '#1E1B4B' },
+  { name: 'Emerald', key: 'emerald', color: '#059669' },
+  { name: 'Sunset', key: 'sunset', color: '#EA580C' },
+  { name: 'Ocean', key: 'ocean', color: '#0284C7' },
+  { name: 'Slate', key: 'slate', color: '#475569' },
+  { name: 'Nordic', key: 'nordic', color: '#0D9488' },
+  { name: 'Cyberpunk', key: 'cyberpunk', color: '#D946EF' },
+  { name: 'Minimalist', key: 'minimalist', color: '#71717A' },
+  { name: 'Monochrome', key: 'monochrome', color: '#18181B' },
+  { name: 'Amethyst', key: 'amethyst', color: '#9333EA' },
+  { name: 'Rose Gold', key: 'rose gold', color: '#F43F5E' },
+  { name: 'Corporate', key: 'corporate', color: '#2563EB' },
+  { name: 'Sandstone', key: 'sandstone', color: '#D97706' },
+];
+
 export const RoomInsightsDashboard: React.FC = () => {
   const rbac = useRbac();
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: '30d' });
@@ -40,6 +73,34 @@ export const RoomInsightsDashboard: React.FC = () => {
     queryFn: () => dashboardApi.getRoomsDashboard(dateRange.preset) as Promise<RoomsDashboardResponse>,
   });
 
+  const templateBreakdown = useMemo(() => {
+    if (!data?.topPerformingRooms?.length) return [];
+    const counts = new Map<string, number>();
+    for (const r of data.topPerformingRooms) {
+      const tmpl = r.template || 'Custom Portfolio';
+      counts.set(tmpl, (counts.get(tmpl) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({
+        name,
+        count,
+        percentage: Math.round((count / data.topPerformingRooms.length) * 100),
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [data?.topPerformingRooms]);
+
+  const activeThemeCounts = useMemo(() => {
+    if (!data?.topPerformingRooms?.length) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const r of data.topPerformingRooms) {
+      if (r.theme) {
+        const key = r.theme.toLowerCase();
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+    }
+    return counts;
+  }, [data?.topPerformingRooms]);
+
   const handleExportCsv = () => {
     if (!data?.topPerformingRooms?.length) return;
     exportToCsv({
@@ -49,6 +110,10 @@ export const RoomInsightsDashboard: React.FC = () => {
         { header: 'Room Name', accessor: row => row.roomName },
         { header: 'Creator Name', accessor: row => row.ownerName },
         { header: 'Creator Email', accessor: row => row.ownerEmail },
+        { header: 'Template', accessor: row => row.template || 'Custom Portfolio' },
+        { header: 'Theme Preset', accessor: row => row.theme || 'Pending Save' },
+        { header: 'Block Count', accessor: row => row.blockCount ?? 'N/A' },
+        { header: 'Customization Depth', accessor: row => (row.customizationDepth !== null && row.customizationDepth !== undefined ? `${row.customizationDepth}%` : 'N/A') },
         { header: 'Status', accessor: row => (row.isPublished ? 'Published' : 'Draft') },
         { header: 'Published At', accessor: row => row.publishedAt || '' },
         { header: 'Total Views', accessor: row => row.views },
@@ -284,6 +349,105 @@ export const RoomInsightsDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Showcase Architecture & Curated Theme Health */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Active Templates Breakdown */}
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <LayoutTemplate size={16} color="var(--accent)" />
+                  <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                    Showcase Template Distribution
+                  </h3>
+                </div>
+                <span className="badge badge-teal" style={{ fontSize: 10.5 }}>
+                  {data.topPerformingRooms?.length || 0} Portfolios
+                </span>
+              </div>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 18 }}>
+                Industry templates active across published and draft creator rooms
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {templateBreakdown.slice(0, 6).map(tmpl => (
+                  <div key={tmpl.name}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 5 }}>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{tmpl.name}</span>
+                      <span className="mono-metric" style={{ color: 'var(--text-2)', fontSize: 12 }}>
+                        {tmpl.count} room{tmpl.count === 1 ? '' : 's'} ({tmpl.percentage}%)
+                      </span>
+                    </div>
+                    <div style={{ height: 10, background: 'var(--panel-2)', borderRadius: 9999, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.max(6, tmpl.percentage)}%`,
+                          background: tmpl.name.includes('Eng') ? '#3B82F6' : tmpl.name.includes('Cyber') ? '#D946EF' : tmpl.name.includes('IAM') ? '#0D9488' : tmpl.name.includes('Design') ? '#FA520F' : '#14B8A6',
+                          borderRadius: 9999,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 13 Curated Theme Adoption Registry */}
+            <div className="card-mistral" style={{ padding: '20px 22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Palette size={16} color="#8B5CF6" />
+                  <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                    13 Curated Theme Presets
+                  </h3>
+                </div>
+                <span className="badge badge-neutral" style={{ fontSize: 10.5, gap: 4 }}>
+                  <Clock size={10} /> Syncing
+                </span>
+              </div>
+              <p style={{ color: 'var(--text-2)', fontSize: 12.5, marginBottom: 14 }}>
+                Aesthetic theme system telemetry status across showcase portfolios
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                {CURATED_THEMES.map(t => {
+                  const count = activeThemeCounts.get(t.key) || 0;
+                  return (
+                    <div
+                      key={t.key}
+                      style={{
+                        padding: '7px 10px',
+                        background: 'var(--panel-2)',
+                        borderRadius: 8,
+                        border: '1px solid var(--line)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.color, flexShrink: 0, boxShadow: `0 0 6px ${t.color}55` }} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.name}
+                        </span>
+                      </div>
+                      {count > 0 ? (
+                        <span className="badge badge-teal mono-metric" style={{ fontSize: 10, padding: '1px 5px' }}>
+                          {count}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 9.5, color: 'var(--dim)', whiteSpace: 'nowrap' }}>
+                          Ready
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           {/* Top Performing Showcase Rooms Table */}
           <div className="table-wrap">
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
@@ -297,15 +461,18 @@ export const RoomInsightsDashboard: React.FC = () => {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ minWidth: 700 }}>
+              <table style={{ minWidth: 880 }}>
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 180 }}>Room Name</th>
-                    <th style={{ minWidth: 180 }}>Creator</th>
-                    <th style={{ minWidth: 90 }}>Status</th>
-                    <th style={{ minWidth: 100 }}>Total Views</th>
-                    <th style={{ minWidth: 110 }}>Unique Views</th>
-                    <th style={{ minWidth: 120 }}>Engagement</th>
+                    <th style={{ minWidth: 160 }}>Room Name</th>
+                    <th style={{ minWidth: 160 }}>Creator</th>
+                    <th style={{ minWidth: 140 }}>Template</th>
+                    <th style={{ minWidth: 120 }}>Theme Preset</th>
+                    <th style={{ minWidth: 110 }}>Composition</th>
+                    <th style={{ minWidth: 80 }}>Status</th>
+                    <th style={{ minWidth: 90 }}>Views</th>
+                    <th style={{ minWidth: 90 }}>Unique</th>
+                    <th style={{ minWidth: 110 }}>Engagement</th>
                     <th style={{ textAlign: 'right', minWidth: 110 }}>Action</th>
                   </tr>
                 </thead>
@@ -327,6 +494,39 @@ export const RoomInsightsDashboard: React.FC = () => {
                           </p>
                           <p className="mono-metric" style={{ fontSize: 11.5, color: 'var(--text-2)' }}>{room.ownerEmail}</p>
                         </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-teal" style={{ fontSize: 11, fontWeight: 600 }}>
+                          {room.template || 'Custom Portfolio'}
+                        </span>
+                      </td>
+                      <td>
+                        {room.theme ? (
+                          <span className="badge" style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--line)', gap: 5 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: THEME_PALETTE[room.theme.toLowerCase()] || '#FA520F' }} />
+                            {room.theme}
+                          </span>
+                        ) : (
+                          <span className="badge badge-neutral" style={{ fontSize: 10, opacity: 0.7 }} title="Waiting for room_saved event with creator's theme choice">
+                            Pending Save
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {room.blockCount ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <span className="mono-metric" style={{ fontSize: 12, fontWeight: 600 }}>
+                              {room.blockCount} blocks
+                            </span>
+                            {room.customizationDepth !== null && room.customizationDepth !== undefined && (
+                              <span style={{ fontSize: 10.5, color: 'var(--text-3)' }}>
+                                {room.customizationDepth}% depth
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: 'var(--dim)' }}>—</span>
+                        )}
                       </td>
                       <td>
                         {room.isPublished ? (

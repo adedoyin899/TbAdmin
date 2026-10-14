@@ -210,8 +210,12 @@ async function runStressTests() {
     assert.ok(bodyFallback.data.funnel.length === 5, 'Fallback funnel returned 5 stages even during provider network failure');
     console.log('✓ External provider failure handled with instant fallback telemetry (100% uptime)\n');
 
-    // Restore valid config
-    postHogService.updateConfig({ host: 'https://us.i.posthog.com', projectId: '48192', apiKey: 'phx_9831a8f902c3847b6a1e' });
+    // Restore valid config from environment
+    postHogService.updateConfig({
+      host: process.env.POSTHOG_HOST || 'https://eu.i.posthog.com',
+      projectId: process.env.POSTHOG_PROJECT_ID || '120100',
+      apiKey: process.env.POSTHOG_API_KEY || '',
+    });
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎉 ALL STRESS TESTS COMPLETED WITH 100% PASS RATE & ZERO CRASHES!');
